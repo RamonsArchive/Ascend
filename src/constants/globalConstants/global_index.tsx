@@ -68,6 +68,20 @@ export const global_home_data = {
         { tag: "Design", alt: "Pitch deck and UI preview" },
       ],
     },
+    images: [
+      { src: "/GlobalAssets/himg2.png", alt: "Image 1" },
+      { src: "/GlobalAssets/himg1.jpg", alt: "Image 2" },
+    ],
+    buttons: [
+      {
+        label: "Explore events",
+        href: "/events",
+      },
+      {
+        label: "Create an organization",
+        href: "",
+      },
+    ],
   },
 
   quick_value: {
@@ -207,7 +221,7 @@ export const global_home_data = {
       ),
       actions: [
         { label: "Explore events", href: "/events" },
-        { label: "Open App", href: "/app" },
+        { label: "Create a workspace", href: "/app/new" },
       ],
     },
   },

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, startTransition } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { nav_links } from "@/src/constants/globalConstants/global_index";
@@ -24,7 +24,9 @@ export default function GlobalMobileMenu({
 
   // Mount on client
   useEffect(() => {
-    setMounted(true);
+    requestAnimationFrame(() => {
+      setMounted(true);
+    });
   }, []);
 
   // Handle click outside and keyboard
@@ -64,7 +66,9 @@ export default function GlobalMobileMenu({
 
     if (isOpen) {
       // Reset states
-      setAnimateText(false);
+      startTransition(() => {
+        setAnimateText(false);
+      });
       // Render menu
       requestAnimationFrame(() => {
         setShouldRender(true);
@@ -75,7 +79,9 @@ export default function GlobalMobileMenu({
       }, 300);
     } else {
       // Close menu - animate text out first
-      setAnimateText(false);
+      startTransition(() => {
+        setAnimateText(false);
+      });
       // Wait for menu slide-out animation (300ms), then remove from DOM
       timeoutRef.current = setTimeout(() => {
         setShouldRender(false);
@@ -142,6 +148,6 @@ export default function GlobalMobileMenu({
         </div>
       </aside>
     </>,
-    document.body
+    document.body,
   );
 }

@@ -1,8 +1,11 @@
+import HomeHero from "@/src/components/globalComponents/HomeHero";
 import React from "react";
 
 const GlobalPage = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-primary-950 h-[2000px]"></div>
+    <>
+      <HomeHero />
+    </>
   );
 };
 
