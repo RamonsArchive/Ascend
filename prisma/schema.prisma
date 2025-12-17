@@ -110,6 +110,13 @@ enum TeamAuditAction {
   LEADER_TRANSFERRED
 }
 
+enum RegistrationRequestStatus { 
+  PENDING 
+  APPROVED 
+  REJECTED 
+  CANCELLED 
+}
+
 /* =========================
    Core Identity
    ========================= */
@@ -149,6 +156,7 @@ model User {
 
   // Scoring as judge
   scoresGiven Score[] @relation("ScoreJudge")
+  registrationRequests EventRegistrationRequest[]
 }
 
 /* =========================
@@ -183,6 +191,18 @@ model OrgMembership {
   @@index([orgId])
 }
 
+enum EventVisibility {
+  PUBLIC_LISTED   // appears on /events
+  PUBLIC_UNLISTED // public page, but not shown on /events
+  PRIVATE         // requires approval/invite to register
+}
+
+enum EventJoinMode {
+  OPEN        // anyone can register (until cutoff)
+  REQUEST     // user requests registration (organizer approves)
+  INVITE_ONLY // only invited users can register
+}
+
 /* =========================
    Events (Public config lives here)
    ========================= */
@@ -209,6 +229,16 @@ model Event {
   // Config toggles
   requireImages    Boolean @default(false)
   requireVideoDemo Boolean @default(false)
+
+   // ✅ Global directory /events controls
+  visibility EventVisibility @default(PUBLIC_LISTED)
+  joinMode   EventJoinMode   @default(OPEN)
+
+  // ✅ Registration windows (controls “no joining after start”)
+  registrationOpensAt DateTime?
+  registrationClosesAt DateTime? // recommended: set to startAt (or earlier)
+  // If you want strict “no joining after start”, enforce:
+  // now <= min(startAt, registrationClosesAt)
 
   // Team size cap (enforce in server actions + tx)
   maxTeamSize Int @default(5)
@@ -237,9 +267,29 @@ model Event {
   submissions      Submission[]
   announcements    Announcement[]
   judgeAssignments JudgeAssignment[]
+  registrationRequests EventRegistrationRequest[]
 
   @@unique([orgId, slug])
   @@index([orgId])
+}
+
+model EventRegistrationRequest {
+  id        String @id @default(cuid())
+  eventId   String
+  userId    String
+  message   String?
+  status    RegistrationRequestStatus @default(PENDING)
+  createdAt DateTime @default(now())
+  reviewedAt DateTime?
+  reviewedByUserId String?
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([userId])
+  @@index([status])
 }
 
 /* =========================

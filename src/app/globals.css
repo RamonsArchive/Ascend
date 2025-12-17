@@ -24,7 +24,11 @@
   --color-primary-700: #2b346e;
   --color-primary-800: #232a64;
   --color-primary-900: #151a4f;
+  --color-primary-930: #0f1538; /* Slightly lighter than 950, darker than 900 */
+  --color-primary-940: #0d1230; /* Between 930 and 950 */
   --color-primary-950: #0b1020;
+  --color-primary-960: #080c18; /* Slightly darker than 950 */
+  --color-primary-970: #060810; /* Darker than 960 */
 
   /* Secondary Color Variations (Electric Indigo #5B5FFF) */
   --color-secondary-50: #ededff;
@@ -128,4 +132,72 @@ body {
 
 @utility flex-center {
   @apply flex items-center justify-center;
+}
+
+/* Mobile Menu Animations - Ascending motion */
+@keyframes ascendIn {
+  from {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ascendOut {
+  from {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px);
+  }
+}
+
+@keyframes mobileLinkIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    display: block;
+  }
+}
+
+@keyframes mobileLinkOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(10px);
+    display: none;
+  }
+}
+
+/* Default hidden (important so nothing flashes) */
+.mobile-link-in,
+.mobile-link-out {
+  opacity: 0;
+  transform: translateY(18px);
+}
+
+/* Stagger in */
+.mobile-link-in {
+  animation: mobileLinkIn 480ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Stagger out */
+.mobile-link-out {
+  animation: mobileLinkOut 220ms ease-in forwards;
 }
