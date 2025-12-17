@@ -1,0 +1,131 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #0b1020;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  --breakpoint-xs: 380px;
+
+  /* Primary Color Variations (Midnight Navy #0B1020) */
+  --color-primary-50: #e8eaf0;
+  --color-primary-100: #c5c9d9;
+  --color-primary-200: #9ea5c0;
+  --color-primary-300: #7780a7;
+  --color-primary-400: #596494;
+  --color-primary-500: #3b4881;
+  --color-primary-600: #343f79;
+  --color-primary-700: #2b346e;
+  --color-primary-800: #232a64;
+  --color-primary-900: #151a4f;
+  --color-primary-950: #0b1020;
+
+  /* Secondary Color Variations (Electric Indigo #5B5FFF) */
+  --color-secondary-50: #ededff;
+  --color-secondary-100: #d1d2ff;
+  --color-secondary-200: #b3b4ff;
+  --color-secondary-300: #9496ff;
+  --color-secondary-400: #7d7fff;
+  --color-secondary-500: #5b5fff;
+  --color-secondary-600: #5356f7;
+  --color-secondary-700: #484bee;
+  --color-secondary-800: #3e41e4;
+  --color-secondary-900: #2d2ed5;
+  --color-secondary-950: #1a1bb8;
+
+  /* Accent Color Variations (Teal Mint #2DD4BF) */
+  --color-accent-50: #e6faf7;
+  --color-accent-100: #c0f2eb;
+  --color-accent-200: #96eade;
+  --color-accent-300: #6be1d1;
+  --color-accent-400: #4bdac7;
+  --color-accent-500: #2dd4bf;
+  --color-accent-600: #28cfb9;
+  --color-accent-700: #22c9b1;
+  --color-accent-800: #1cc3a9;
+  --color-accent-900: #11b99b;
+  --color-accent-950: #0a9a80;
+
+  /* Warning Color Variations (Amber Glow #F59E0B) */
+  --color-warning-50: #fff8e1;
+  --color-warning-100: #ffecb3;
+  --color-warning-200: #ffe082;
+  --color-warning-300: #ffd54f;
+  --color-warning-400: #ffca28;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #f08c00;
+  --color-warning-700: #e67c00;
+  --color-warning-800: #db6b00;
+  --color-warning-900: #c75000;
+  --color-warning-950: #a33d00;
+
+  /* Primary Background Variations (Based on Midnight Navy) */
+  --color-primary-background-50: #f0f1f4;
+  --color-primary-background-100: #d9dbe3;
+  --color-primary-background-200: #c0c3d0;
+  --color-primary-background-300: #a6abbd;
+  --color-primary-background-400: #9399af;
+  --color-primary-background-500: #8087a1;
+  --color-primary-background-600: #787f99;
+  --color-primary-background-700: #6d748f;
+  --color-primary-background-800: #636a85;
+  --color-primary-background-900: #505774;
+  --color-primary-background-950: #0b1020;
+
+  /* Neutral Variations */
+  --color-neutral-50: #f8f9fa;
+  --color-neutral-100: #f1f3f5;
+  --color-neutral-200: #e9ecef;
+  --color-neutral-300: #dee2e6;
+  --color-neutral-400: #ced4da;
+  --color-neutral-500: #adb5bd;
+  --color-neutral-600: #6c757d;
+  --color-neutral-700: #495057;
+  --color-neutral-800: #343a40;
+  --color-neutral-900: #212529;
+  --color-neutral-950: #0b1020;
+
+  /* Text Colors */
+  --color-text-primary: #0b1020;
+  --color-text-secondary: #343a40;
+  --color-text-muted: #6c757d;
+  --color-text-inverse: #ffffff;
+
+  /* Background Colors */
+  --color-bg-primary: #f0f1f4;
+  --color-bg-secondary: #ffffff;
+  --color-bg-muted: #e9ecef;
+  --color-bg-dark: #0b1020;
+  --color-bg-hero: #0b1020;
+  --color-bg-gradient-start: #0b1020;
+  --color-bg-gradient-end: #151a4f;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0b1020;
+    --foreground: #f8f9fa;
+    --color-bg-primary: #0b1020;
+    --color-bg-secondary: #151a4f;
+    --color-bg-muted: #1e2340;
+    --color-text-primary: #f8f9fa;
+    --color-text-secondary: #dee2e6;
+    --color-text-muted: #adb5bd;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+@utility flex-center {
+  @apply flex items-center justify-center;
+}

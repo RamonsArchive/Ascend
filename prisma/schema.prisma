@@ -1,0 +1,519 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+//
+// Ascend — Unified Prisma Schema (Multi-Org + Multi-Event + Teams/Invites/Matchmaking)
+//
+// Goals supported:
+// - Multi-tenant orgs (Organization + OrgMembership + role-based access)
+// - Public event pages (rules/dates/sponsors/etc live on Event, rendered at /:orgSlug/:eventSlug)
+// - Participant registration + newsletter opt-in + matchmaking profile (EventParticipant)
+// - Teams with:
+//   - max team size enforcement (Event.maxTeamSize — enforced in server actions/transactions)
+//   - one-team-per-user-per-event (TeamMember @@unique([eventId, userId]))
+//   - email-only invites (TeamInvite + token acceptance link)
+//   - join requests (TeamJoinRequest) from a Find Teams page
+//   - audit history (TeamAuditLog) to prevent repudiation
+// - Submissions + judging + scoring
+//
+// Notes:
+// - The database constraints here prevent many bad states,
+//   but capacity checks (maxTeamSize) MUST be enforced in server actions with transactions.
+// - Email invite acceptance should require signed-in user whose User.email matches invite email.
+//
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+/* =========================
+   Enums
+   ========================= */
+
+enum OrgRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum EventType {
+  IDEATHON
+  HACKATHON
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum TeamRole {
+  LEADER
+  MEMBER
+}
+
+enum SubmissionStatus {
+  DRAFT
+  SUBMITTED
+}
+
+enum JudgeRole {
+  JUDGE
+  ADMIN_JUDGE
+}
+
+enum ParticipantStatus {
+  REGISTERED
+  WITHDRAWN
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  REVOKED
+  EXPIRED
+}
+
+enum JoinRequestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELLED
+}
+
+enum TeamAuditAction {
+  TEAM_CREATED
+  TEAM_UPDATED
+  TEAM_DELETED
+
+  INVITE_SENT
+  INVITE_REVOKED
+  INVITE_ACCEPTED
+  INVITE_DECLINED
+
+  JOIN_REQUEST_SENT
+  JOIN_REQUEST_ACCEPTED
+  JOIN_REQUEST_DECLINED
+  JOIN_REQUEST_CANCELLED
+
+  MEMBER_LEFT
+  MEMBER_KICKED
+  LEADER_TRANSFERRED
+}
+
+/* =========================
+   Core Identity
+   ========================= */
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  imageUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Multi-org membership
+  memberships OrgMembership[]
+
+  // Event participation (registration + newsletter + matchmaking profile)
+  eventParticipants EventParticipant[]
+
+  // Team membership (per event)
+  teams TeamMember[]
+
+  // Submissions (as author; teams can also own submissions)
+  submissions Submission[] @relation("SubmissionAuthor")
+
+  // Judging (user assigned as judge for event)
+  judgeLinks JudgeAssignment[]
+
+  // Team invites: created-by + optional target user when accepted
+  teamInvitesCreated TeamInvite[] @relation("TeamInviteCreator")
+
+  // Join requests made by a user to teams
+  teamJoinRequests TeamJoinRequest[]
+
+  // Audit logs (actor vs target user)
+  teamAuditActor  TeamAuditLog[] @relation("TeamAuditActor")
+  teamAuditTarget TeamAuditLog[] @relation("TeamAuditTarget")
+
+  // Scoring as judge
+  scoresGiven Score[] @relation("ScoreJudge")
+}
+
+/* =========================
+   Multi-Org / Tenancy
+   ========================= */
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  logoUrl     String?
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  memberships OrgMembership[]
+  events      Event[]
+}
+
+model OrgMembership {
+  id        String   @id @default(cuid())
+  orgId     String
+  userId    String
+  role      OrgRole  @default(MEMBER)
+  createdAt DateTime @default(now())
+
+  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, userId])
+  @@index([userId])
+  @@index([orgId])
+}
+
+/* =========================
+   Events (Public config lives here)
+   ========================= */
+
+model Event {
+  id          String      @id @default(cuid())
+  orgId       String
+  name        String
+  slug        String
+  type        EventType
+  status      EventStatus @default(DRAFT)
+
+  // Public-facing content (rendered on /:orgSlug/:eventSlug)
+  heroTitle    String
+  heroSubtitle String?
+  rulesRich    Json? // markdown AST / editor JSON
+  rubricRich   Json? // optional
+
+  // Dates / deadlines
+  startAt     DateTime?
+  endAt       DateTime?
+  submitDueAt DateTime?
+
+  // Config toggles
+  requireImages    Boolean @default(false)
+  requireVideoDemo Boolean @default(false)
+
+  // Team size cap (enforce in server actions + tx)
+  maxTeamSize Int @default(5)
+
+  // Policy knobs
+  // If true: after startAt, disallow leader transfer / kicking / leaving (except organizer override in code).
+  lockTeamChangesAtStart Boolean @default(true)
+
+  // If false: disable self-service join requests; only invites/admin assignment.
+  allowSelfJoinRequests Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  org              Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  submissionSchema SubmissionSchema?
+
+  // Participation + teams + workflows
+  participants   EventParticipant[]
+  teams          Team[]
+  teamInvites    TeamInvite[]
+  joinRequests   TeamJoinRequest[]
+  teamAuditLogs  TeamAuditLog[]
+
+  // Submissions + announcements + judging
+  submissions      Submission[]
+  announcements    Announcement[]
+  judgeAssignments JudgeAssignment[]
+
+  @@unique([orgId, slug])
+  @@index([orgId])
+}
+
+/* =========================
+   Registration + Newsletter + Matchmaking Profile
+   ========================= */
+
+model EventParticipant {
+  id        String            @id @default(cuid())
+  eventId   String
+  userId    String
+  status    ParticipantStatus @default(REGISTERED)
+
+  // Newsletter / contact
+  newsletterOptIn Boolean @default(false)
+
+  // Optional override for contact (defaults to User.email in UI; store only if user edits)
+  contactEmail String?
+
+  // Matchmaking / preferences
+  lookingForTeam  Boolean @default(true)
+  trackPreference String? // e.g. "Beginner" | "Intermediate" | "Advanced" (or make enum later)
+  skills          Json?   // e.g. ["react", "ml", "uiux"]
+  interests       Json?   // e.g. ["hardware", "coastal tech", "design"]
+  experienceLevel String? // e.g. "Beginner" | "Intermediate" | "Advanced"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([userId])
+}
+
+/* =========================
+   Submission Schema (dynamic form definition)
+   ========================= */
+
+model SubmissionSchema {
+  id      String @id @default(cuid())
+  eventId String @unique
+
+  // Defines what fields appear on the submission form
+  // Example:
+  // [{ key:"repoUrl", label:"Repo URL", type:"url", required:true }, ...]
+  fields Json
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+/* =========================
+   Teams (Find Teams + Invites + Requests)
+   ========================= */
+
+model Team {
+  id        String   @id @default(cuid())
+  eventId   String
+  name      String
+
+  // Shown on Find Teams page
+  blurb String? // short description / what you're looking for
+  track String? // team’s chosen track/category label
+
+  // If true, team is discoverable on Find Teams page
+  lookingForMembers Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  auditLogs TeamAuditLog[]
+
+  members      TeamMember[]
+  invites      TeamInvite[]
+  joinRequests TeamJoinRequest[]
+  submissions  Submission[]
+
+  @@index([eventId])
+}
+
+/*
+  TeamMember design notes:
+  - eventId is stored directly to enforce:
+      one-team-per-user-per-event via @@unique([eventId, userId])
+  - LEADER transfer and kicking must be audited and optionally locked after event start.
+*/
+model TeamMember {
+  id      String   @id @default(cuid())
+  eventId String
+  teamId  String
+  userId  String
+  role    TeamRole @default(MEMBER)
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@unique([eventId, userId]) // user can only belong to one team per event
+  @@index([eventId])
+  @@index([userId])
+}
+
+/*
+  Email-only invites:
+  - Leader enters an email -> invite created with token
+  - Recipient signs in -> must match User.email -> accept via /.../team/invites/:token
+  - Acceptance must check:
+      - Event.maxTeamSize capacity
+      - TeamMember @@unique([eventId, userId]) (not already on a team)
+      - Optional lockTeamChangesAtStart policy if event has started
+*/
+model TeamInvite {
+  id        String       @id @default(cuid())
+  eventId   String
+  teamId    String
+  email     String
+  token     String       @unique
+  status    InviteStatus @default(PENDING)
+  message   String?
+
+  createdByUserId String
+  createdAt       DateTime @default(now())
+  expiresAt       DateTime?
+
+  event   Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  team    Team  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  creator User  @relation("TeamInviteCreator", fields: [createdByUserId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+  @@index([teamId])
+  @@index([email])
+}
+
+/*
+  Join requests:
+  - A user sees a team on Find Teams -> sends request with message
+  - Team leader accepts/declines
+  - Acceptance must check:
+      - Event.maxTeamSize capacity
+      - TeamMember @@unique([eventId, userId]) (not already on a team)
+      - allowSelfJoinRequests policy
+*/
+model TeamJoinRequest {
+  id        String            @id @default(cuid())
+  eventId   String
+  teamId    String
+  userId    String
+  message   String?
+  status    JoinRequestStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  team  Team  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([eventId])
+  @@index([teamId])
+  @@index([userId])
+}
+
+/*
+  Audit log:
+  - Write a row for sensitive actions:
+      - kicking
+      - leader transfer
+      - invite send/revoke/accept/decline
+      - join request lifecycle
+  - Helps prevent repudiation and enables organizer review.
+*/
+model TeamAuditLog {
+  id           String          @id @default(cuid())
+  eventId      String
+  teamId       String
+  actorId      String?         // who performed the action (nullable for system actions)
+  targetUserId String?         // optional target (kicked user / new leader / etc)
+  action       TeamAuditAction
+  meta         Json?           // { reason, emailInvited, previousLeaderId, newLeaderId, etc }
+  createdAt    DateTime        @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  team  Team  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  actor      User? @relation("TeamAuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  targetUser User? @relation("TeamAuditTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+
+  @@index([eventId])
+  @@index([teamId])
+  @@index([actorId])
+  @@index([targetUserId])
+}
+
+/* =========================
+   Submissions + Judging
+   ========================= */
+
+model Submission {
+  id        String           @id @default(cuid())
+  eventId   String
+  teamId    String?
+  authorId  String?
+  status    SubmissionStatus @default(DRAFT)
+
+  title       String
+  description String?
+  content     Json? // full submission payload from schema
+  imageUrls   Json? // array of URLs
+  videoUrl    String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  submittedAt DateTime?
+
+  event  Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  team   Team?  @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  author User?  @relation("SubmissionAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+
+  scores Score[]
+
+  @@index([eventId])
+  @@index([teamId])
+  @@index([authorId])
+}
+
+model JudgeAssignment {
+  id     String    @id @default(cuid())
+  eventId String
+  userId String
+  role   JudgeRole @default(JUDGE)
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([userId])
+  @@index([eventId])
+}
+
+model Score {
+  id           String  @id @default(cuid())
+  submissionId String
+  judgeId      String  // links to User.id (judge)
+
+  total     Float?
+  breakdown Json?   // e.g. { "impact": 8, "tech": 7, "design": 9 }
+  feedback  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  judge      User       @relation("ScoreJudge", fields: [judgeId], references: [id], onDelete: Cascade)
+
+  @@unique([submissionId, judgeId])
+  @@index([submissionId])
+  @@index([judgeId])
+}
+
+/* =========================
+   Announcements
+   ========================= */
+
+model Announcement {
+  id      String   @id @default(cuid())
+  eventId String
+  title   String
+  bodyRich Json?   // markdown AST / editor JSON
+  createdAt DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+}
