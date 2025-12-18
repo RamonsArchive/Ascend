@@ -1,5 +1,8 @@
 import React from "react";
-import { ABOUT_DATA, global_about_data } from "@/src/constants/globalConstants/global_index";
+import {
+  ABOUT_DATA,
+  global_about_data,
+} from "@/src/constants/globalConstants/global_index";
 import { BadgeCheck, Globe, HandHeart } from "lucide-react";
 
 const AboutValuesStats = () => {
@@ -97,4 +100,3 @@ const AboutValuesStats = () => {
 };
 
 export default AboutValuesStats;
-

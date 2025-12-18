@@ -524,38 +524,34 @@ export const global_contact_data = {
     description: "Questions, partnerships, or event support — reach out.",
   },
 
-  header: {
+  hero: {
+    eyebrow: "Contact",
     title: (
       <>
-        Contact <span className="text-accent-500">Ascend</span>
+        Let’s build your next <span className="text-accent-500">event</span>
       </>
     ),
-    description: (
-      <>
-        Want to run an event or bring Ascend to your organization? Send a
-        message and we’ll get back to you.
-      </>
-    ),
+    description:
+      "Questions, partnerships, or bringing Ascend to your organization — send a note and we’ll get back to you.",
   },
 
-  form: {
-    fields: [
-      { key: "name", label: "Name", type: "text", required: true },
-      { key: "email", label: "Email", type: "email", required: true },
-      {
-        key: "organization",
-        label: "Organization (optional)",
-        type: "text",
-        required: false,
-      },
-      { key: "message", label: "Message", type: "textarea", required: true },
+  formSection: {
+    title: "Send a message",
+    description:
+      "Share a little context and we’ll reply with next steps. No spam — just a real response.",
+    services: [
+      "Event setup / onboarding",
+      "Partnerships",
+      "Product feedback",
+      "Other",
     ],
     submitLabel: "Send message",
-    successMessage: <>Message sent — we’ll reply soon.</>,
+    successMessage: "Message sent — we’ll reply soon.",
   },
 
-  links: [
-    // Fill these when you actually have them (or remove)
-    { label: "Email", href: "mailto:hello@ascend.dev" },
-  ],
+  linksSection: {
+    title: "Find us online",
+    description:
+      "Use the social links below to reach us directly. (Contact links are sourced from the global links index.)",
+  },
 } as const;

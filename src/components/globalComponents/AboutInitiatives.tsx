@@ -82,4 +82,3 @@ const AboutInitiatives = () => {
 };
 
 export default AboutInitiatives;
-

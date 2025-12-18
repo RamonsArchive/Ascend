@@ -14,7 +14,8 @@ const AboutMission = () => {
           <div className="text-sm md:text-base text-white/70 leading-relaxed max-w-4xl">
             Ascend is built with the belief that access to technology and STEM
             opportunity should be equitable. We’re proud to partner with
-            organizations like Digital Revolution that push this mission forward.
+            organizations like Digital Revolution that push this mission
+            forward.
           </div>
         </div>
 
@@ -32,4 +33,3 @@ const AboutMission = () => {
 };
 
 export default AboutMission;
-

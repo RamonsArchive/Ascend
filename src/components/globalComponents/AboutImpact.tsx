@@ -60,4 +60,3 @@ const AboutImpact = () => {
 };
 
 export default AboutImpact;
-

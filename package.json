@@ -17,12 +17,16 @@
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
+    "@prisma/adapter-mariadb": "^7.2.0",
     "@prisma/client": "^7.2.0",
     "gsap": "^3.14.2",
     "lucide-react": "^0.561.0",
+    "mariadb": "^3.4.5",
     "next": "16.0.10",
     "react": "19.2.1",
-    "react-dom": "19.2.1"
+    "react-dom": "19.2.1",
+    "sonner": "^2.0.7",
+    "zod": "^4.2.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
