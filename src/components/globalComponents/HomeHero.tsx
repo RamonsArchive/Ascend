@@ -11,39 +11,51 @@ const HomeHero = () => {
     <div className="relative flex flex-col items-center justify-center h-[calc(100dvh-48px)] w-full overflow-hidden">
       {/* Ascending Geometric Sticks Background Effect - Electric River Flow */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Left side electric stream - random spread, flowing toward center */}
-        {Array.from({ length: 60 }).map((_, i) => {
-          const randomDelay = Math.random() * 3; // Random delay 0-3s
-          const randomDuration = 2.5 + Math.random() * 1.5; // Random duration 2.5-4s (faster)
-          const randomPosition = 5 + Math.random() * 40; // Random position 5-45%
+        {/* Left side electric stream - evenly spread, flowing toward center */}
+        {Array.from({ length: 40 }).map((_, i) => {
+          const baseDelay = (i * 0.1) % 4; // Evenly spaced delays, cycling every 4s
+          const delayVariation = (Math.random() - 0.5) * 0.3; // Small random variation ±0.15s
+          const delay = baseDelay + delayVariation;
+          const baseDuration = 3.5;
+          const durationVariation = (Math.random() - 0.5) * 0.5; // Small variation ±0.25s
+          const duration = baseDuration + durationVariation;
+          const basePosition = 5 + (i % 20) * 2; // Evenly spread positions
+          const positionVariation = (Math.random() - 0.5) * 1.5; // Small random variation ±0.75%
+          const position = basePosition + positionVariation;
           return (
             <div
               key={`left-${i}`}
               className={`ascend-stick ascend-stick-left ${i % 2 === 0 ? "text-[#1A1BB8]" : "text-white"}`}
               style={
                 {
-                  "--stick-position": `${randomPosition}%`,
-                  "--stick-delay": `${randomDelay}s`,
-                  "--stick-duration": `${randomDuration}s`,
+                  "--stick-position": `${Math.max(2, Math.min(48, position))}%`,
+                  "--stick-delay": `${Math.max(0, delay)}s`,
+                  "--stick-duration": `${Math.max(2.5, Math.min(4.5, duration))}s`,
                 } as React.CSSProperties
               }
             />
           );
         })}
-        {/* Right side electric stream - random spread, flowing toward center */}
-        {Array.from({ length: 60 }).map((_, i) => {
-          const randomDelay = Math.random() * 3; // Random delay 0-3s
-          const randomDuration = 2.5 + Math.random() * 1.5; // Random duration 2.5-4s (faster)
-          const randomPosition = 5 + Math.random() * 40; // Random position 5-45%
+        {/* Right side electric stream - evenly spread, flowing toward center */}
+        {Array.from({ length: 40 }).map((_, i) => {
+          const baseDelay = (i * 0.1) % 4; // Evenly spaced delays, cycling every 4s
+          const delayVariation = (Math.random() - 0.5) * 0.3; // Small random variation ±0.15s
+          const delay = baseDelay + delayVariation;
+          const baseDuration = 3.5;
+          const durationVariation = (Math.random() - 0.5) * 0.5; // Small variation ±0.25s
+          const duration = baseDuration + durationVariation;
+          const basePosition = 5 + (i % 20) * 2; // Evenly spread positions
+          const positionVariation = (Math.random() - 0.5) * 1.5; // Small random variation ±0.75%
+          const position = basePosition + positionVariation;
           return (
             <div
               key={`right-${i}`}
               className={`ascend-stick ascend-stick-right ${i % 2 === 0 ? "text-white" : "text-[#1A1BB8]"}`}
               style={
                 {
-                  "--stick-position": `${randomPosition}%`,
-                  "--stick-delay": `${randomDelay}s`,
-                  "--stick-duration": `${randomDuration}s`,
+                  "--stick-position": `${Math.max(2, Math.min(48, position))}%`,
+                  "--stick-delay": `${Math.max(0, delay)}s`,
+                  "--stick-duration": `${Math.max(2.5, Math.min(4.5, duration))}s`,
                 } as React.CSSProperties
               }
             />

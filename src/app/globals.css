@@ -242,19 +242,13 @@ body {
   bottom: 0;
   width: 3px;
   height: 120px;
-  background: linear-gradient(
-    to top,
-    currentColor 0%,
-    currentColor 95%,
-    rgba(255, 255, 255, 0.8) 100%
-  );
+  background: linear-gradient(to top, currentColor 0%, currentColor 100%);
   transform-origin: bottom center;
   pointer-events: none;
   box-shadow:
     0 0 6px currentColor,
     0 0 12px currentColor,
-    0 0 18px currentColor,
-    0 0 2px rgba(255, 255, 255, 0.9);
+    0 0 18px currentColor;
   filter: brightness(1.2) contrast(1.1);
 }
 
