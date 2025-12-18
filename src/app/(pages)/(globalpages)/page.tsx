@@ -1,7 +1,7 @@
 import HomeHero from "@/src/components/globalComponents/HomeHero";
 import React from "react";
 
-const GlobalPage = () => {
+const GlobalHomePage = () => {
   return (
     <>
       <HomeHero />
@@ -9,4 +9,4 @@ const GlobalPage = () => {
   );
 };
 
-export default GlobalPage;
+export default GlobalHomePage;

@@ -69,8 +69,8 @@ export const global_home_data = {
       ],
     },
     images: [
-      { src: "/GlobalAssets/himg2.png", alt: "Image 1" },
-      { src: "/GlobalAssets/himg1.jpg", alt: "Image 2" },
+      { src: "/GlobalAssets/Hero/himg2.png", alt: "Image 1" },
+      { src: "/GlobalAssets/Hero/himg1.jpg", alt: "Image 2" },
     ],
     buttons: [
       {

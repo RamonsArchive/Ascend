@@ -50,12 +50,12 @@ const ImageCarousel = ({ images }: { images: string[] }) => {
               func(clientX, clientY);
               lastExecTime = currentTime;
             },
-            delay - (currentTime - lastExecTime),
+            delay - (currentTime - lastExecTime)
           );
         }
       };
     },
-    [],
+    []
   );
 
   // Auto-advance carousel every 5 seconds
@@ -152,7 +152,7 @@ const ImageCarousel = ({ images }: { images: string[] }) => {
         clearInterval(interval.current);
       }
     },
-    [interval],
+    [interval]
   );
 
   const handleMove = useCallback(
@@ -180,7 +180,7 @@ const ImageCarousel = ({ images }: { images: string[] }) => {
       const maxDragDistance = imageWidth * 0.8; // 80% of image width max
       const clampedDeltaX = Math.max(
         -maxDragDistance,
-        Math.min(maxDragDistance, deltaX),
+        Math.min(maxDragDistance, deltaX)
       );
 
       // Calculate drag offset as percentage
@@ -188,7 +188,7 @@ const ImageCarousel = ({ images }: { images: string[] }) => {
       setDragOffset(offsetPercent);
       setCurrentX(clientX);
     },
-    [isDragging, startX, startY, images.length],
+    [isDragging, startX, startY, images.length]
   );
 
   const handleEnd = useCallback(() => {
@@ -354,7 +354,7 @@ const ImageCarousel = ({ images }: { images: string[] }) => {
                       imageRef.current[index] = el;
                     }
                   }}
-                  className="w-full h-full max-h-[650px] object-contain"
+                  className="w-full h-full max-h-[650px] object-cover"
                 />
               </div>
             </div>
