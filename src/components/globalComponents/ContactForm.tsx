@@ -227,15 +227,7 @@ const ContactForm = ({
       };
     };
     initAnimations();
-  }, [
-    firstNameLabelRef.current,
-    lastNameLabelRef.current,
-    emailLabelRef.current,
-    phoneNumberLabelRef.current,
-    serviceLabelRef.current,
-    organizationLabelRef.current,
-    messageLabelRef.current,
-  ]);
+  }, []);
 
   const resetForm = () => {
     setStoreFormData({

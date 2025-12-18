@@ -5,7 +5,7 @@ import ImageCarousel from "../ImageCarousel";
 
 const HomeHero = () => {
   const { hero } = global_home_data;
-  const { title, subtitle, description, buttons, images, carousel } = hero;
+  const { title, subtitle, buttons, images, carousel } = hero;
 
   const STICK_COUNT = 72;
   const rand01 = (seed: number) => {
