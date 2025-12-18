@@ -62,14 +62,13 @@ const HomeHero = () => {
               {title}
             </h1>
 
-            {/* Subtitle */}
-            <div className="text-md md:text-lg font-medium text-white/90 leading-snug">
-              {subtitle}
-            </div>
-
-            {/* Description */}
-            <div className="text-sm md:text-md text-white/70 leading-relaxed max-w-2xl">
-              {description}
+            {/* Supporting copy (cleaner + more readable) */}
+            <div className="flex flex-col items-center gap-1 md:gap-1.5 text-sm md:text-base leading-relaxed">
+              <div className="text-white/75 max-w-2xl">{subtitle}</div>
+              <div className="text-white/60 max-w-2xl">
+                {carousel?.caption ??
+                  "Built for builders, judges, and organizers."}
+              </div>
             </div>
           </div>
 
@@ -80,13 +79,6 @@ const HomeHero = () => {
                 images={images.map((image) => image.src) as string[]}
               />
             </div>
-
-            {/* Carousel Caption */}
-            {carousel?.caption && (
-              <div className="text-xs md:text-sm lg:text-base text-white/60 text-center max-w-2xl">
-                {carousel.caption}
-              </div>
-            )}
           </div>
 
           {/* CTA Buttons */}

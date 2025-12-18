@@ -51,57 +51,60 @@ const NavbarContent = ({
   isMenuOpen: boolean;
 }) => {
   return (
-    <div className="flex justify-between items-center w-full h-[48px] px-5 md:px-10 bg-primary-950">
-      <div className="flex items-center justify-between w-full h-full">
-        {/* Logo */}
-        <Link
-          href="/"
-          className="relative flex-center h-full w-[52px] md:w-[68px] cursor-pointer"
-        >
-          <Image
-            src="/Logos/Transparent/ascend_logo_white_t.svg"
-            alt="Ascend logo"
-            fill
-            priority
-            sizes="68px"
-            className="object-cover object-top w-full h-full cursor-pointer"
-          />
-        </Link>
-
-        {/* Desktop: Nav links in center */}
-        <div className="hidden lg:flex items-center justify-center flex-1 gap-0">
-          <div className="flex-center flex-row text-white">
-            {nav_links.map((link) => (
-              <Link
-                href={link.href}
-                key={link.href}
-                className="text-white text-[16px] font-medium py-2 px-6 duration-300 ease-in-out hover:bg-primary-background-400/20 transition-colors text-center cursor-pointer rounded-sm"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* Desktop: Profile Avatar on the right */}
-        <div className="hidden lg:flex items-center">
-          <ProfileAvatar />
-        </div>
-
-        {/* Mobile: Profile Avatar and Menu button */}
-        <div className="lg:hidden flex items-center gap-3">
-          <ProfileAvatar />
-          <button
-            onClick={onMenuToggle}
-            className="flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity duration-300 ease-in-out"
-            aria-label="Toggle menu"
+    <div className="relative w-full bg-primary-950">
+      <div className="marketing-nav-bg" />
+      <div className="relative flex justify-between items-center w-full h-[48px] px-5 md:px-10">
+        <div className="flex items-center justify-between w-full h-full">
+          {/* Logo */}
+          <Link
+            href="/"
+            className="relative flex-center h-full w-[52px] md:w-[68px] cursor-pointer"
           >
-            {isMenuOpen ? (
-              <XIcon className="w-6 h-6 text-white" />
-            ) : (
-              <MenuIcon className="w-6 h-6 text-white" />
-            )}
-          </button>
+            <Image
+              src="/Logos/Transparent/ascend_logo_white_t.svg"
+              alt="Ascend logo"
+              fill
+              priority
+              sizes="68px"
+              className="object-cover object-top w-full h-full cursor-pointer"
+            />
+          </Link>
+
+          {/* Desktop: Nav links in center */}
+          <div className="hidden lg:flex items-center justify-center flex-1 gap-0">
+            <div className="flex-center flex-row text-white">
+              {nav_links.map((link) => (
+                <Link
+                  href={link.href}
+                  key={link.href}
+                  className="text-white text-[16px] font-medium py-2 px-6 duration-300 ease-in-out hover:bg-primary-background-400/20 transition-colors text-center cursor-pointer rounded-sm"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Desktop: Profile Avatar on the right */}
+          <div className="hidden lg:flex items-center">
+            <ProfileAvatar />
+          </div>
+
+          {/* Mobile: Profile Avatar and Menu button */}
+          <div className="lg:hidden flex items-center gap-3">
+            <ProfileAvatar />
+            <button
+              onClick={onMenuToggle}
+              className="flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity duration-300 ease-in-out"
+              aria-label="Toggle menu"
+            >
+              {isMenuOpen ? (
+                <XIcon className="w-6 h-6 text-white" />
+              ) : (
+                <MenuIcon className="w-6 h-6 text-white" />
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -162,7 +165,7 @@ const GlobalNav = () => {
     const updateNavbar = () => {
       const currentScrollY = Math.max(
         0,
-        window.scrollY || window.pageYOffset || 0,
+        window.scrollY || window.pageYOffset || 0
       );
 
       const navbarHeight = 48; // Height of the navbar

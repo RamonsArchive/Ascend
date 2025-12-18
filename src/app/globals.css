@@ -203,6 +203,122 @@ body {
 }
 
 /* Ascending Geometric Sticks Animation - Constant Stream (low, clean) */
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* Subtle grid + radiation gradient */
+  background:
+    radial-gradient(
+      60% 45% at 50% 100%,
+      rgba(26, 27, 184, 0.35) 0%,
+      rgba(26, 27, 184, 0.14) 35%,
+      rgba(11, 16, 32, 0) 70%
+    ),
+    radial-gradient(
+      80% 55% at 50% 0%,
+      rgba(255, 255, 255, 0.06) 0%,
+      rgba(255, 255, 255, 0) 60%
+    ),
+    repeating-linear-gradient(
+      to right,
+      rgba(255, 255, 255, 0.06) 0 1px,
+      rgba(255, 255, 255, 0) 1px 56px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.05) 0 1px,
+      rgba(255, 255, 255, 0) 1px 56px
+    );
+  opacity: 0.8;
+  -webkit-mask-image: radial-gradient(
+    70% 70% at 50% 55%,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 0) 75%
+  );
+  mask-image: radial-gradient(
+    70% 70% at 50% 55%,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 0) 75%
+  );
+}
+
+/* Full marketing page background (same grid vibe, less intense) */
+.marketing-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    /* Push the top glow down so it doesn't wash the navbar */
+    radial-gradient(
+      70% 55% at 50% 26%,
+      rgba(255, 255, 255, 0.03) 0%,
+      rgba(255, 255, 255, 0) 60%
+    ),
+    radial-gradient(
+      70% 55% at 50% 100%,
+      rgba(26, 27, 184, 0.22) 0%,
+      rgba(26, 27, 184, 0.08) 35%,
+      rgba(11, 16, 32, 0) 70%
+    ),
+    repeating-linear-gradient(
+      to right,
+      rgba(255, 255, 255, 0.05) 0 1px,
+      rgba(255, 255, 255, 0) 1px 72px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.04) 0 1px,
+      rgba(255, 255, 255, 0) 1px 72px
+    );
+  opacity: 0.55;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 1) 70%,
+    rgba(0, 0, 0, 0.2) 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 1) 70%,
+    rgba(0, 0, 0, 0.2) 100%
+  );
+}
+
+/* Navbar overlay: EXACT same grid pattern as .marketing-bg (keeps nav base color) */
+.marketing-nav-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      to right,
+      rgba(255, 255, 255, 0.05) 0 1px,
+      rgba(255, 255, 255, 0) 1px 72px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.04) 0 1px,
+      rgba(255, 255, 255, 0) 1px 72px
+    );
+  opacity: 0.6;
+}
+
+/* Shared marketing card style (used across home + about) */
+.marketing-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+
+.marketing-card:hover {
+  border-color: rgba(224, 231, 255, 0.55); /* accent-100-ish */
+  background: rgba(255, 255, 255, 0.06);
+}
+
 .ascend-stream {
   position: absolute;
   left: 0;
@@ -211,6 +327,7 @@ body {
   height: 220px; /* keep the effect low */
   overflow: hidden;
   pointer-events: none;
+  opacity: 0.55; /* reduce distraction vs text */
   /* Fade out as it rises so it disappears cleanly */
   -webkit-mask-image: linear-gradient(
     to top,
@@ -256,9 +373,9 @@ body {
   will-change: transform, opacity;
   mix-blend-mode: screen;
   box-shadow:
-    0 0 6px currentColor,
-    0 0 14px currentColor,
-    0 0 26px currentColor;
+    0 0 5px currentColor,
+    0 0 10px currentColor,
+    0 0 18px currentColor;
   animation: ascendStream var(--dur) linear infinite;
   animation-delay: var(--delay);
 }
