@@ -67,29 +67,37 @@ const ContactForm = ({
   }>({});
 
   useGSAP(() => {
-    // Add a small delay for Vercel deployment stability
+    let cleanup: undefined | (() => void);
+
     const initAnimations = () => {
-      // Check if all refs are available before proceeding
       if (
         !firstNameLabelRef.current ||
         !lastNameLabelRef.current ||
+        !emailLabelRef.current ||
+        !phoneNumberLabelRef.current ||
+        !serviceLabelRef.current ||
+        !organizationLabelRef.current ||
+        !messageLabelRef.current ||
+        !submitButtonRef.current ||
         !firstNameRef.current ||
         !lastNameRef.current ||
         !emailRef.current ||
-        !phoneNumberLabelRef.current ||
-        !serviceLabelRef.current ||
+        !phoneNumberRef.current ||
         !serviceRef.current ||
-        !organizationLabelRef.current ||
-        !messageLabelRef.current ||
-        !submitButtonRef.current
+        !organizationRef.current ||
+        !messageRef.current
       ) {
-        setTimeout(initAnimations, 100);
+        requestAnimationFrame(initAnimations);
         return;
       }
 
-      // get the split text elements
+      // ✅ Use the actual element as trigger (not a selector string)
+      const triggerEl = document.getElementById("contact-form");
+      if (!triggerEl) {
+        requestAnimationFrame(initAnimations);
+        return;
+      }
 
-      // label splits
       const firstNameLabelSplit = new SplitText(firstNameLabelRef.current, {
         type: "words",
       });
@@ -99,85 +107,29 @@ const ContactForm = ({
       const emailLabelSplit = new SplitText(emailLabelRef.current, {
         type: "words",
       });
-      const phoneNumberLabelSplit = new SplitText(phoneNumberLabelRef.current, {
+      const phoneLabelSplit = new SplitText(phoneNumberLabelRef.current, {
         type: "words",
       });
       const serviceLabelSplit = new SplitText(serviceLabelRef.current, {
         type: "words",
       });
-      const organizationLabelSplit = new SplitText(
-        organizationLabelRef.current,
-        {
-          type: "words",
-        },
-      );
-      const messageLabelSplit = new SplitText(messageLabelRef.current, {
+      const orgLabelSplit = new SplitText(organizationLabelRef.current, {
+        type: "words",
+      });
+      const msgLabelSplit = new SplitText(messageLabelRef.current, {
         type: "words",
       });
 
-      gsap.set(
-        [
-          ...firstNameLabelSplit.words,
-          ...lastNameLabelSplit.words,
-          ...emailLabelSplit.words,
-          ...phoneNumberLabelSplit.words,
-          ...serviceLabelSplit.words,
-          ...organizationLabelSplit.words,
-          ...messageLabelSplit.words,
-        ],
-        {
-          opacity: 0,
-          yPercent: 100,
-        },
-      );
-
-      gsap.set(
-        [
-          firstNameRef.current,
-          lastNameRef.current,
-          emailRef.current,
-          phoneNumberRef.current,
-          serviceRef.current,
-          organizationRef.current,
-          messageRef.current,
-        ],
-        {
-          opacity: 0,
-          yPercent: 100,
-        },
-      );
-
-      gsap.set([submitButtonRef.current], {
-        opacity: 0,
-        yPercent: 100,
-      });
-
-      // create scroll trigger and animation for labels
-      // Use single container trigger for all labels to avoid conflicts
       const allLabels = [
         ...firstNameLabelSplit.words,
         ...lastNameLabelSplit.words,
         ...emailLabelSplit.words,
-        ...phoneNumberLabelSplit.words,
+        ...phoneLabelSplit.words,
         ...serviceLabelSplit.words,
-        ...organizationLabelSplit.words,
-        ...messageLabelSplit.words,
+        ...orgLabelSplit.words,
+        ...msgLabelSplit.words,
       ];
 
-      gsap.to(allLabels, {
-        scrollTrigger: {
-          trigger: "#contact-form",
-          start: "top 85%",
-          end: "top 35%",
-          scrub: 1,
-        },
-        opacity: 1,
-        yPercent: 0,
-        stagger: 0.02, // Small stagger for smooth sequence
-      });
-
-      // create scroll trigger and animation for inputs
-      // Use single container trigger for all inputs to avoid conflicts
       const allInputs = [
         firstNameRef.current,
         lastNameRef.current,
@@ -186,49 +138,50 @@ const ContactForm = ({
         serviceRef.current,
         organizationRef.current,
         messageRef.current,
-      ].filter(Boolean);
+        submitButtonRef.current,
+      ];
 
-      gsap.to(allInputs, {
+      // ✅ IMPORTANT: use y (pixels) for inputs, not yPercent
+      // yPercent can feel weird on form elements in some browsers.
+      gsap.set(allLabels, { opacity: 0, y: 48 });
+      gsap.set(allInputs, { opacity: 0, y: 48 });
+
+      const tl = gsap.timeline({
         scrollTrigger: {
-          trigger: "#contact-form",
+          trigger: triggerEl,
           start: "top 85%",
-          end: "top 35%",
+          end: "top 40%",
           scrub: 1,
+          // markers: true, // turn on once to debug
         },
-        opacity: 1,
-        yPercent: 0,
-        stagger: 0.02, // Match label timing
+        defaults: { ease: "power3.out", duration: 0.6 },
       });
 
-      // create scroll trigger and animation for accent divider and submit button
-      const remainingElements = [submitButtonRef.current];
+      tl.to(allLabels, { opacity: 1, y: 0, stagger: 0.02 }, 0).to(
+        allInputs,
+        { opacity: 1, y: 0, stagger: 0.04 },
+        0.05,
+      );
 
-      gsap.to(remainingElements, {
-        scrollTrigger: {
-          trigger: "#contact-form",
-          start: "top 75%",
-          end: "top 25%",
-          scrub: 1,
-        },
-        opacity: 1,
-        yPercent: 0,
-        stagger: 0.1, // Slightly more stagger for visual separation
-      });
+      requestAnimationFrame(() => ScrollTrigger.refresh());
 
-      return () => {
+      // ✅ set cleanup so Strict Mode doesn't double-wrap / double-trigger
+      cleanup = () => {
+        tl.scrollTrigger?.kill();
+        tl.kill();
         firstNameLabelSplit.revert();
         lastNameLabelSplit.revert();
         emailLabelSplit.revert();
-        phoneNumberLabelSplit.revert();
+        phoneLabelSplit.revert();
         serviceLabelSplit.revert();
-        organizationLabelSplit.revert();
-        messageLabelSplit.revert();
-        ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+        orgLabelSplit.revert();
+        msgLabelSplit.revert();
       };
     };
-    initAnimations();
-  }, []);
 
+    initAnimations();
+    return () => cleanup?.();
+  }, []);
   const resetForm = () => {
     setStoreFormData({
       firstName: "",
