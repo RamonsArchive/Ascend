@@ -7,55 +7,44 @@ const HomeHero = () => {
   const { hero } = global_home_data;
   const { title, subtitle, description, buttons, images, carousel } = hero;
 
+  const STICK_COUNT = 72;
+  const rand01 = (seed: number) => {
+    // Deterministic pseudo-random in [0,1)
+    const x = Math.sin(seed) * 10000;
+    return x - Math.floor(x);
+  };
+  const clamp = (v: number, min: number, max: number) =>
+    Math.min(max, Math.max(min, v));
+
   return (
     <div className="relative flex flex-col items-center justify-center h-[calc(100dvh-48px)] w-full overflow-hidden">
-      {/* Ascending Geometric Sticks Background Effect - Electric River Flow */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Left side electric stream - evenly spread, flowing toward center */}
-        {Array.from({ length: 40 }).map((_, i) => {
-          const baseDelay = (i * 0.1) % 4; // Evenly spaced delays, cycling every 4s
-          const delayVariation = (Math.random() - 0.5) * 0.3; // Small random variation ±0.15s
-          const delay = baseDelay + delayVariation;
-          const baseDuration = 3.5;
-          const durationVariation = (Math.random() - 0.5) * 0.5; // Small variation ±0.25s
-          const duration = baseDuration + durationVariation;
-          const basePosition = 5 + (i % 20) * 2; // Evenly spread positions
-          const positionVariation = (Math.random() - 0.5) * 1.5; // Small random variation ±0.75%
-          const position = basePosition + positionVariation;
+      {/* Ascending Geometric Sticks Background Effect - Constant Stream Straight Up */}
+      <div className="ascend-stream">
+        {Array.from({ length: STICK_COUNT }).map((_, i) => {
+          // Evenly spaced across the bottom, with subtle deterministic jitter (balanced, not wavy).
+          const baseX = ((i + 0.5) / STICK_COUNT) * 100;
+          const xJitter = (rand01(i * 12.9898 + 1.23) - 0.5) * 1.2; // ±0.6%
+          const x = clamp(baseX + xJitter, 1, 99);
+
+          // Fast, constant stream: use negative delays so it starts "already flowing".
+          const dur = 1.9 + rand01(i * 0.17 + 9.1) * 0.8; // 1.9s .. 2.7s
+          const delay = -(i * 0.09); // continuous spacing (no wave reset)
+
+          // Keep it low: shorter bars + limited travel, slight variety.
+          const h = 34 + rand01(i * 3.33 + 2.7) * 38; // 34px .. 72px
+          const travel = 110 + rand01(i * 7.77 + 4.2) * 80; // 110px .. 190px
+
           return (
             <div
-              key={`left-${i}`}
-              className={`ascend-stick ascend-stick-left ${i % 2 === 0 ? "text-[#1A1BB8]" : "text-white"}`}
+              key={`stick-${i}`}
+              className={`ascend-stick ${i % 2 === 0 ? "text-[#1A1BB8]" : "text-white"}`}
               style={
                 {
-                  "--stick-position": `${Math.max(2, Math.min(48, position))}%`,
-                  "--stick-delay": `${Math.max(0, delay)}s`,
-                  "--stick-duration": `${Math.max(2.5, Math.min(4.5, duration))}s`,
-                } as React.CSSProperties
-              }
-            />
-          );
-        })}
-        {/* Right side electric stream - evenly spread, flowing toward center */}
-        {Array.from({ length: 40 }).map((_, i) => {
-          const baseDelay = (i * 0.1) % 4; // Evenly spaced delays, cycling every 4s
-          const delayVariation = (Math.random() - 0.5) * 0.3; // Small random variation ±0.15s
-          const delay = baseDelay + delayVariation;
-          const baseDuration = 3.5;
-          const durationVariation = (Math.random() - 0.5) * 0.5; // Small variation ±0.25s
-          const duration = baseDuration + durationVariation;
-          const basePosition = 5 + (i % 20) * 2; // Evenly spread positions
-          const positionVariation = (Math.random() - 0.5) * 1.5; // Small random variation ±0.75%
-          const position = basePosition + positionVariation;
-          return (
-            <div
-              key={`right-${i}`}
-              className={`ascend-stick ascend-stick-right ${i % 2 === 0 ? "text-white" : "text-[#1A1BB8]"}`}
-              style={
-                {
-                  "--stick-position": `${Math.max(2, Math.min(48, position))}%`,
-                  "--stick-delay": `${Math.max(0, delay)}s`,
-                  "--stick-duration": `${Math.max(2.5, Math.min(4.5, duration))}s`,
+                  "--x": x,
+                  "--dur": `${dur}s`,
+                  "--delay": `${delay}s`,
+                  "--h": `${h}px`,
+                  "--travel": `${travel}px`,
                 } as React.CSSProperties
               }
             />

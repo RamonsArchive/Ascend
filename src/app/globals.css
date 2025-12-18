@@ -202,37 +202,43 @@ body {
   animation: mobileLinkOut 220ms ease-in forwards;
 }
 
-/* Ascending Geometric Sticks Animation */
-@keyframes ascendStickLeft {
-  0% {
-    transform: translateY(100vh) translateX(0) rotate(20deg);
-    opacity: 0;
-  }
-  1% {
-    opacity: 1;
-  }
-  85% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(-10vh) translateX(50px) rotate(20deg);
-    opacity: 0;
-  }
+/* Ascending Geometric Sticks Animation - Constant Stream (low, clean) */
+.ascend-stream {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 220px; /* keep the effect low */
+  overflow: hidden;
+  pointer-events: none;
+  /* Fade out as it rises so it disappears cleanly */
+  -webkit-mask-image: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 1) 60%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  mask-image: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 1) 60%,
+    rgba(0, 0, 0, 0) 100%
+  );
 }
 
-@keyframes ascendStickRight {
+@keyframes ascendStream {
   0% {
-    transform: translateY(100vh) translateX(0) rotate(-20deg);
+    transform: translate3d(0, 0, 0);
     opacity: 0;
   }
-  1% {
+  8% {
     opacity: 1;
   }
-  85% {
+  80% {
     opacity: 1;
   }
   100% {
-    transform: translateY(-10vh) translateX(-50px) rotate(-20deg);
+    transform: translate3d(0, calc(var(--travel) * -1), 0);
     opacity: 0;
   }
 }
@@ -240,32 +246,19 @@ body {
 .ascend-stick {
   position: absolute;
   bottom: 0;
-  width: 3px;
-  height: 120px;
-  background: linear-gradient(to top, currentColor 0%, currentColor 100%);
+  left: calc(var(--x) * 1%);
+  width: 3px; /* thin, crisp */
+  height: var(--h);
+  background: currentColor;
+  border-radius: 999px;
   transform-origin: bottom center;
   pointer-events: none;
+  will-change: transform, opacity;
+  mix-blend-mode: screen;
   box-shadow:
     0 0 6px currentColor,
-    0 0 12px currentColor,
-    0 0 18px currentColor;
-  filter: brightness(1.2) contrast(1.1);
-}
-
-.ascend-stick-left {
-  left: var(--stick-position);
-  animation: ascendStickLeft var(--stick-duration) linear infinite;
-  animation-delay: var(--stick-delay);
-}
-
-.ascend-stick-right {
-  right: var(--stick-position);
-  animation: ascendStickRight var(--stick-duration) linear infinite;
-  animation-delay: var(--stick-delay);
-}
-
-.ascend-stick-center {
-  left: 50%;
-  animation: ascendStickCenter var(--stick-duration) linear infinite;
-  animation-delay: var(--stick-delay);
+    0 0 14px currentColor,
+    0 0 26px currentColor;
+  animation: ascendStream var(--dur) linear infinite;
+  animation-delay: var(--delay);
 }
