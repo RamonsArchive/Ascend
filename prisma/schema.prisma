@@ -4,8 +4,8 @@ generator client {
 
 datasource db {
   provider = "mysql"
+  url      = env("DATABASE_URL") // This is the connection URL for the database
 }
-
 
 model User {
   id            String    @id
