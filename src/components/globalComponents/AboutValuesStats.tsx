@@ -9,6 +9,17 @@ const AboutValuesStats = () => {
   return (
     <section className="flex flex-col items-center justify-center w-full">
       <div className="flex flex-col w-full max-w-6xl px-5 sm:px-10 md:px-18 py-10 md:py-14 gap-8 md:gap-10">
+        <div className="flex flex-col gap-3">
+          <h2 className="text-2xl md:text-3xl font-semibold text-white">
+            Values & focus
+          </h2>
+          <div className="text-sm md:text-base text-white/70 leading-relaxed max-w-4xl">
+            Ascend isn’t a donation organization — we build product and partner
+            with mission-aligned groups. This section summarizes our direction
+            and what we optimize for.
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           <div className="marketing-card flex flex-col gap-3 px-6 py-6 rounded-2xl">
             <div className="text-xs md:text-sm text-white/60">Founded</div>
@@ -17,15 +28,15 @@ const AboutValuesStats = () => {
             </div>
           </div>
           <div className="marketing-card flex flex-col gap-3 px-6 py-6 rounded-2xl">
-            <div className="text-xs md:text-sm text-white/60">Model</div>
+            <div className="text-xs md:text-sm text-white/60">Communities</div>
             <div className="text-base md:text-lg font-semibold text-white">
-              {stats.profitsDonated}
+              Growing daily
             </div>
           </div>
           <div className="marketing-card flex flex-col gap-3 px-6 py-6 rounded-2xl">
-            <div className="text-xs md:text-sm text-white/60">Communities</div>
+            <div className="text-xs md:text-sm text-white/60">Focus</div>
             <div className="text-base md:text-lg font-semibold text-white">
-              {stats.communitiesServed}
+              {stats.missionFocus}
             </div>
           </div>
         </div>
