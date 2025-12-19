@@ -37,7 +37,7 @@ export const checkRateLimit = async (functionToRateLimit: string) => {
   const clientId = await getClientId();
   const prefix = process.env.PROJECT_PREFIX;
   const { success } = await rateLimiter.limit(
-    `${prefix}:${clientId}:${functionToRateLimit}`
+    `${prefix}:${clientId}:${functionToRateLimit}`,
   );
   if (!success) {
     return parseServerActionResponse({

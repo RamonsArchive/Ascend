@@ -46,7 +46,8 @@ model Session {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([token])
-  @@index([userId(length: 191)])
+  // Note: MySQL typically creates an index for FK columns; keeping an explicit
+  // index here can cause name conflicts if the DB already created one.
   @@map("session")
 }
 
@@ -66,7 +67,9 @@ model Account {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
-  @@index([userId(length: 191)])
+  // Note: MySQL requires the FK column to be indexed; an index is typically
+  // created implicitly. Keeping an explicit index here can cause conflicts
+  // when the DB already has an index with the same name.
   @@map("account")
 }
 
@@ -88,7 +91,9 @@ model Organization {
   name        String
   slug        String          @unique
   logoUrl     String?
+  coverUrl    String?
   description String?
+  moderationStatus            ModerationStatus @default(ACTIVE)
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
   events      Event[]
@@ -114,6 +119,7 @@ model Event {
   orgId                  String
   name                   String
   slug                   String
+  coverUrl               String?
   type                   EventType
   status                 EventStatus                @default(DRAFT)
   heroTitle              String
@@ -145,6 +151,7 @@ model Event {
   teamAuditLogs          TeamAuditLog[]
   teamInvites            TeamInvite[]
   joinRequests           TeamJoinRequest[]
+  moderationStatus       ModerationStatus @default(ACTIVE)
 
   @@unique([orgId, slug])
   @@index([orgId])
@@ -212,6 +219,7 @@ model Team {
   invites           TeamInvite[]
   joinRequests      TeamJoinRequest[]
   members           TeamMember[]
+  moderationStatus  ModerationStatus @default(ACTIVE)
 
   @@index([eventId])
 }
@@ -334,6 +342,7 @@ model Submission {
   author      User?            @relation("SubmissionAuthor", fields: [authorId], references: [id])
   event       Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
   team        Team?            @relation(fields: [teamId], references: [id])
+  moderationStatus             ModerationStatus @default(ACTIVE)
 
   @@index([eventId])
   @@index([teamId])
@@ -465,11 +474,11 @@ enum TeamAuditAction {
   LEADER_TRANSFERRED
 }
 
-enum RegistrationRequestStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  CANCELLED
+enum RegistrationRequestStatus { 
+  PENDING 
+  APPROVED 
+  REJECTED 
+  CANCELLED 
 }
 
 enum EventVisibility {
@@ -482,4 +491,10 @@ enum EventJoinMode {
   OPEN
   REQUEST
   INVITE_ONLY
+}
+
+enum ModerationStatus {
+  ACTIVE
+  FLAGGED
+  HIDDEN
 }

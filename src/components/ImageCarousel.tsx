@@ -365,7 +365,7 @@ const ImageCarousel = ({ images }: { images: string[] }) => {
       {/* Progress Dots */}
       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20">
         <div className="flex flex-row w-full max-w-md items-center gap-3">
-          <div className="flex items-center space-x-2 bg-black/35 backdrop-blur-sm rounded-full px-3 py-1.5">
+          <div className="flex items-center gap-2 bg-black/35 backdrop-blur-sm rounded-full px-3 py-1.5">
             {images.map((_, index) => (
               <span
                 key={index}

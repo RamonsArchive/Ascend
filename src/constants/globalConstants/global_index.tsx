@@ -249,6 +249,10 @@ export const global_events_data = {
         start building.
       </>
     ),
+    ctas: {
+      primary: { label: "Host an event", href: "/app/orgs/new" },
+      helperText: "Host your own hackathon or ideathon",
+    },
   },
 
   // Copy you can use above your event list
@@ -272,6 +276,19 @@ export const global_events_data = {
       "Registration closes at or before the event start time (no late joining).",
       "Teams can disable join requests, and events can lock team changes after start.",
     ],
+  },
+
+  orgs: {
+    title: <>Explore organizations</>,
+    subtitle:
+      "Browse organizers and communities publishing events on Ascend — from studios to universities and guilds.",
+    cta: { label: "Create an organization", href: "/app/orgs/new" },
+  },
+
+  events: {
+    title: <>Explore events</>,
+    subtitle:
+      "Filter by format, find what’s starting soon, and jump into an event that matches your pace.",
   },
 
   // UI filter labels (map these to DB fields)
