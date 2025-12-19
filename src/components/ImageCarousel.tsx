@@ -50,12 +50,12 @@ const ImageCarousel = ({ images }: { images: string[] }) => {
               func(clientX, clientY);
               lastExecTime = currentTime;
             },
-            delay - (currentTime - lastExecTime),
+            delay - (currentTime - lastExecTime)
           );
         }
       };
     },
-    [],
+    []
   );
 
   // Auto-advance carousel every 5 seconds
@@ -152,7 +152,7 @@ const ImageCarousel = ({ images }: { images: string[] }) => {
         clearInterval(interval.current);
       }
     },
-    [interval],
+    [interval]
   );
 
   const handleMove = useCallback(
@@ -180,7 +180,7 @@ const ImageCarousel = ({ images }: { images: string[] }) => {
       const maxDragDistance = imageWidth * 0.8; // 80% of image width max
       const clampedDeltaX = Math.max(
         -maxDragDistance,
-        Math.min(maxDragDistance, deltaX),
+        Math.min(maxDragDistance, deltaX)
       );
 
       // Calculate drag offset as percentage
@@ -188,7 +188,7 @@ const ImageCarousel = ({ images }: { images: string[] }) => {
       setDragOffset(offsetPercent);
       setCurrentX(clientX);
     },
-    [isDragging, startX, startY, images.length],
+    [isDragging, startX, startY, images.length]
   );
 
   const handleEnd = useCallback(() => {
@@ -364,8 +364,8 @@ const ImageCarousel = ({ images }: { images: string[] }) => {
 
       {/* Progress Dots */}
       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20">
-        <div className="flex flex-row w-full max-w-md items-center gap-5">
-          <div className="flex items-center space-x-3 bg-black/50 backdrop-blur-sm rounded-full px-4 py-2">
+        <div className="flex flex-row w-full max-w-md items-center gap-3">
+          <div className="flex items-center space-x-2 bg-black/35 backdrop-blur-sm rounded-full px-3 py-1.5">
             {images.map((_, index) => (
               <span
                 key={index}
@@ -374,8 +374,8 @@ const ImageCarousel = ({ images }: { images: string[] }) => {
                     dotRef.current[index] = el;
                   }
                 }}
-                className={`w-3 h-3 rounded-full cursor-pointer transition-all duration-300 relative ${
-                  index === currentImage ? "bg-white" : "bg-white/40"
+                className={`w-2 h-2 rounded-full cursor-pointer transition-all duration-300 relative ${
+                  index === currentImage ? "bg-white/90" : "bg-white/30"
                 }`}
                 onClick={() => handleImageSelect(index)}
               >
@@ -387,7 +387,7 @@ const ImageCarousel = ({ images }: { images: string[] }) => {
                     }
                   }}
                   className={`absolute inset-0 rounded-full transition-all duration-300 ${
-                    index === currentImage ? "bg-blue-400" : "bg-transparent"
+                    index === currentImage ? "bg-blue-300/80" : "bg-transparent"
                   }`}
                   style={{
                     clipPath:
@@ -402,12 +402,12 @@ const ImageCarousel = ({ images }: { images: string[] }) => {
           </div>
           <button
             onClick={handlePlayPause}
-            className="w-10 h-10 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-black/70 transition-all duration-300"
+            className="w-8 h-8 bg-black/35 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-black/55 transition-all duration-300"
           >
             {isPlaying ? (
-              <Pause className="w-5 h-5 text-white" />
+              <Pause className="w-4 h-4 text-white/90" />
             ) : (
-              <Play className="w-5 h-5 text-white" />
+              <Play className="w-4 h-4 text-white/90" />
             )}
           </button>
         </div>

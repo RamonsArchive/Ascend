@@ -12,6 +12,7 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import SplitText from "gsap/SplitText";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { writeContactMessage } from "@/src/actions/global_actions";
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
@@ -160,7 +161,7 @@ const ContactForm = ({
       tl.to(allLabels, { opacity: 1, y: 0, stagger: 0.02 }, 0).to(
         allInputs,
         { opacity: 1, y: 0, stagger: 0.04 },
-        0.05,
+        0.05
       );
 
       requestAnimationFrame(() => ScrollTrigger.refresh());
@@ -198,24 +199,16 @@ const ContactForm = ({
 
   const submitForm = async (
     state: ActionState,
-    formData: FormData,
+    formData: FormData
   ): Promise<ActionState> => {
     try {
       setErrors({});
-      const formObject = formDataToObject(formData);
+      const formObject = formDataToObject(formData) as FormDataType;
       const cleanNumber = phoneDisplay.replace(/[^0-9]/g, "");
       formObject.phone = cleanNumber;
-
       await contactFormSchema.parseAsync(formObject);
 
-      const result = parseServerActionResponse({
-        status: "SUCCESS",
-        error: "",
-        data: {
-          ...formObject,
-          createdAt: new Date().toISOString(),
-        },
-      });
+      const result = await writeContactMessage(formObject);
 
       if (result.status === "ERROR") {
         setStatusMessage("Something went wrong. Please try again.");
@@ -231,7 +224,7 @@ const ContactForm = ({
 
       resetForm();
       setStatusMessage(
-        "Form submitted successfully. We will get back to you soon!",
+        "Form submitted successfully. We will get back to you soon!"
       );
       toast.success("SUCCESS", {
         description: "Form submitted successfully",
@@ -245,7 +238,7 @@ const ContactForm = ({
     } catch (error) {
       console.error(error);
       setStatusMessage(
-        "An error occurred while submitting the form. Please try again.",
+        "An error occurred while submitting the form. Please try again."
       );
       if (error instanceof z.ZodError) {
         const fieldErrors = z.flattenError(error).fieldErrors as Record<

@@ -1,11 +1,18 @@
 import { parseServerActionResponse } from "../lib/utils";
 import { FormDataType } from "../lib/global_types";
 import { prisma } from "../lib/prisma";
+import SendContactEmail from "../emails/SendContactEmail";
+import { checkRateLimit } from "../lib/rate-limiter";
 
-export const writeContactMessage = async (formData: FormDataType) => {
+export const writeContactMessage = async (formObject: FormDataType) => {
   try {
+    const isRateLimited = await checkRateLimit("writeContactMessage");
+    if (isRateLimited.status === "ERROR") {
+      return isRateLimited;
+    }
+
     const { firstName, lastName, email, phone, organization, message } =
-      formData;
+      formObject;
 
     const contactMessage = await prisma.contactMessage.create({
       data: {
@@ -17,6 +24,9 @@ export const writeContactMessage = async (formData: FormDataType) => {
         message,
       },
     });
+
+    // emial with resend
+    await SendContactEmail({ formObject });
 
     return parseServerActionResponse({
       status: "SUCCESS",
