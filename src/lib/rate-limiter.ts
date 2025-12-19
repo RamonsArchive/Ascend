@@ -1,8 +1,8 @@
+"server-only";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 import { parseServerActionResponse } from "./utils";
 import { getAnonId } from "./anon-id";
-import { getSession } from "./auth-client";
 import { auth } from "./auth";
 import { headers } from "next/headers";
 

@@ -1,5 +1,6 @@
 import LocalFont from "next/font/local";
 import "./globals.css";
+import { Toaster } from "sonner";
 
 const lexend = LocalFont({
   src: "./fonts/Inter/Inter-VariableFont_opsz,wght.woff2",
@@ -16,7 +17,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${lexend.variable} antialiased`}>{children}</body>
+      <body className={`${lexend.variable} antialiased`}>
+        {children}
+        <Toaster />
+      </body>
     </html>
   );
 }

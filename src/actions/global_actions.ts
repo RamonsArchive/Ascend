@@ -1,3 +1,4 @@
+"use server";
 import { parseServerActionResponse } from "../lib/utils";
 import { FormDataType } from "../lib/global_types";
 import { prisma } from "../lib/prisma";
