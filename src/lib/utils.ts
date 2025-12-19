@@ -74,3 +74,27 @@ export function formatDate(date: string | Date | null | undefined): string {
     return "Invalid date";
   }
 }
+
+const DEFAULT_ALLOWED_IMAGE_MIME_TYPES = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+]);
+
+/**
+ * Universal helper for validating uploaded image files on the client.
+ * Backend should still validate independently.
+ */
+export function isAllowedImageFile(
+  file: File | null | undefined,
+  allowedMimeTypes: Set<string> = DEFAULT_ALLOWED_IMAGE_MIME_TYPES,
+) {
+  if (!file) return false;
+  return allowedMimeTypes.has(file.type);
+}
+
+export function getFileExtension(filename: string) {
+  const idx = filename.lastIndexOf(".");
+  if (idx === -1) return "";
+  return filename.slice(idx + 1).toLowerCase();
+}

@@ -11,6 +11,10 @@ export const mockOrganizations: Organization[] = [
     moderationStatus: "ACTIVE",
     description:
       "Ascend is building the modern event layer for ambitious builders.",
+    publicEmail: "hello@ascend.com",
+    publicPhone: "+1234567890",
+    websiteUrl: "https://ascend.com",
+    contactNote: "Email us for sponsorships",
     createdAt: new Date("2025-12-01T00:00:00Z"),
     updatedAt: new Date("2025-12-01T00:00:00Z"),
   },
@@ -23,6 +27,10 @@ export const mockOrganizations: Organization[] = [
     moderationStatus: "ACTIVE",
     description:
       "A product studio helping teams ship beautiful, durable software.",
+    publicEmail: "hello@clutchstudio.com",
+    publicPhone: "+1234567890",
+    websiteUrl: "https://clutchstudio.com",
+    contactNote: "Email us for sponsorships",
     createdAt: new Date("2025-12-02T00:00:00Z"),
     updatedAt: new Date("2025-12-02T00:00:00Z"),
   },
@@ -35,6 +43,10 @@ export const mockOrganizations: Organization[] = [
     moderationStatus: "ACTIVE",
     description:
       "A community for engineers exploring reliability, infra, and AI systems.",
+    publicEmail: "hello@systemsguild.com",
+    publicPhone: "+1234567890",
+    websiteUrl: "https://systemsguild.com",
+    contactNote: "Email us for sponsorships",
     createdAt: new Date("2025-12-03T00:00:00Z"),
     updatedAt: new Date("2025-12-03T00:00:00Z"),
   },
@@ -47,6 +59,10 @@ export const mockOrganizations: Organization[] = [
     moderationStatus: "ACTIVE",
     description:
       "Builders and researchers working on climate-forward technology.",
+    publicEmail: "hello@greenfuturelabs.com",
+    publicPhone: "+1234567890",
+    websiteUrl: "https://greenfuturelabs.com",
+    contactNote: "Email us for sponsorships",
     createdAt: new Date("2025-12-04T00:00:00Z"),
     updatedAt: new Date("2025-12-04T00:00:00Z"),
   },

@@ -93,11 +93,16 @@ model Organization {
   logoUrl     String?
   coverUrl    String?
   description String?
+  publicEmail String?   // e.g. hello@org.com
+  publicPhone String?   // optional, international format
+  websiteUrl  String?
+  contactNote String?   // “Email us for sponsorships”
   moderationStatus            ModerationStatus @default(ACTIVE)
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
   events      Event[]
   memberships OrgMembership[]
+  sponsors OrganizationSponsor[]
 }
 
 model OrgMembership {
@@ -152,6 +157,7 @@ model Event {
   teamInvites            TeamInvite[]
   joinRequests           TeamJoinRequest[]
   moderationStatus       ModerationStatus @default(ACTIVE)
+  sponsors EventSponsor[]
 
   @@unique([orgId, slug])
   @@index([orgId])
@@ -405,6 +411,74 @@ model ContactMessage {
   @@index([createdAt])
 }
 
+
+model Sponsor {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  websiteUrl  String?
+  description String?
+  logoKey     String?  @db.Text   // S3 key (recommended) e.g. public/sponsors/{id}/logo/v1/...
+  coverKey    String?  @db.Text   // optional
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orgLinks    OrganizationSponsor[]
+  eventLinks  EventSponsor[]
+}
+
+model OrganizationSponsor {
+  id          String      @id @default(cuid())
+  orgId       String
+  sponsorId   String
+  tier        SponsorTier @default(COMMUNITY)
+  isActive    Boolean     @default(true)
+  displayName String?
+  blurb       String?
+  order       Int         @default(0)
+
+  // optional: custom logo for this org relationship (override global)
+  logoKey     String?     @db.Text
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  sponsor     Sponsor      @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, sponsorId])
+  @@index([orgId])
+  @@index([sponsorId])
+  @@index([tier])
+}
+
+model EventSponsor {
+  id          String      @id @default(cuid())
+  eventId     String
+  sponsorId   String
+  tier        SponsorTier @default(COMMUNITY)
+  isActive    Boolean     @default(true)
+  displayName String?
+  blurb       String?
+  order       Int         @default(0)
+
+  // optional overrides for this specific event
+  logoKey     String?     @db.Text
+  websiteUrl  String?
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  event       Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  sponsor     Sponsor @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, sponsorId])
+  @@index([eventId])
+  @@index([sponsorId])
+  @@index([tier])
+}
+
 enum OrgRole {
   OWNER
   ADMIN
@@ -497,4 +571,13 @@ enum ModerationStatus {
   ACTIVE
   FLAGGED
   HIDDEN
+}
+
+enum SponsorTier {
+  TITLE
+  PLATINUM
+  GOLD
+  SILVER
+  BRONZE
+  COMMUNITY
 }
