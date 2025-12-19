@@ -66,7 +66,7 @@ const NavbarContent = ({
               fill
               priority
               sizes="68px"
-              className="object-cover object-top w-full h-full cursor-pointer"
+              className="object-cover w-full cursor-pointer"
             />
           </Link>
 
@@ -165,7 +165,7 @@ const GlobalNav = () => {
     const updateNavbar = () => {
       const currentScrollY = Math.max(
         0,
-        window.scrollY || window.pageYOffset || 0,
+        window.scrollY || window.pageYOffset || 0
       );
 
       const navbarHeight = 48; // Height of the navbar
