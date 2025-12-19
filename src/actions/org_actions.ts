@@ -2,6 +2,7 @@
 
 import { checkRateLimit } from "../lib/rate-limiter";
 import { parseServerActionResponse } from "../lib/utils";
+import type { ActionState } from "../lib/global_types";
 
 function slugify(input: string) {
   return input
@@ -14,13 +15,13 @@ function slugify(input: string) {
 }
 
 export const createOrganization = async (
-  _prevState: unknown,
+  _prevState: ActionState,
   formData: FormData,
-) => {
+): Promise<ActionState> => {
   try {
     const isRateLimited = await checkRateLimit("createOrganization");
     if (isRateLimited.status === "ERROR") {
-      return isRateLimited;
+      return isRateLimited as ActionState;
     }
 
     const name = (formData.get("name")?.toString() ?? "").trim();
@@ -38,7 +39,7 @@ export const createOrganization = async (
         status: "ERROR",
         error: "Organization name is required.",
         data: null,
-      });
+      }) as ActionState;
     }
 
     // Placeholder: later you'll upload files + write to DB.
@@ -59,13 +60,13 @@ export const createOrganization = async (
       status: "SUCCESS",
       error: "",
       data: placeholder,
-    });
+    }) as ActionState;
   } catch (error) {
     console.error(error);
     return parseServerActionResponse({
       status: "ERROR",
       error: "Failed to create organization",
       data: null,
-    });
+    }) as ActionState;
   }
 };

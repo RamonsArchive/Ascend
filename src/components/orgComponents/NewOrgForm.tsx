@@ -13,7 +13,7 @@ import { isAllowedImageFile } from "@/src/lib/utils";
 
 const initialState: ActionState = {
   status: "INITIAL",
-  error: null,
+  error: "",
   data: null,
 };
 
@@ -40,16 +40,16 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
 
   const logoPreviewUrl = useMemo(
     () => (local.logoFile ? URL.createObjectURL(local.logoFile) : null),
-    [local.logoFile],
+    [local.logoFile]
   );
   const coverPreviewUrl = useMemo(
     () => (local.coverFile ? URL.createObjectURL(local.coverFile) : null),
-    [local.coverFile],
+    [local.coverFile]
   );
 
-  const [state, formAction, isPending] = useActionState(
+  const [state, formAction, isPending] = useActionState<ActionState, FormData>(
     createOrganization,
-    initialState,
+    initialState
   );
 
   const onSelectLogo = (file: File | null) => {
