@@ -10,3 +10,6 @@ export const signInWithGoogle = () =>
 export const signOut = () => authClient.signOut();
 
 export const getSession = () => authClient.getSession();
+
+// Reactive session hook (subscribes to Better Auth's internal store)
+export const useSession = () => authClient.useSession();

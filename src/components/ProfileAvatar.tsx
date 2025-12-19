@@ -1,42 +1,25 @@
 "use client";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo } from "react";
 import Image from "next/image";
 import { UserIcon } from "lucide-react";
-import { signInWithGoogle, signOut, getSession } from "../lib/auth-client";
-
-type SessionResult = Awaited<ReturnType<typeof getSession>>;
-type SessionData = SessionResult extends { data: infer D } ? D : never;
+import { signInWithGoogle, signOut, useSession } from "../lib/auth-client";
 
 const ProfileAvatar = () => {
-  const [session, setSession] = useState<SessionData>(null);
-
-  const refreshSession = useCallback(async () => {
-    try {
-      const res = await getSession();
-      setSession(res.data ?? null);
-    } catch {
-      setSession(null);
-    }
-  }, []);
-
-  useEffect(() => {
-    void refreshSession();
-  }, [refreshSession]);
+  const { data: session, refetch } = useSession();
 
   const userImage = useMemo(() => session?.user?.image ?? null, [session]);
   const userName = useMemo(() => session?.user?.name ?? null, [session]);
   const isSignedIn = !!session?.user;
 
   const handleClick = useCallback(async () => {
-    console.log("handleClick", isSignedIn);
     if (isSignedIn) {
       await signOut();
-      await refreshSession();
+      await refetch();
       return;
     }
 
     await signInWithGoogle();
-  }, [isSignedIn, refreshSession]);
+  }, [isSignedIn, refetch]);
 
   return (
     <button
