@@ -49,7 +49,7 @@ export const global_home_data = {
       </>
     ),
     primary_cta: { label: "Explore events", href: "/events" },
-    secondary_cta: { label: "Open App", href: "/app" },
+    secondary_cta: { label: "create an organization", href: "/app/orgs/new" },
 
     // Your hero carousel concept
     carousel: {
@@ -77,7 +77,7 @@ export const global_home_data = {
       },
       {
         label: "Create an organization",
-        href: "",
+        href: "/app/orgs/new",
       },
     ],
   },
