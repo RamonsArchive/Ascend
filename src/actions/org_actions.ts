@@ -4,7 +4,7 @@ import { checkRateLimit } from "../lib/rate-limiter";
 import { parseServerActionResponse } from "../lib/utils";
 import { auth } from "../lib/auth";
 import type { ActionState } from "../lib/global_types";
-import { newOrgFormSchema } from "../lib/validation";
+import { newOrgServerFormSchema } from "../lib/validation";
 import { prisma } from "../lib/prisma";
 import { headers } from "next/headers";
 import crypto from "crypto";
@@ -24,9 +24,7 @@ export const createOrganization = async (
   formData: FormData
 ): Promise<ActionState> => {
   try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
+    const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user?.id) {
       return parseServerActionResponse({
         status: "ERROR",
@@ -34,6 +32,7 @@ export const createOrganization = async (
         data: null,
       }) as ActionState;
     }
+
     const name = (formData.get("name")?.toString() ?? "").trim();
     const description = (formData.get("description")?.toString() ?? "").trim();
     const publicEmail = (formData.get("publicEmail")?.toString() ?? "").trim();
@@ -41,12 +40,18 @@ export const createOrganization = async (
     const websiteUrl = (formData.get("websiteUrl")?.toString() ?? "").trim();
     const contactNote = (formData.get("contactNote")?.toString() ?? "").trim();
 
-    const rawLogo = formData.get("logoFile");
-    const rawCover = formData.get("coverFile");
-    const logoFile =
-      rawLogo instanceof File && rawLogo.size > 0 ? rawLogo : undefined;
-    const coverFile =
-      rawCover instanceof File && rawCover.size > 0 ? rawCover : undefined;
+    // NEW: keys come as strings (already uploaded)
+    const logoKey = (formData.get("logoKey")?.toString() ?? "").trim() || null;
+    const coverKey =
+      (formData.get("coverKey")?.toString() ?? "").trim() || null;
+
+    // IMPORTANT: newOrgServerFormSchema must NOT require logoFile/coverFile as File anymore
+    // Instead validate logoKey/coverKey as optional strings (or do it manually here)
+
+    const isRateLimited = await checkRateLimit("createOrganization");
+    if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
+
+    const baseSlug = slugify(name);
 
     const payload = {
       name,
@@ -54,45 +59,36 @@ export const createOrganization = async (
       publicEmail,
       publicPhone,
       websiteUrl,
-      logoFile,
-      coverFile,
       contactNote,
+      logoKey,
+      coverKey,
     };
 
-    const parsed = await newOrgFormSchema.safeParseAsync(payload);
+    const parsed = await newOrgServerFormSchema.safeParseAsync(payload);
     if (!parsed.success) {
-      const message =
-        parsed.error.issues[0]?.message ?? "Invalid organization details.";
       return parseServerActionResponse({
         status: "ERROR",
-        error: message,
+        error: parsed.error.message,
         data: null,
       }) as ActionState;
     }
 
-    const isRateLimited = await checkRateLimit("createOrganization");
-    if (isRateLimited.status === "ERROR") {
-      return isRateLimited as ActionState;
-    }
-
-    const baseSlug = slugify(name);
-
     const organization = await prisma.$transaction(async (tx) => {
-      // retry for slug collisions
-      let slug = baseSlug;
+      let newSlug = baseSlug;
 
       for (let attempt = 0; attempt < 20; attempt++) {
         try {
           const createdOrg = await tx.organization.create({
             data: {
               name,
-              slug,
+              slug: newSlug,
               description,
               publicEmail,
               publicPhone,
               websiteUrl,
               contactNote,
-              // logoUrl/coverUrl set AFTER upload step
+              logoKey,
+              coverKey,
             },
           });
 
@@ -106,15 +102,13 @@ export const createOrganization = async (
 
           return createdOrg;
         } catch (e: unknown) {
-          // Prisma unique constraint
           if (
             typeof e === "object" &&
             e !== null &&
             "code" in e &&
             (e as { code?: string }).code === "P2002"
           ) {
-            // increment slug: ascend -> ascend-2 -> ascend-3
-            slug =
+            newSlug =
               attempt === 0 ? `${baseSlug}-2` : `${baseSlug}-${attempt + 2}`;
             continue;
           }
@@ -122,8 +116,7 @@ export const createOrganization = async (
         }
       }
 
-      // fallback if we somehow had 20 collisions
-      slug = `${baseSlug}-${crypto.randomBytes(3).toString("hex")}`;
+      const slug = `${baseSlug}-${crypto.randomBytes(3).toString("hex")}`;
       const createdOrg = await tx.organization.create({
         data: {
           name,
@@ -133,6 +126,8 @@ export const createOrganization = async (
           publicPhone,
           websiteUrl,
           contactNote,
+          logoKey,
+          coverKey,
         },
       });
 

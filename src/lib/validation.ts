@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { TEN_MB, validateImageFile } from "./utils";
+
 export const contactFormSchema = z.object({
   firstName: z.string().min(1, { message: "Name is required" }).max(20, {
     message: "Name must be less than 20 characters",
@@ -16,7 +17,7 @@ export const contactFormSchema = z.object({
         if (!val) return true; // Allow empty/undefined
         return /^[0-9]{10}$/.test(val); // Validate if provided
       },
-      { message: "Phone number must be 10 digits" },
+      { message: "Phone number must be 10 digits" }
     ),
   organization: z.string().optional(),
   message: z.string().min(1, { message: "Message is required" }).max(500, {
@@ -29,44 +30,42 @@ export const loginFormSchema = z.object({
   password: z.string().min(1, { message: "Password is required" }),
 });
 
-export const newOrgFormSchema = z.object({
+export const newOrgClientFormSchema = z.object({
   name: z
     .string()
     .min(1, { message: "Organization name is required" })
     .max(100, {
       message: "Name must be less than 100 characters",
     }),
-  // Description can be plain text or Markdown (stored as a string).
+
   description: z.preprocess(
     (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
-    z
-      .string()
-      .max(1000, { message: "Description must be less than 1000 characters" })
-      .optional(),
+    z.string().min(1, { message: "Description is required" }).max(1000, {
+      message: "Description must be less than 1000 characters",
+    })
   ),
+
   publicEmail: z.preprocess(
     (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
-    z.string().email({ message: "Invalid email address" }).optional(),
+    z.string().email({ message: "Invalid email address" }).optional()
   ),
+
   publicPhone: z
     .string()
     .optional()
-    .refine(
-      (val) => {
-        if (!val) return true; // Allow empty/undefined
-        return /^[0-9]{10}$/.test(val); // Validate if provided
-      },
-      { message: "Phone number must be 10 digits" },
-    ),
+    .refine((val) => !val || /^[0-9]{10}$/.test(val), {
+      message: "Phone number must be 10 digits",
+    }),
+
   websiteUrl: z.preprocess(
     (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
-    z.string().url({ message: "Invalid website URL" }).optional(),
+    z.string().url({ message: "Invalid website URL" }).optional()
   ),
+
   logoFile: z
-    .custom<File | undefined>(
-      (val) => val === undefined || val === null || val instanceof File,
-      { message: "Invalid logo file" },
-    )
+    .custom<File | undefined>((val) => val == null || val instanceof File, {
+      message: "Invalid logo file",
+    })
     .optional()
     .refine(
       (val) => {
@@ -83,13 +82,13 @@ export const newOrgFormSchema = z.object({
           },
         });
       },
-      { message: "Logo must be a PNG, JPG, or WEBP. Max size is 10MB." },
+      { message: "Logo must be a PNG, JPG, or WEBP. Max size is 10MB." }
     ),
+
   coverFile: z
-    .custom<File | undefined>(
-      (val) => val === undefined || val === null || val instanceof File,
-      { message: "Invalid cover file" },
-    )
+    .custom<File | undefined>((val) => val == null || val instanceof File, {
+      message: "Invalid cover file",
+    })
     .optional()
     .refine(
       (val) => {
@@ -106,14 +105,69 @@ export const newOrgFormSchema = z.object({
           },
         });
       },
-      { message: "Cover must be a PNG, JPG, or WEBP. Max size is 10MB." },
+      { message: "Cover must be a PNG, JPG, or WEBP. Max size is 10MB." }
     ),
-  // Contact note is Markdown, stored as a string. Optional, but if present validate length.
+
   contactNote: z.preprocess(
     (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
     z
       .string()
       .max(2000, { message: "Contact note must be less than 2000 characters" })
-      .optional(),
+      .optional()
+  ),
+});
+
+const S3_KEY_REGEX = /^[a-z0-9!_.*'()-]+(?:\/[a-z0-9!_.*'()-]+)*$/i;
+
+export const newOrgServerFormSchema = z.object({
+  name: z
+    .string()
+    .min(1, { message: "Organization name is required" })
+    .max(100),
+
+  description: z.preprocess(
+    (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+    z.string().min(1, { message: "Description is required" }).max(1000)
+  ),
+
+  publicEmail: z.preprocess(
+    (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+    z.string().email({ message: "Invalid email address" }).optional()
+  ),
+
+  publicPhone: z
+    .string()
+    .optional()
+    .refine((val) => !val || /^[0-9]{10}$/.test(val), {
+      message: "Phone number must be 10 digits",
+    }),
+
+  websiteUrl: z.preprocess(
+    (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+    z.string().url({ message: "Invalid website URL" }).optional()
+  ),
+
+  // NEW: presigned upload results
+  logoKey: z.preprocess(
+    (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+    z
+      .string()
+      .max(512)
+      .regex(S3_KEY_REGEX, { message: "Invalid logo key" })
+      .optional()
+  ),
+
+  coverKey: z.preprocess(
+    (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+    z
+      .string()
+      .max(512)
+      .regex(S3_KEY_REGEX, { message: "Invalid cover key" })
+      .optional()
+  ),
+
+  contactNote: z.preprocess(
+    (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+    z.string().max(2000).optional()
   ),
 });

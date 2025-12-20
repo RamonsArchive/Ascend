@@ -27,14 +27,15 @@ import {
   updatePhoneNumber,
   validateImageFile,
 } from "@/src/lib/utils";
-import { newOrgFormSchema } from "@/src/lib/validation";
+import { newOrgClientFormSchema } from "@/src/lib/validation";
 import { signInWithGoogle } from "@/src/lib/auth-client";
+import { createOrgImageUpload } from "@/src/actions/s3_actions";
+import { uploadToS3PresignedPost } from "@/src/lib/s3-client";
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
 const DRAFT_KEY = "ascend:new-org-create:draft:v1";
 const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
-const CREATE_NEXT = "/organizations/create";
 
 const initialState: ActionState = {
   status: "INITIAL",
@@ -387,9 +388,8 @@ const NewOrgForm = ({
       setErrors({});
 
       const payload = payloadFromFormData(formData);
-      await newOrgFormSchema.parseAsync(payload);
+      await newOrgClientFormSchema.parseAsync(payload);
 
-      // check if logged in
       if (!isLoggedIn) {
         persistDraft();
         setStatusMessage("Redirecting to sign in…");
@@ -404,22 +404,60 @@ const NewOrgForm = ({
           data: null,
         });
       }
-      const result = await createOrganization(initialState, formData);
+
+      setStatusMessage("Uploading images…");
+
+      // Grab files directly from inputs (don’t rely on FormData for File after we re-build it)
+      const logoFile = logoRef.current?.files?.[0] ?? null;
+      const coverFile = coverRef.current?.files?.[0] ?? null;
+
+      let logoKey: string | null = null;
+      let coverKey: string | null = null;
+
+      if (logoFile) {
+        const presign = await createOrgImageUpload({
+          kind: "logo",
+          fileName: logoFile.name,
+          contentType: logoFile.type,
+        });
+        await uploadToS3PresignedPost({
+          url: presign.url,
+          fields: presign.fields,
+          file: logoFile,
+        });
+        logoKey = presign.key;
+      }
+
+      if (coverFile) {
+        const presign = await createOrgImageUpload({
+          kind: "cover",
+          fileName: coverFile.name,
+          contentType: coverFile.type,
+        });
+        await uploadToS3PresignedPost({
+          url: presign.url,
+          fields: presign.fields,
+          file: coverFile,
+        });
+        coverKey = presign.key;
+      }
+
+      setStatusMessage("Creating organization…");
+
+      // Build a NEW FormData without files; send keys instead
+      const fd = new FormData();
+      fd.set("name", storeFormData.name);
+      fd.set("description", storeFormData.description);
+      fd.set("publicEmail", storeFormData.publicEmail);
+      fd.set("publicPhone", storeFormData.publicPhone); // digits already
+      fd.set("websiteUrl", storeFormData.websiteUrl);
+      fd.set("contactNote", storeFormData.contactNote);
+      if (logoKey) fd.set("logoKey", logoKey);
+      if (coverKey) fd.set("coverKey", coverKey);
+
+      const result = await createOrganization(initialState, fd);
+
       if (result.status === "ERROR") {
-        if (
-          result.error &&
-          result.error.includes("MUST BE LOGGED IN TO CREATE AN ORGANIZATION")
-        ) {
-          // Session might be stale client-side; persist draft and send them to login.
-          persistDraft();
-          setStatusMessage("Redirecting to sign in…");
-          toast.error("SIGN IN REQUIRED", {
-            description:
-              "Sign in with Google to create an organization. We saved your draft (files need to be reselected).",
-          });
-          redirectToLogin();
-          return result;
-        }
         setStatusMessage("Something went wrong. Please try again.");
         toast.error("ERROR", {
           description:
@@ -440,30 +478,8 @@ const NewOrgForm = ({
       setStatusMessage(
         "An error occurred while submitting the form. Please try again."
       );
-
-      if (error instanceof z.ZodError) {
-        const fieldErrors = z.flattenError(error).fieldErrors as Record<
-          string,
-          string[]
-        >;
-        const formatted: Record<string, string> = {};
-        Object.keys(fieldErrors).forEach((key) => {
-          formatted[key] = fieldErrors[key]?.[0] || "";
-        });
-        setErrors(formatted as NewOrgClientErrors);
-        toast.error("ERROR", {
-          description: Object.values(formatted).filter(Boolean).join(", "),
-        });
-        return {
-          status: "ERROR",
-          error: Object.values(formatted).filter(Boolean).join(", "),
-          data: null,
-        };
-      }
-
       toast.error("ERROR", {
-        description:
-          "An error occurred while submitting the form. Please try again.",
+        description: error instanceof Error ? error.message : "Unknown error",
       });
       return {
         status: "ERROR",
@@ -522,7 +538,6 @@ const NewOrgForm = ({
           action={formAction}
           className="flex flex-col gap-8 md:gap-10"
           id="new-org-form"
-          encType="multipart/form-data"
         >
           <div className="flex flex-col gap-6 md:gap-8">
             <div className="flex flex-col gap-2 overflow-hidden">
@@ -557,6 +572,7 @@ const NewOrgForm = ({
                   className="text-xs md:text-sm text-white/75"
                 >
                   {form.description.label}
+                  <span className="text-xs text-red-500">*</span>
                 </label>
                 <button
                   type="button"

@@ -9,7 +9,7 @@ const NewOrgsPage = async ({
 }: {
   searchParams: Promise<{ pathname: string }>;
 }) => {
-  const path = (await searchParams).pathname || "/organizations/create";
+  const path = (await searchParams).pathname || "/app/orgs/new";
   const session = await auth.api.getSession({
     headers: await headers(),
   });

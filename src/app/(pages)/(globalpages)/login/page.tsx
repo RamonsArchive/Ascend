@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { signInWithGoogle, useSession } from "@/src/lib/auth-client";
 
-const DEFAULT_NEXT = "/organizations/create";
+const DEFAULT_NEXT = "/";
 
 export default function LoginPage() {
   const router = useRouter();
