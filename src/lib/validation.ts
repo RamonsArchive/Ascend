@@ -1,7 +1,5 @@
 import { z } from "zod";
-import { validateImageFile } from "./utils";
-
-const TEN_MB = 10 * 1024 * 1024;
+import { TEN_MB, validateImageFile } from "./utils";
 export const contactFormSchema = z.object({
   firstName: z.string().min(1, { message: "Name is required" }).max(20, {
     message: "Name must be less than 20 characters",
@@ -18,7 +16,7 @@ export const contactFormSchema = z.object({
         if (!val) return true; // Allow empty/undefined
         return /^[0-9]{10}$/.test(val); // Validate if provided
       },
-      { message: "Phone number must be 10 digits" }
+      { message: "Phone number must be 10 digits" },
     ),
   organization: z.string().optional(),
   message: z.string().min(1, { message: "Message is required" }).max(500, {
@@ -32,19 +30,24 @@ export const loginFormSchema = z.object({
 });
 
 export const newOrgFormSchema = z.object({
-  name: z.string().min(1, { message: "Name is required" }).max(100, {
-    message: "Name must be less than 100 characters",
-  }),
-  description: z
+  name: z
     .string()
-    .min(1, { message: "Description is required" })
-    .max(1000, {
-      message: "Description must be less than 1000 characters",
+    .min(1, { message: "Organization name is required" })
+    .max(100, {
+      message: "Name must be less than 100 characters",
     }),
-  publicEmail: z
-    .string()
-    .email({ message: "Invalid email address" })
-    .optional(),
+  // Description can be plain text or Markdown (stored as a string).
+  description: z.preprocess(
+    (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+    z
+      .string()
+      .max(1000, { message: "Description must be less than 1000 characters" })
+      .optional(),
+  ),
+  publicEmail: z.preprocess(
+    (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+    z.string().email({ message: "Invalid email address" }).optional(),
+  ),
   publicPhone: z
     .string()
     .optional()
@@ -53,17 +56,23 @@ export const newOrgFormSchema = z.object({
         if (!val) return true; // Allow empty/undefined
         return /^[0-9]{10}$/.test(val); // Validate if provided
       },
-      { message: "Phone number must be 10 digits" }
+      { message: "Phone number must be 10 digits" },
     ),
-  websiteUrl: z.string().url({ message: "Invalid website URL" }).optional(),
+  websiteUrl: z.preprocess(
+    (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+    z.string().url({ message: "Invalid website URL" }).optional(),
+  ),
   logoFile: z
-    .instanceof(File)
+    .custom<File | undefined>(
+      (val) => val === undefined || val === null || val instanceof File,
+      { message: "Invalid logo file" },
+    )
     .optional()
     .refine(
       (val) => {
-        if (!val) return true; // Allow empty/undefined
+        if (!val) return true;
         return validateImageFile({
-          file: val as File | null | undefined,
+          file: val,
           options: {
             allowedMimeTypes: new Set([
               "image/png",
@@ -74,16 +83,19 @@ export const newOrgFormSchema = z.object({
           },
         });
       },
-      { message: "Logo must be a PNG, JPG, or WEBP. Max size is 10MB." }
+      { message: "Logo must be a PNG, JPG, or WEBP. Max size is 10MB." },
     ),
   coverFile: z
-    .instanceof(File)
+    .custom<File | undefined>(
+      (val) => val === undefined || val === null || val instanceof File,
+      { message: "Invalid cover file" },
+    )
     .optional()
     .refine(
       (val) => {
-        if (!val) return true; // Allow empty/undefined
+        if (!val) return true;
         return validateImageFile({
-          file: val as File | null | undefined,
+          file: val,
           options: {
             allowedMimeTypes: new Set([
               "image/png",
@@ -94,13 +106,14 @@ export const newOrgFormSchema = z.object({
           },
         });
       },
-      { message: "Cover must be a PNG, JPG, or WEBP. Max size is 10MB." }
+      { message: "Cover must be a PNG, JPG, or WEBP. Max size is 10MB." },
     ),
-  contactNote: z
-    .string()
-    .min(1, { message: "Contact note is required" })
-    .max(1000, {
-      message: "Contact note must be less than 1000 characters",
-    })
-    .optional(),
+  // Contact note is Markdown, stored as a string. Optional, but if present validate length.
+  contactNote: z.preprocess(
+    (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+    z
+      .string()
+      .max(2000, { message: "Contact note must be less than 2000 characters" })
+      .optional(),
+  ),
 });

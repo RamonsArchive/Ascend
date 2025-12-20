@@ -7,6 +7,11 @@ export const new_org_data = {
     title: "Create an organization",
     subtitle: "Create an organization to host events and manage your team.",
   },
+  formSection: {
+    title: "Set up your org profile",
+    description:
+      "This is your public-facing organization card. Add a logo, a cover image, and a short description so participants instantly recognize your brand.",
+  },
   hero: {
     title: "Create an organization",
     subtitle: "Create an organization to host events and manage your team.",

@@ -2,7 +2,8 @@
 
 import { checkRateLimit } from "../lib/rate-limiter";
 import { parseServerActionResponse } from "../lib/utils";
-import type { ActionState, NewOrgFormDataType } from "../lib/global_types";
+import type { ActionState } from "../lib/global_types";
+import { newOrgFormSchema } from "../lib/validation";
 
 function slugify(input: string) {
   return input
@@ -15,7 +16,8 @@ function slugify(input: string) {
 }
 
 export const createOrganization = async (
-  formData: NewOrgFormDataType
+  _prevState: ActionState,
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const isRateLimited = await checkRateLimit("createOrganization");
@@ -30,13 +32,31 @@ export const createOrganization = async (
     const websiteUrl = (formData.get("websiteUrl")?.toString() ?? "").trim();
     const contactNote = (formData.get("contactNote")?.toString() ?? "").trim();
 
-    const logoFile = formData.get("logoFile");
-    const coverFile = formData.get("coverFile");
+    const rawLogo = formData.get("logoFile");
+    const rawCover = formData.get("coverFile");
+    const logoFile =
+      rawLogo instanceof File && rawLogo.size > 0 ? rawLogo : undefined;
+    const coverFile =
+      rawCover instanceof File && rawCover.size > 0 ? rawCover : undefined;
 
-    if (!name) {
+    const payload = {
+      name,
+      description,
+      publicEmail,
+      publicPhone,
+      websiteUrl,
+      logoFile,
+      coverFile,
+      contactNote,
+    };
+
+    const parsed = await newOrgFormSchema.safeParseAsync(payload);
+    if (!parsed.success) {
+      const message =
+        parsed.error.issues[0]?.message ?? "Invalid organization details.";
       return parseServerActionResponse({
         status: "ERROR",
-        error: "Organization name is required.",
+        error: message,
         data: null,
       }) as ActionState;
     }
@@ -51,8 +71,8 @@ export const createOrganization = async (
       publicPhone: publicPhone || null,
       websiteUrl: websiteUrl || null,
       contactNote: contactNote || null,
-      hasLogoFile: logoFile instanceof File ? logoFile.size > 0 : false,
-      hasCoverFile: coverFile instanceof File ? coverFile.size > 0 : false,
+      hasLogoFile: !!logoFile,
+      hasCoverFile: !!coverFile,
     };
 
     return parseServerActionResponse({
