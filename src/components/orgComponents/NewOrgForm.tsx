@@ -14,7 +14,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { createOrganization } from "@/src/actions/org_actions";
 import { new_org_data } from "@/src/constants/orgConstants/org_index";
 import type { ActionState } from "@/src/lib/global_types";
-import { TEN_MB, validateImageFile } from "@/src/lib/utils";
+import { TEN_MB, updatePhoneNumber, validateImageFile } from "@/src/lib/utils";
 import { newOrgFormSchema } from "@/src/lib/validation";
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
@@ -65,7 +65,7 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
   const { form } = new_org_data;
   const allowedImageMimeTypes = useMemo(
     () => new Set(["image/png", "image/jpeg", "image/webp"]),
-    [],
+    []
   );
 
   const submitButtonRef = useRef<HTMLButtonElement>(null);
@@ -94,11 +94,29 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
   const [statusMessage, setStatusMessage] = useState("");
   const [showContactPreview, setShowContactPreview] = useState(false);
   const [showDescriptionPreview, setShowDescriptionPreview] = useState(false);
-  const [descriptionValue, setDescriptionValue] = useState("");
-  const [contactNoteValue, setContactNoteValue] = useState("");
+  const [storeFormData, setStoreFormData] = useState({
+    name: "",
+    description: "",
+    publicEmail: "",
+    publicPhone: "",
+    websiteUrl: "",
+    contactNote: "",
+  });
+  const [phoneDisplay, setPhoneDisplay] = useState("");
 
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
+
+  const handleFormChange = (key: string, value: string) => {
+    if (key === "publicPhone") {
+      updatePhoneNumber(value, phoneDisplay, setPhoneDisplay);
+      const cleanPhone = value.replace(/[^0-9]/g, "");
+      setStoreFormData({ ...storeFormData, publicPhone: cleanPhone });
+      return;
+    }
+
+    setStoreFormData({ ...storeFormData, [key]: value });
+  };
 
   useGSAP(() => {
     let cleanup: undefined | (() => void);
@@ -184,11 +202,13 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
       const allPreviewButtons = [
         descriptionPreviewButtonRef.current,
         contactNotePreviewButtonRef.current,
-      ];
+      ].filter(Boolean) as HTMLElement[];
 
       gsap.set(allLabels, { opacity: 0, y: 48 });
       gsap.set(allInputs, { opacity: 0, y: 48 });
-      gsap.set(allPreviewButtons, { opacity: 0, y: 48 });
+      if (allPreviewButtons.length > 0) {
+        gsap.set(allPreviewButtons, { opacity: 0, y: 48 });
+      }
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: triggerEl,
@@ -202,9 +222,11 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
       tl.to(allLabels, { opacity: 1, y: 0, stagger: 0.02 }, 0).to(
         allInputs,
         { opacity: 1, y: 0, stagger: 0.04 },
-        0.05,
+        0.05
       );
-      tl.to(allPreviewButtons, { opacity: 1, y: 0, stagger: 0.02 }, 0.05);
+      if (allPreviewButtons.length > 0) {
+        tl.to(allPreviewButtons, { opacity: 1, y: 0, stagger: 0.02 }, 0.05);
+      }
       requestAnimationFrame(() => ScrollTrigger.refresh());
 
       cleanup = () => {
@@ -230,8 +252,15 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
     setStatusMessage("");
     setShowContactPreview(false);
     setShowDescriptionPreview(false);
-    setDescriptionValue("");
-    setContactNoteValue("");
+    setStoreFormData({
+      name: "",
+      description: "",
+      publicEmail: "",
+      publicPhone: "",
+      websiteUrl: "",
+      contactNote: "",
+    });
+    setPhoneDisplay("");
 
     if (nameRef.current) nameRef.current.value = "";
     if (descriptionRef.current) descriptionRef.current.value = "";
@@ -248,7 +277,7 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
 
   const submitForm = async (
     _state: ActionState,
-    formData: FormData,
+    formData: FormData
   ): Promise<ActionState> => {
     try {
       setErrors({});
@@ -276,7 +305,7 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
     } catch (error) {
       console.error(error);
       setStatusMessage(
-        "An error occurred while submitting the form. Please try again.",
+        "An error occurred while submitting the form. Please try again."
       );
 
       if (error instanceof z.ZodError) {
@@ -354,7 +383,7 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
   };
 
   return (
-    <div className="flex flex-col w-full rounded-3xl px-6 py-6 md:px-8 md:py-8 bg-white/4">
+    <div className="marketing-card w-full rounded-3xl px-6 py-6 md:px-8 md:py-8 bg-white/4">
       <div className="flex flex-col gap-6 md:gap-8">
         <form
           action={formAction}
@@ -367,7 +396,7 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
               <label
                 htmlFor="name"
                 ref={nameLabelRef}
-                className="label-base flex items-center gap-1"
+                className="text-xs md:text-sm text-white/75 flex items-center gap-1"
               >
                 {form.name.label}
                 <span className="text-xs text-red-500">*</span>
@@ -377,8 +406,10 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
                 name="name"
                 ref={nameRef}
                 placeholder={form.name.placeholder}
-                className="input-base"
+                className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
                 required
+                value={storeFormData.name}
+                onChange={(e) => handleFormChange("name", e.target.value)}
               />
               {errors.name ? (
                 <p className="text-red-400 text-xs md:text-sm">{errors.name}</p>
@@ -390,7 +421,7 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
                 <label
                   htmlFor="description"
                   ref={descriptionLabelRef}
-                  className="label-base"
+                  className="text-xs md:text-sm text-white/75"
                 >
                   {form.description.label}
                 </label>
@@ -398,20 +429,20 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
                   type="button"
                   ref={descriptionPreviewButtonRef}
                   onClick={() => setShowDescriptionPreview((p) => !p)}
-                  className="px-3 py-2 rounded-md bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition-colors text-sm"
+                  className="px-4 py-2 rounded-2xl bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition-colors text-xs md:text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
                 >
                   {showDescriptionPreview ? "Edit" : "Preview"}
                 </button>
               </div>
 
               {showDescriptionPreview ? (
-                <div className="rounded-md border border-white/10 bg-primary-950/70 p-4">
+                <div className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
                   <div className="prose prose-invert max-w-none prose-p:text-white/75 prose-a:text-accent-400 prose-strong:text-white">
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       rehypePlugins={[rehypeSanitize]}
                     >
-                      {descriptionValue || "*Nothing yet…*"}
+                      {storeFormData.description || "*Nothing yet…*"}
                     </ReactMarkdown>
                   </div>
                 </div>
@@ -421,9 +452,11 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
                   name="description"
                   ref={descriptionRef}
                   placeholder={form.description.placeholder}
-                  className="input-base min-h-[120px] resize-none"
-                  value={descriptionValue}
-                  onChange={(e) => setDescriptionValue(e.target.value)}
+                  className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors min-h-[160px] resize-none shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                  value={storeFormData.description}
+                  onChange={(e) =>
+                    handleFormChange("description", e.target.value)
+                  }
                 />
               )}
               {errors.description ? (
@@ -438,7 +471,7 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
                 <label
                   htmlFor="publicEmail"
                   ref={publicEmailLabelRef}
-                  className="label-base"
+                  className="text-xs md:text-sm text-white/75"
                 >
                   Public email
                 </label>
@@ -447,7 +480,11 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
                   name="publicEmail"
                   ref={publicEmailRef}
                   placeholder="hello@org.com"
-                  className="input-base"
+                  className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                  value={storeFormData.publicEmail}
+                  onChange={(e) =>
+                    handleFormChange("publicEmail", e.target.value)
+                  }
                 />
                 {errors.publicEmail ? (
                   <p className="text-red-400 text-xs md:text-sm">
@@ -460,7 +497,7 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
                 <label
                   htmlFor="publicPhone"
                   ref={publicPhoneLabelRef}
-                  className="label-base"
+                  className="text-xs md:text-sm text-white/75"
                 >
                   Public phone
                 </label>
@@ -469,7 +506,11 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
                   name="publicPhone"
                   ref={publicPhoneRef}
                   placeholder="5551234567"
-                  className="input-base"
+                  className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                  value={phoneDisplay}
+                  onChange={(e) =>
+                    handleFormChange("publicPhone", e.target.value)
+                  }
                 />
                 {errors.publicPhone ? (
                   <p className="text-red-400 text-xs md:text-sm">
@@ -483,7 +524,7 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
               <label
                 htmlFor="websiteUrl"
                 ref={websiteUrlLabelRef}
-                className="label-base"
+                className="text-xs md:text-sm text-white/75"
               >
                 Website URL
               </label>
@@ -492,7 +533,9 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
                 name="websiteUrl"
                 ref={websiteUrlRef}
                 placeholder="https://yourorg.com"
-                className="input-base"
+                className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                value={storeFormData.websiteUrl}
+                onChange={(e) => handleFormChange("websiteUrl", e.target.value)}
               />
               {errors.websiteUrl ? (
                 <p className="text-red-400 text-xs md:text-sm">
@@ -506,7 +549,7 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
                 <label
                   htmlFor="logoFile"
                   ref={logoLabelRef}
-                  className="label-base"
+                  className="text-xs md:text-sm text-white/75"
                 >
                   {form.logo.label}
                 </label>
@@ -516,17 +559,17 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
                   type="file"
                   accept="image/png,image/jpeg,image/webp"
                   ref={logoRef}
-                  className="input-base"
+                  className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] file:mr-4 file:rounded-xl file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-white/80 file:hover:bg-white/15 file:transition-colors"
                   onChange={(e) => onSelectLogo(e.target.files?.[0] ?? null)}
                 />
                 {logoPreviewUrl ? (
-                  <div className="flex flex-col gap-2 rounded-lg border border-white/10 bg-white/5 p-3">
+                  <div className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
                     <div className="text-xs text-white/60">Preview</div>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={logoPreviewUrl}
                       alt="Logo preview"
-                      className="w-16 h-16 object-contain rounded-md bg-black/30 border border-white/10"
+                      className="w-16 h-16 object-contain rounded-xl bg-black/30 border border-white/10"
                     />
                   </div>
                 ) : null}
@@ -541,7 +584,7 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
                 <label
                   htmlFor="coverFile"
                   ref={coverLabelRef}
-                  className="label-base"
+                  className="text-xs md:text-sm text-white/75"
                 >
                   {form.cover.label}
                 </label>
@@ -551,17 +594,17 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
                   type="file"
                   accept="image/png,image/jpeg,image/webp"
                   ref={coverRef}
-                  className="input-base"
+                  className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] file:mr-4 file:rounded-xl file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-white/80 file:hover:bg-white/15 file:transition-colors"
                   onChange={(e) => onSelectCover(e.target.files?.[0] ?? null)}
                 />
                 {coverPreviewUrl ? (
-                  <div className="flex flex-col gap-2 rounded-lg border border-white/10 bg-white/5 p-3">
+                  <div className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
                     <div className="text-xs text-white/60">Preview</div>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={coverPreviewUrl}
                       alt="Cover preview"
-                      className="w-full h-28 object-cover rounded-md border border-white/10"
+                      className="w-full h-28 object-cover rounded-xl border border-white/10"
                     />
                   </div>
                 ) : null}
@@ -578,7 +621,7 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
                 <label
                   htmlFor="contactNote"
                   ref={contactNoteLabelRef}
-                  className="label-base"
+                  className="text-xs md:text-sm text-white/75"
                 >
                   Contact note (Markdown)
                 </label>
@@ -586,20 +629,20 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
                   type="button"
                   ref={contactNotePreviewButtonRef}
                   onClick={() => setShowContactPreview((p) => !p)}
-                  className="px-3 py-2 rounded-md bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition-colors text-sm"
+                  className="px-4 py-2 rounded-2xl bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition-colors text-xs md:text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
                 >
                   {showContactPreview ? "Edit" : "Preview"}
                 </button>
               </div>
 
               {showContactPreview ? (
-                <div className="rounded-md border border-white/10 bg-primary-950/70 p-4">
+                <div className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
                   <div className="prose prose-invert max-w-none prose-p:text-white/75 prose-a:text-accent-400 prose-strong:text-white">
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       rehypePlugins={[rehypeSanitize]}
                     >
-                      {contactNoteValue || "*Nothing yet…*"}
+                      {storeFormData.contactNote || "*Nothing yet…*"}
                     </ReactMarkdown>
                   </div>
                 </div>
@@ -609,9 +652,11 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
                   name="contactNote"
                   ref={contactNoteRef}
                   placeholder="Example: **Sponsorships** — email [partners@org.com](mailto:partners@org.com)"
-                  className="input-base min-h-[140px] resize-none"
-                  value={contactNoteValue}
-                  onChange={(e) => setContactNoteValue(e.target.value)}
+                  className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors min-h-[160px] resize-none shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                  value={storeFormData.contactNote}
+                  onChange={(e) =>
+                    handleFormChange("contactNote", e.target.value)
+                  }
                 />
               )}
               {errors.contactNote ? (

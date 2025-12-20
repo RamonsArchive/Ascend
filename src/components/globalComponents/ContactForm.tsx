@@ -161,7 +161,7 @@ const ContactForm = ({
       tl.to(allLabels, { opacity: 1, y: 0, stagger: 0.02 }, 0).to(
         allInputs,
         { opacity: 1, y: 0, stagger: 0.04 },
-        0.05,
+        0.05
       );
 
       requestAnimationFrame(() => ScrollTrigger.refresh());
@@ -199,7 +199,7 @@ const ContactForm = ({
 
   const submitForm = async (
     state: ActionState,
-    formData: FormData,
+    formData: FormData
   ): Promise<ActionState> => {
     try {
       setErrors({});
@@ -224,7 +224,7 @@ const ContactForm = ({
 
       resetForm();
       setStatusMessage(
-        "Form submitted successfully. We will get back to you soon!",
+        "Form submitted successfully. We will get back to you soon!"
       );
       toast.success("SUCCESS", {
         description: "Form submitted successfully",
@@ -238,7 +238,7 @@ const ContactForm = ({
     } catch (error) {
       console.error(error);
       setStatusMessage(
-        "An error occurred while submitting the form. Please try again.",
+        "An error occurred while submitting the form. Please try again."
       );
       if (error instanceof z.ZodError) {
         const fieldErrors = z.flattenError(error).fieldErrors as Record<

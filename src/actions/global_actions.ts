@@ -4,6 +4,7 @@ import { FormDataType } from "../lib/global_types";
 import { prisma } from "../lib/prisma";
 import SendContactEmail from "../emails/SendContactEmail";
 import { checkRateLimit } from "../lib/rate-limiter";
+import { contactFormSchema } from "../lib/validation";
 
 export const writeContactMessage = async (formObject: FormDataType) => {
   try {
@@ -14,6 +15,24 @@ export const writeContactMessage = async (formObject: FormDataType) => {
 
     const { firstName, lastName, email, phone, organization, message } =
       formObject;
+
+    const payload = {
+      firstName,
+      lastName,
+      email,
+      phone,
+      organization,
+      message,
+    };
+    const parsed = await contactFormSchema.safeParseAsync(payload);
+    if (!parsed.success) {
+      const message = parsed.error.issues[0]?.message ?? "Invalid form data";
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: message,
+        data: null,
+      });
+    }
 
     const contactMessage = await prisma.contactMessage.create({
       data: {
