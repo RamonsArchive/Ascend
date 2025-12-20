@@ -1,6 +1,12 @@
 import { z } from "zod";
 import { TEN_MB, validateImageFile } from "./utils";
 
+const emptyToUndefined = (v: unknown) => {
+  if (v == null) return undefined; // handles null + undefined
+  if (typeof v === "string" && v.trim() === "") return undefined;
+  return v;
+};
+
 export const contactFormSchema = z.object({
   firstName: z.string().min(1, { message: "Name is required" }).max(20, {
     message: "Name must be less than 20 characters",
@@ -147,18 +153,16 @@ export const newOrgServerFormSchema = z.object({
     z.string().url({ message: "Invalid website URL" }).optional()
   ),
 
-  // NEW: presigned upload results
   logoKey: z.preprocess(
-    (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+    emptyToUndefined,
     z
       .string()
       .max(512)
       .regex(S3_KEY_REGEX, { message: "Invalid logo key" })
       .optional()
   ),
-
   coverKey: z.preprocess(
-    (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+    emptyToUndefined,
     z
       .string()
       .max(512)

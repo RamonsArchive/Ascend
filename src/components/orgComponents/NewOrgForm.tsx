@@ -386,10 +386,13 @@ const NewOrgForm = ({
   ): Promise<ActionState> => {
     try {
       setErrors({});
-
-      console.log("submitForm", formData);
-
+      if (storeFormData.publicPhone) {
+        const cleanNumber = storeFormData.publicPhone.replace(/[^0-9]/g, "");
+        formData.set("publicPhone", cleanNumber);
+      }
+      console.log("formData", JSON.stringify(formData, null, 2));
       const payload = payloadFromFormData(formData);
+      console.log("payload", payload);
       await newOrgClientFormSchema.parseAsync(payload);
       console.log("parsed");
 
@@ -429,6 +432,7 @@ const NewOrgForm = ({
           file: logoFile,
         });
         logoKey = presign.key;
+        console.log("logoKey", logoKey);
       }
 
       if (coverFile) {
@@ -443,6 +447,7 @@ const NewOrgForm = ({
           file: coverFile,
         });
         coverKey = presign.key;
+        console.log("coverKey", coverKey);
       }
 
       setStatusMessage("Creating organization…");
@@ -457,6 +462,7 @@ const NewOrgForm = ({
       fd.set("contactNote", storeFormData.contactNote);
       if (logoKey) fd.set("logoKey", logoKey);
       if (coverKey) fd.set("coverKey", coverKey);
+      console.log("publicPhone", storeFormData.publicPhone);
 
       console.log("fd", fd);
       const result = await createOrganization(initialState, fd);

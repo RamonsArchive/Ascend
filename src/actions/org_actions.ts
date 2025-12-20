@@ -43,16 +43,18 @@ export const createOrganization = async (
 
     // tmp keys coming from client after presigned uploads
     const logoTmpKey =
-      (formData.get("logoKey")?.toString() ?? "").trim() || null;
+      (formData.get("logoKey")?.toString() ?? "").trim() || undefined;
     const coverTmpKey =
-      (formData.get("coverKey")?.toString() ?? "").trim() || null;
+      (formData.get("coverKey")?.toString() ?? "").trim() || undefined;
+    console.log("logoTmpKey", logoTmpKey);
+    console.log("coverTmpKey", coverTmpKey);
 
     const isRateLimited = await checkRateLimit("createOrganization");
     if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
 
     const baseSlug = slugify(name);
 
-    const parsed = await newOrgServerFormSchema.safeParseAsync({
+    const payload = {
       name,
       description,
       publicEmail,
@@ -61,7 +63,9 @@ export const createOrganization = async (
       contactNote,
       logoKey: logoTmpKey,
       coverKey: coverTmpKey,
-    });
+    };
+    console.log("payload", payload);
+    const parsed = await newOrgServerFormSchema.safeParseAsync(payload);
 
     if (!parsed.success) {
       const msg =
