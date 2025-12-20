@@ -8,6 +8,7 @@ import { newOrgServerFormSchema } from "../lib/validation";
 import { prisma } from "../lib/prisma";
 import { headers } from "next/headers";
 import crypto from "crypto";
+import { finalizeOrgImageFromTmp, OrgAssetKind } from "../lib/s3-upload";
 
 function slugify(input: string) {
   return input
@@ -40,67 +41,99 @@ export const createOrganization = async (
     const websiteUrl = (formData.get("websiteUrl")?.toString() ?? "").trim();
     const contactNote = (formData.get("contactNote")?.toString() ?? "").trim();
 
-    // NEW: keys come as strings (already uploaded)
-    const logoKey = (formData.get("logoKey")?.toString() ?? "").trim() || null;
-    const coverKey =
+    // tmp keys coming from client after presigned uploads
+    const logoTmpKey =
+      (formData.get("logoKey")?.toString() ?? "").trim() || null;
+    const coverTmpKey =
       (formData.get("coverKey")?.toString() ?? "").trim() || null;
-
-    // IMPORTANT: newOrgServerFormSchema must NOT require logoFile/coverFile as File anymore
-    // Instead validate logoKey/coverKey as optional strings (or do it manually here)
 
     const isRateLimited = await checkRateLimit("createOrganization");
     if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
 
     const baseSlug = slugify(name);
 
-    const payload = {
+    const parsed = await newOrgServerFormSchema.safeParseAsync({
       name,
       description,
       publicEmail,
       publicPhone,
       websiteUrl,
       contactNote,
-      logoKey,
-      coverKey,
-    };
+      logoKey: logoTmpKey,
+      coverKey: coverTmpKey,
+    });
 
-    const parsed = await newOrgServerFormSchema.safeParseAsync(payload);
     if (!parsed.success) {
+      const msg =
+        parsed.error.issues[0]?.message ?? "Invalid organization details.";
       return parseServerActionResponse({
         status: "ERROR",
-        error: parsed.error.message,
+        error: msg,
         data: null,
       }) as ActionState;
     }
 
     const organization = await prisma.$transaction(async (tx) => {
+      // 1) Create org with placeholder keys (null for now)
       let newSlug = baseSlug;
+
+      const createWithSlug = async (slug: string) => {
+        const createdOrg = await tx.organization.create({
+          data: {
+            name,
+            slug,
+            description,
+            publicEmail: publicEmail || null,
+            publicPhone: publicPhone || null,
+            websiteUrl: websiteUrl || null,
+            contactNote: contactNote || null,
+            logoKey: null,
+            coverKey: null,
+          },
+        });
+
+        await tx.orgMembership.create({
+          data: {
+            orgId: createdOrg.id,
+            userId: session.user.id,
+            role: "OWNER",
+          },
+        });
+
+        // 2) Finalize uploads (copy tmp -> final, delete tmp)
+        // Do this AFTER org exists so we can put it under orgId.
+        const [finalLogoKey, finalCoverKey] = await Promise.all([
+          logoTmpKey
+            ? finalizeOrgImageFromTmp({
+                orgId: createdOrg.id,
+                kind: "logo",
+                tmpKey: logoTmpKey,
+              })
+            : Promise.resolve(null),
+          coverTmpKey
+            ? finalizeOrgImageFromTmp({
+                orgId: createdOrg.id,
+                kind: "cover",
+                tmpKey: coverTmpKey,
+              })
+            : Promise.resolve(null),
+        ]);
+
+        // 3) Update org with final keys
+        const updatedOrg = await tx.organization.update({
+          where: { id: createdOrg.id },
+          data: {
+            logoKey: finalLogoKey,
+            coverKey: finalCoverKey,
+          },
+        });
+
+        return updatedOrg;
+      };
 
       for (let attempt = 0; attempt < 20; attempt++) {
         try {
-          const createdOrg = await tx.organization.create({
-            data: {
-              name,
-              slug: newSlug,
-              description,
-              publicEmail,
-              publicPhone,
-              websiteUrl,
-              contactNote,
-              logoKey,
-              coverKey,
-            },
-          });
-
-          await tx.orgMembership.create({
-            data: {
-              orgId: createdOrg.id,
-              userId: session.user.id,
-              role: "OWNER",
-            },
-          });
-
-          return createdOrg;
+          return await createWithSlug(newSlug);
         } catch (e: unknown) {
           if (
             typeof e === "object" &&
@@ -116,26 +149,8 @@ export const createOrganization = async (
         }
       }
 
-      const slug = `${baseSlug}-${crypto.randomBytes(3).toString("hex")}`;
-      const createdOrg = await tx.organization.create({
-        data: {
-          name,
-          slug,
-          description,
-          publicEmail,
-          publicPhone,
-          websiteUrl,
-          contactNote,
-          logoKey,
-          coverKey,
-        },
-      });
-
-      await tx.orgMembership.create({
-        data: { orgId: createdOrg.id, userId: session.user.id, role: "OWNER" },
-      });
-
-      return createdOrg;
+      const fallbackSlug = `${baseSlug}-${crypto.randomBytes(3).toString("hex")}`;
+      return await createWithSlug(fallbackSlug);
     });
 
     return parseServerActionResponse({
@@ -152,3 +167,26 @@ export const createOrganization = async (
     }) as ActionState;
   }
 };
+
+export async function updateOrgImage(opts: {
+  orgId: string;
+  kind: OrgAssetKind; // "logo" | "cover"
+  tmpKey: string; // new tmp upload key
+}) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user?.id) throw new Error("UNAUTHORIZED");
+
+  const finalKey = await finalizeOrgImageFromTmp({
+    orgId: opts.orgId,
+    kind: opts.kind,
+    tmpKey: opts.tmpKey,
+  });
+
+  const data =
+    opts.kind === "logo" ? { logoKey: finalKey } : { coverKey: finalKey };
+
+  return prisma.organization.update({
+    where: { id: opts.orgId },
+    data,
+  });
+}

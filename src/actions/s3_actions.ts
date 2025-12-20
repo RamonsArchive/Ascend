@@ -15,16 +15,15 @@ function assertEnv() {
     throw new Error("Missing AWS_REGION or AWS_S3_BUCKET_NAME");
 }
 
-function extFrom(fileName: string, mime: string) {
-  const dot = fileName.lastIndexOf(".");
-  if (dot !== -1 && dot < fileName.length - 1)
-    return fileName.slice(dot + 1).toLowerCase();
+function extFromMime(mime: string) {
   const map: Record<string, string> = {
     "image/png": "png",
     "image/jpeg": "jpg",
     "image/webp": "webp",
   };
-  return map[mime] ?? "bin";
+  const ext = map[mime];
+  if (!ext) throw new Error("Unsupported content type");
+  return ext;
 }
 
 const s3 = new S3Client({ region: REGION });
@@ -46,9 +45,9 @@ export async function createOrgImageUpload(opts: {
   // You can keep this simple or use orgId once org exists.
   // This uses userId and random UUID so it’s always unique.
   const uuid = crypto.randomUUID();
-  const ext = extFrom(fileName, contentType);
+  const ext = extFromMime(contentType);
 
-  const key = `public/tmp/uploads/${session.user.id}/${kind}/v1/${uuid}.${ext}`;
+  const key = `tmp/uploads/${session.user.id}/${kind}/v1/${uuid}.${ext}`;
 
   // Presigned POST (best for browsers, supports size/type conditions)
   const presigned = await createPresignedPost(s3, {
@@ -56,7 +55,7 @@ export async function createOrgImageUpload(opts: {
     Key: key,
     Conditions: [
       ["content-length-range", 1, MAX_BYTES],
-      ["starts-with", "$Content-Type", "image/"],
+      ["eq", "$Content-Type", "image/"],
 
       // Optional hardening:
       // ["eq", "$acl", "private"],  // only if your bucket allows ACLs (many don't)

@@ -387,8 +387,11 @@ const NewOrgForm = ({
     try {
       setErrors({});
 
+      console.log("submitForm", formData);
+
       const payload = payloadFromFormData(formData);
       await newOrgClientFormSchema.parseAsync(payload);
+      console.log("parsed");
 
       if (!isLoggedIn) {
         persistDraft();
@@ -455,7 +458,9 @@ const NewOrgForm = ({
       if (logoKey) fd.set("logoKey", logoKey);
       if (coverKey) fd.set("coverKey", coverKey);
 
+      console.log("fd", fd);
       const result = await createOrganization(initialState, fd);
+      console.log("result", result);
 
       if (result.status === "ERROR") {
         setStatusMessage("Something went wrong. Please try again.");

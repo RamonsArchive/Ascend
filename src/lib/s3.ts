@@ -16,22 +16,15 @@ const s3 = new S3Client({
   // If you're using static creds locally, AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY will be used automatically by the SDK.
 });
 
-function extFrom(file: File) {
-  // Prefer filename ext, else fallback to content-type
-  const name = file.name || "";
-  const dot = name.lastIndexOf(".");
-  if (dot !== -1 && dot < name.length - 1)
-    return name.slice(dot + 1).toLowerCase();
-
-  const ct = file.type || "";
+function extFromMime(mime: string) {
   const map: Record<string, string> = {
     "image/png": "png",
     "image/jpeg": "jpg",
     "image/webp": "webp",
-    "image/gif": "gif",
-    "image/svg+xml": "svg",
   };
-  return map[ct] ?? "bin";
+  const ext = map[mime];
+  if (!ext) throw new Error("Unsupported content type");
+  return ext;
 }
 
 export async function uploadOrgImage(opts: {
@@ -42,7 +35,7 @@ export async function uploadOrgImage(opts: {
   const { orgId, kind, file } = opts;
 
   const uuid = crypto.randomUUID();
-  const ext = extFrom(file);
+  const ext = extFromMime(file.type);
 
   const key = `public/orgs/${orgId}/${kind}/v1/${uuid}.${ext}`;
 
