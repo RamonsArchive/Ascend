@@ -90,8 +90,8 @@ model Organization {
   id          String          @id @default(cuid())
   name        String
   slug        String          @unique
-  logoUrl     String?
-  coverUrl    String?
+  logoKey    String?
+  coverKey    String?
   description String?
   publicEmail String?   // e.g. hello@org.com
   publicPhone String?   // optional, international format
@@ -124,7 +124,7 @@ model Event {
   orgId                  String
   name                   String
   slug                   String
-  coverUrl               String?
+  coverKey               String?
   type                   EventType
   status                 EventStatus                @default(DRAFT)
   heroTitle              String
@@ -339,8 +339,8 @@ model Submission {
   title       String
   description String?
   content     Json?
-  imageUrls   Json?
-  videoUrl    String?
+  imageKeys   Json?
+  videoKey    String?
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   submittedAt DateTime?
@@ -416,7 +416,7 @@ model Sponsor {
   id          String   @id @default(cuid())
   name        String
   slug        String   @unique
-  websiteUrl  String?
+  websiteKey  String?
   description String?
   logoKey     String?  @db.Text   // S3 key (recommended) e.g. public/sponsors/{id}/logo/v1/...
   coverKey    String?  @db.Text   // optional
@@ -465,7 +465,7 @@ model EventSponsor {
 
   // optional overrides for this specific event
   logoKey     String?     @db.Text
-  websiteUrl  String?
+  websiteKey  String?
 
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt

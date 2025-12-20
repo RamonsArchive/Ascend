@@ -1,8 +1,14 @@
 import React from "react";
 import NewOrgHero from "@/src/components/orgComponents/NewOrgHero";
 import NewOrgFormSection from "@/src/components/orgComponents/NewOrgFormSection";
+import { auth } from "@/src/lib/auth";
+import { headers } from "next/headers";
 
-const NewOrgsPage = () => {
+const NewOrgsPage = async () => {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+  const isLoggedIn = !!session?.user?.id;
   return (
     <div className="relative w-full">
       {/* Org onboarding theme background (distinct from marketing pages) */}
@@ -10,7 +16,7 @@ const NewOrgsPage = () => {
 
       <div className="relative flex flex-col items-center justify-center w-full gap-12 md:gap-16 lg:gap-20">
         <NewOrgHero />
-        <NewOrgFormSection />
+        <NewOrgFormSection isLoggedIn={isLoggedIn} />
       </div>
     </div>
   );

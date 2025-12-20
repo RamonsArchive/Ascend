@@ -14,7 +14,12 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { createOrganization } from "@/src/actions/org_actions";
 import { new_org_data } from "@/src/constants/orgConstants/org_index";
 import type { ActionState } from "@/src/lib/global_types";
-import { TEN_MB, updatePhoneNumber, validateImageFile } from "@/src/lib/utils";
+import {
+  parseServerActionResponse,
+  TEN_MB,
+  updatePhoneNumber,
+  validateImageFile,
+} from "@/src/lib/utils";
 import { newOrgFormSchema } from "@/src/lib/validation";
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
@@ -65,7 +70,7 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
   const { form } = new_org_data;
   const allowedImageMimeTypes = useMemo(
     () => new Set(["image/png", "image/jpeg", "image/webp"]),
-    []
+    [],
   );
 
   const submitButtonRef = useRef<HTMLButtonElement>(null);
@@ -222,7 +227,7 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
       tl.to(allLabels, { opacity: 1, y: 0, stagger: 0.02 }, 0).to(
         allInputs,
         { opacity: 1, y: 0, stagger: 0.04 },
-        0.05
+        0.05,
       );
       if (allPreviewButtons.length > 0) {
         tl.to(allPreviewButtons, { opacity: 1, y: 0, stagger: 0.02 }, 0.05);
@@ -277,7 +282,7 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
 
   const submitForm = async (
     _state: ActionState,
-    formData: FormData
+    formData: FormData,
   ): Promise<ActionState> => {
     try {
       setErrors({});
@@ -285,8 +290,19 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
       const payload = payloadFromFormData(formData);
       await newOrgFormSchema.parseAsync(payload);
 
+      // check if logged in
+
       const result = await createOrganization(initialState, formData);
       if (result.status === "ERROR") {
+        if (
+          result.error.includes("MUST BE LOGGED IN TO CREATE AN ORGANIZATION")
+        ) {
+          setStatusMessage("You must be logged in to create an organization.");
+          toast.error("ERROR", {
+            description: "You must be logged in to create an organization.",
+          });
+          return result;
+        }
         setStatusMessage("Something went wrong. Please try again.");
         toast.error("ERROR", {
           description:
@@ -305,7 +321,7 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
     } catch (error) {
       console.error(error);
       setStatusMessage(
-        "An error occurred while submitting the form. Please try again."
+        "An error occurred while submitting the form. Please try again.",
       );
 
       if (error instanceof z.ZodError) {

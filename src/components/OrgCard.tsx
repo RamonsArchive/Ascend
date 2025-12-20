@@ -10,9 +10,9 @@ const OrgCard = ({ org }: { org: Organization }) => {
       className="group w-full rounded-xl border border-white/10 bg-primary-950/70 hover:bg-primary-950 transition-colors duration-200 overflow-hidden hover:border-accent-100"
     >
       <div className="relative w-full h-[140px] bg-black/40">
-        {org.coverUrl ? (
+        {org.coverKey ? (
           <Image
-            src={org.coverUrl}
+            src={org.coverKey}
             alt={`${org.name} cover`}
             fill
             sizes="(max-width: 768px) 100vw, 33vw"
@@ -27,9 +27,9 @@ const OrgCard = ({ org }: { org: Organization }) => {
       <div className="flex flex-col gap-3 p-4">
         <div className="flex items-center gap-3">
           <div className="relative w-9 h-9 rounded-md overflow-hidden border border-white/10 bg-white/5 shrink-0">
-            {org.logoUrl ? (
+            {org.logoKey ? (
               <Image
-                src={org.logoUrl}
+                src={org.logoKey}
                 alt={`${org.name} logo`}
                 fill
                 sizes="36px"

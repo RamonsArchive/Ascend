@@ -25,7 +25,7 @@ const EventCard = ({
 }) => {
   const dateRange = useMemo(
     () => formatDateRange(event.startAt ?? null, event.endAt ?? null),
-    [event.endAt, event.startAt],
+    [event.endAt, event.startAt]
   );
 
   const badge = useMemo(() => {
@@ -52,9 +52,9 @@ const EventCard = ({
       className="group w-full rounded-xl border border-white/10 bg-primary-950/70 hover:bg-primary-950 transition-colors duration-200 overflow-hidden hover:border-accent-100"
     >
       <div className="relative w-full h-[160px] bg-black/40">
-        {event.coverUrl ? (
+        {event.coverKey ? (
           <Image
-            src={event.coverUrl}
+            src={event.coverKey}
             alt={`${event.name} cover`}
             fill
             sizes="(max-width: 768px) 100vw, 50vw"

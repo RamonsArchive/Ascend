@@ -2,7 +2,7 @@ import React from "react";
 import NewOrgForm from "./NewOrgForm";
 import { new_org_data } from "@/src/constants/orgConstants/org_index";
 
-const NewOrgFormSection = () => {
+const NewOrgFormSection = ({ isLoggedIn }: { isLoggedIn: boolean }) => {
   const { formSection } = new_org_data;
 
   return (
@@ -17,7 +17,10 @@ const NewOrgFormSection = () => {
           </div>
         </div>
 
-        <NewOrgForm submitLabel={new_org_data.cta.label} />
+        <NewOrgForm
+          submitLabel={new_org_data.cta.label}
+          isLoggedIn={isLoggedIn}
+        />
       </div>
     </section>
   );

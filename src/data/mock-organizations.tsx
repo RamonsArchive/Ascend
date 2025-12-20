@@ -6,8 +6,8 @@ export const mockOrganizations: Organization[] = [
     id: "org_ascend",
     name: "Ascend",
     slug: "ascend",
-    logoUrl: "/Logos/Transparent/ascend_logo_t.png",
-    coverUrl: "/GlobalAssets/Hero/himg2.png",
+    logoKey: "/Logos/Transparent/ascend_logo_t.png",
+    coverKey: "/GlobalAssets/Hero/himg2.png",
     moderationStatus: "ACTIVE",
     description:
       "Ascend is building the modern event layer for ambitious builders.",
@@ -22,8 +22,8 @@ export const mockOrganizations: Organization[] = [
     id: "org_clutch_studio",
     name: "Clutch Studio",
     slug: "clutch-studio",
-    logoUrl: "/Logos/Transparent/ascend_logo_black_t.png",
-    coverUrl: "/GlobalAssets/Hero/himg1.jpg",
+    logoKey: "/Logos/Transparent/ascend_logo_black_t.png",
+    coverKey: "/GlobalAssets/Hero/himg1.jpg",
     moderationStatus: "ACTIVE",
     description:
       "A product studio helping teams ship beautiful, durable software.",
@@ -38,8 +38,8 @@ export const mockOrganizations: Organization[] = [
     id: "org_systems_guild",
     name: "Systems Guild",
     slug: "systems-guild",
-    logoUrl: "/Logos/Transparent/ascend_logo_white_t.png",
-    coverUrl: "/GlobalAssets/Hero/himg2.png",
+    logoKey: "/Logos/Transparent/ascend_logo_white_t.png",
+    coverKey: "/GlobalAssets/Hero/himg2.png",
     moderationStatus: "ACTIVE",
     description:
       "A community for engineers exploring reliability, infra, and AI systems.",
@@ -54,8 +54,8 @@ export const mockOrganizations: Organization[] = [
     id: "org_green_future_labs",
     name: "Green Future Labs",
     slug: "green-future-labs",
-    logoUrl: "/Logos/Transparent/ascend_logo_t.png",
-    coverUrl: "/GlobalAssets/Hero/himg1.jpg",
+    logoKey: "/Logos/Transparent/ascend_logo_t.png",
+    coverKey: "/GlobalAssets/Hero/himg1.jpg",
     moderationStatus: "ACTIVE",
     description:
       "Builders and researchers working on climate-forward technology.",

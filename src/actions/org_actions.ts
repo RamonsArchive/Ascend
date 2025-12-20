@@ -2,8 +2,12 @@
 
 import { checkRateLimit } from "../lib/rate-limiter";
 import { parseServerActionResponse } from "../lib/utils";
+import { auth } from "../lib/auth";
 import type { ActionState } from "../lib/global_types";
 import { newOrgFormSchema } from "../lib/validation";
+import { prisma } from "../lib/prisma";
+import { headers } from "next/headers";
+import crypto from "crypto";
 
 function slugify(input: string) {
   return input
@@ -15,16 +19,28 @@ function slugify(input: string) {
     .replace(/^-|-$/g, "");
 }
 
+async function generateOrgSlug(name: string) {
+  const base = slugify(name);
+  // You can also do a quick query first, but it's still race-prone.
+  // Best is to attempt and catch P2002 in a loop.
+  return base;
+}
+
 export const createOrganization = async (
   _prevState: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
-    const isRateLimited = await checkRateLimit("createOrganization");
-    if (isRateLimited.status === "ERROR") {
-      return isRateLimited as ActionState;
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+    if (!session?.user?.id) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "MUST BE LOGGED IN TO CREATE AN ORGANIZATION",
+        data: null,
+      }) as ActionState;
     }
-
     const name = (formData.get("name")?.toString() ?? "").trim();
     const description = (formData.get("description")?.toString() ?? "").trim();
     const publicEmail = (formData.get("publicEmail")?.toString() ?? "").trim();
@@ -61,27 +77,81 @@ export const createOrganization = async (
       }) as ActionState;
     }
 
-    // Placeholder: later you'll upload files + write to DB.
-    const placeholder = {
-      id: "org_placeholder",
-      name,
-      slug: slugify(name) || "org",
-      description: description || null,
-      publicEmail: publicEmail || null,
-      publicPhone: publicPhone || null,
-      websiteUrl: websiteUrl || null,
-      contactNote: contactNote || null,
-      hasLogoFile: !!logoFile,
-      hasCoverFile: !!coverFile,
-    };
+    const isRateLimited = await checkRateLimit("createOrganization");
+    if (isRateLimited.status === "ERROR") {
+      return isRateLimited as ActionState;
+    }
+
+    const baseSlug = slugify(name);
+
+    const organization = await prisma.$transaction(async (tx) => {
+      // retry for slug collisions
+      let slug = baseSlug;
+
+      for (let attempt = 0; attempt < 20; attempt++) {
+        try {
+          const createdOrg = await tx.organization.create({
+            data: {
+              name,
+              slug,
+              description,
+              publicEmail,
+              publicPhone,
+              websiteUrl,
+              contactNote,
+              // logoUrl/coverUrl set AFTER upload step
+            },
+          });
+
+          await tx.orgMembership.create({
+            data: {
+              orgId: createdOrg.id,
+              userId: session.user.id,
+              role: "OWNER",
+            },
+          });
+
+          return createdOrg;
+        } catch (e: any) {
+          // Prisma unique constraint
+          if (e?.code === "P2002") {
+            // increment slug: ascend -> ascend-2 -> ascend-3
+            slug =
+              attempt === 0 ? `${baseSlug}-2` : `${baseSlug}-${attempt + 2}`;
+            continue;
+          }
+          throw e;
+        }
+      }
+
+      // fallback if we somehow had 20 collisions
+      slug = `${baseSlug}-${crypto.randomBytes(3).toString("hex")}`;
+      const createdOrg = await tx.organization.create({
+        data: {
+          name,
+          slug,
+          description,
+          publicEmail,
+          publicPhone,
+          websiteUrl,
+          contactNote,
+        },
+      });
+
+      await tx.orgMembership.create({
+        data: { orgId: createdOrg.id, userId: session.user.id, role: "OWNER" },
+      });
+
+      return createdOrg;
+    });
 
     return parseServerActionResponse({
       status: "SUCCESS",
       error: "",
-      data: placeholder,
+      data: organization,
     }) as ActionState;
-  } catch (error) {
-    console.error(error);
+  } catch (err) {
+    console.error(err);
     return parseServerActionResponse({
       status: "ERROR",
       error: "Failed to create organization",
