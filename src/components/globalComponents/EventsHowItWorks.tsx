@@ -32,7 +32,7 @@ const EventsHowItWorks = () => {
           ))}
         </div>
 
-        <div className="rounded-xl border border-white/10 bg-primary-950/50 p-5">
+        <div className="rounded-xl border border-white/10 bg-primary-950/50 p-5 hover:border-accent-100 transition-colors duration-200">
           <div className="flex flex-col gap-2">
             <div className="text-white font-semibold">Rules & notes</div>
             <ul className="flex flex-col gap-2">

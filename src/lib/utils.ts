@@ -6,7 +6,7 @@ export const parseServerActionResponse = <T>(response: T): T => {
 export const updatePhoneNumber = (
   value: string,
   phoneNumber: string,
-  setPhoneNumber: (value: string) => void,
+  setPhoneNumber: (value: string) => void
 ) => {
   // If the user is backspacing and hit a dash, remove the digit before the dash
   const prevLength = phoneNumber.length;
@@ -36,7 +36,7 @@ export const updatePhoneNumber = (
   if (cleanedValue.length >= 6) {
     formattedValue = `${cleanedValue.slice(0, 3)}-${cleanedValue.slice(
       3,
-      6,
+      6
     )}-${cleanedValue.slice(6, 10)}`;
   } else if (cleanedValue.length >= 3) {
     formattedValue = `${cleanedValue.slice(0, 3)}-${cleanedValue.slice(3)}`;
@@ -87,7 +87,7 @@ const DEFAULT_ALLOWED_IMAGE_MIME_TYPES = new Set([
  */
 export function isAllowedImageFile(
   file: File | null | undefined,
-  allowedMimeTypes: Set<string> = DEFAULT_ALLOWED_IMAGE_MIME_TYPES,
+  allowedMimeTypes: Set<string> = DEFAULT_ALLOWED_IMAGE_MIME_TYPES
 ) {
   if (!file) return false;
   return allowedMimeTypes.has(file.type);
@@ -98,3 +98,24 @@ export function getFileExtension(filename: string) {
   if (idx === -1) return "";
   return filename.slice(idx + 1).toLowerCase();
 }
+
+export function isUnderFileSize(
+  file: File | null | undefined,
+  maxBytes: number
+) {
+  if (!file) return false;
+  return file.size <= maxBytes;
+}
+
+export const validateImageFile = async ({
+  file,
+  options,
+}: {
+  file: File | null | undefined;
+  options: { allowedMimeTypes: Set<string>; maxBytes: number };
+}) => {
+  if (!file) return false;
+  if (!isAllowedImageFile(file, options.allowedMimeTypes)) return false;
+  if (!isUnderFileSize(file, options.maxBytes)) return false;
+  return true;
+};

@@ -13,7 +13,7 @@ export const new_org_data = {
     description:
       "Create an organization to host events and manage your team. You can add a logo and cover image to your organization. ",
     description2:
-      "Have sponsors? Add them to your organization to display their logos and links on your event pages.",
+      "Have sponsors? Add them to your organization to display their logos and links on your event pages after creating an organization.",
   },
   form: {
     name: {

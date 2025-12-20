@@ -2,7 +2,7 @@
 
 import { checkRateLimit } from "../lib/rate-limiter";
 import { parseServerActionResponse } from "../lib/utils";
-import type { ActionState } from "../lib/global_types";
+import type { ActionState, NewOrgFormDataType } from "../lib/global_types";
 
 function slugify(input: string) {
   return input
@@ -15,8 +15,7 @@ function slugify(input: string) {
 }
 
 export const createOrganization = async (
-  _prevState: ActionState,
-  formData: FormData,
+  formData: NewOrgFormDataType
 ): Promise<ActionState> => {
   try {
     const isRateLimited = await checkRateLimit("createOrganization");

@@ -380,3 +380,11 @@ body {
   animation: ascendStream var(--dur) linear infinite;
   animation-delay: var(--delay);
 }
+
+@utility input-base {
+  @apply w-full rounded-md bg-primary-950/70 border border-white/10 px-4 py-2.5 text-sm text-white placeholder:text-white/40 outline-none focus:border-accent-500/60 transition-colors;
+}
+
+@utility label-base {
+  @apply text-white/80 text-sm font-medium;
+}

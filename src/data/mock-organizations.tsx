@@ -60,7 +60,7 @@ export const mockOrganizations: Organization[] = [
     description:
       "Builders and researchers working on climate-forward technology.",
     publicEmail: "hello@greenfuturelabs.com",
-    publicPhone: "+1234567890",
+    publicPhone: "+1234567890", // optianl
     websiteUrl: "https://greenfuturelabs.com",
     contactNote: "Email us for sponsorships",
     createdAt: new Date("2025-12-04T00:00:00Z"),

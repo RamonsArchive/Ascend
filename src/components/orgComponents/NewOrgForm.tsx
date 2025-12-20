@@ -5,11 +5,17 @@ import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
+import Form from "next/form";
 
 import { createOrganization } from "@/src/actions/org_actions";
 import { new_org_data } from "@/src/constants/orgConstants/org_index";
 import type { ActionState, NewOrgFormDataType } from "@/src/lib/global_types";
-import { isAllowedImageFile } from "@/src/lib/utils";
+import {
+  validateImageFile,
+  parseServerActionResponse,
+  formDataToObject,
+} from "@/src/lib/utils";
+import { newOrgFormSchema } from "@/src/lib/validation";
 
 const initialState: ActionState = {
   status: "INITIAL",
@@ -17,13 +23,13 @@ const initialState: ActionState = {
   data: null,
 };
 
-const inputBase =
-  "w-full rounded-md bg-primary-950/70 border border-white/10 px-4 py-2.5 text-sm text-white placeholder:text-white/40 outline-none focus:border-accent-500/60 transition-colors";
-
-const labelBase = "text-white/80 text-sm font-medium";
-
 const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
   const { form } = new_org_data;
+  const allowedImageMimeTypes = new Set([
+    "image/png",
+    "image/jpeg",
+    "image/webp",
+  ]);
 
   const [local, setLocal] = useState<NewOrgFormDataType>({
     name: "",
@@ -36,7 +42,21 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
     contactNote: "",
   });
 
+  const [errors, setErrors] = useState<{
+    name?: string;
+    description?: string;
+    publicEmail?: string;
+    publicPhone?: string;
+    websiteUrl?: string;
+    logoFile?: string;
+    coverFile?: string;
+    contactNote?: string;
+  }>({});
+
+  const [statusMessage, setStatusMessage] = useState<string>("");
+
   const [showMarkdownPreview, setShowMarkdownPreview] = useState(false);
+  const [showDescriptionPreview, setShowDescriptionPreview] = useState(false);
 
   const logoPreviewUrl = useMemo(
     () => (local.logoFile ? URL.createObjectURL(local.logoFile) : null),
@@ -46,19 +66,25 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
     () => (local.coverFile ? URL.createObjectURL(local.coverFile) : null),
     [local.coverFile]
   );
-
-  const [state, formAction, isPending] = useActionState<ActionState, FormData>(
-    createOrganization,
-    initialState
-  );
+  const TEN_MB = 10 * 1024 * 1024;
 
   const onSelectLogo = (file: File | null) => {
     if (!file) {
       setLocal((p) => ({ ...p, logoFile: null }));
       return;
     }
-    if (!isAllowedImageFile(file)) {
-      toast.error("Logo must be a PNG, JPG, or WEBP.");
+    if (
+      !validateImageFile({
+        file,
+        options: {
+          allowedMimeTypes: allowedImageMimeTypes,
+          maxBytes: TEN_MB,
+        },
+      })
+    ) {
+      toast.error("ERROR", {
+        description: "Logo must be a PNG, JPG, or WEBP. Max size is 10MB.",
+      });
       return;
     }
     setLocal((p) => ({ ...p, logoFile: file }));
@@ -69,11 +95,122 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
       setLocal((p) => ({ ...p, coverFile: null }));
       return;
     }
-    if (!isAllowedImageFile(file)) {
-      toast.error("Cover must be a PNG, JPG, or WEBP.");
+    if (
+      !validateImageFile({
+        file,
+        options: {
+          allowedMimeTypes: allowedImageMimeTypes,
+          maxBytes: TEN_MB,
+        },
+      })
+    ) {
+      toast.error("ERROR", {
+        description: "Cover must be a PNG, JPG, or WEBP. Max size is 10MB.",
+      });
       return;
     }
     setLocal((p) => ({ ...p, coverFile: file }));
+  };
+
+  const resetForm = () => {
+    setLocal({
+      name: "",
+      description: "",
+      publicEmail: "",
+      publicPhone: "",
+      websiteUrl: "",
+      logoFile: null,
+      coverFile: null,
+      contactNote: "",
+    });
+    setErrors({});
+    setStatusMessage("");
+    setShowMarkdownPreview(false);
+    setShowDescriptionPreview(false);
+  };
+
+  const submitForm = async (
+    state: ActionState,
+    formData: FormData
+  ): Promise<ActionState> => {
+    try {
+      setErrors({});
+      const formObject = formDataToObject(formData);
+      await newOrgFormSchema.parseAsync(formObject);
+      const result = await createOrganization(formObject);
+      if (result.status === "ERROR") {
+        setStatusMessage("Something went wrong. Please try again.");
+        toast.error("ERROR", {
+          description: "Something went wrong. Please try again.",
+        });
+        return parseServerActionResponse({
+          status: "ERROR",
+          error: "Something went wrong. Please try again.",
+          data: null,
+        });
+      }
+
+      resetForm();
+      setStatusMessage("Organization created successfully.");
+      toast.success("SUCCESS", {
+        description: "Organization created successfully.",
+      });
+      return parseServerActionResponse({
+        status: "SUCCESS",
+        error: "",
+        data: result.data,
+      });
+    } catch (error) {
+      console.error(error);
+      setStatusMessage(
+        "An error occurred while submitting the form. Please try again."
+      );
+      if (error instanceof z.ZodError) {
+        const fieldErrors = z.flattenError(error).fieldErrors as Record<
+          string,
+          string[]
+        >;
+        const formattedErrors: Record<string, string> = {};
+        Object.keys(fieldErrors).forEach((key) => {
+          formattedErrors[key] = fieldErrors[key]?.[0] || "";
+        });
+        setErrors(formattedErrors);
+        toast.error("ERROR", {
+          description: Object.values(formattedErrors).join(", "),
+        });
+        return parseServerActionResponse({
+          status: "ERROR",
+          error: Object.values(formattedErrors).join(", "),
+          data: null,
+        });
+      }
+      toast.error("ERROR", {
+        description:
+          "An error occurred while submitting the form. Please try again.",
+      });
+
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "An error occurred while submitting the form",
+        data: null,
+      });
+    }
+  };
+
+  const [state, formAction, isPending] = useActionState<ActionState, FormData>(
+    submitForm,
+    initialState
+  );
+
+  const handleFormChange = (key: string, value: string) => {
+    if (key === "phone") {
+      updatePhoneNumber(value, phoneDisplay, setPhoneDisplay);
+      const cleanPhone = value.replace(/[^0-9]/g, "");
+      setStoreFormData({ ...storeFormData, phone: cleanPhone });
+      return;
+    }
+
+    setStoreFormData({ ...storeFormData, [key]: value });
   };
 
   return (
@@ -88,15 +225,20 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
           </div>
         </div>
 
-        <form
+        <Form
           action={formAction}
-          encType="multipart/form-data"
           className="flex flex-col gap-6 rounded-xl border border-white/10 bg-primary-950/60 p-5 md:p-6"
+          id="new-org-form"
         >
           <div className="flex flex-col gap-2">
-            <label className={labelBase} htmlFor="name">
+            <label
+              className="label-base flex items-center gap-1"
+              htmlFor="name"
+            >
               {form.name.label}
+              <span className="text-xs text-red-500">*</span>
             </label>
+
             <input
               id="name"
               name="name"
@@ -105,30 +247,61 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
                 setLocal((p) => ({ ...p, name: e.target.value }))
               }
               placeholder={form.name.placeholder}
-              className={inputBase}
+              className="input-base"
               required
             />
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className={labelBase} htmlFor="description">
-              {form.description.label}
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              value={local.description}
-              onChange={(e) =>
-                setLocal((p) => ({ ...p, description: e.target.value }))
-              }
-              placeholder={form.description.placeholder}
-              className={`${inputBase} min-h-[120px] resize-none`}
-            />
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <label
+                  className="label-base flex items-center gap-1"
+                  htmlFor="description"
+                >
+                  {form.description.label}
+                  <span className="text-xs text-red-500">*</span>
+                </label>
+
+                <button
+                  type="button"
+                  onClick={() => setShowDescriptionPreview((p) => !p)}
+                  className="px-3 py-2 rounded-md bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition-colors text-sm"
+                >
+                  {showDescriptionPreview ? "Edit" : "Preview"}
+                </button>
+              </div>
+
+              {showDescriptionPreview ? (
+                <div className="rounded-md border border-white/10 bg-primary-950/70 p-4">
+                  <div className="prose prose-invert max-w-none prose-p:text-white/75 prose-a:text-accent-400 prose-strong:text-white">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeSanitize]}
+                    >
+                      {local.description || "*Nothing yet…*"}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+              ) : (
+                <textarea
+                  id="description"
+                  name="description"
+                  value={local.description}
+                  onChange={(e) =>
+                    setLocal((p) => ({ ...p, description: e.target.value }))
+                  }
+                  placeholder={form.description.placeholder}
+                  className="input-base min-h-[120px] resize-none"
+                  required
+                />
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex flex-col gap-2">
-              <label className={labelBase} htmlFor="publicEmail">
+              <label className="label-base" htmlFor="publicEmail">
                 Public email
               </label>
               <input
@@ -139,12 +312,12 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
                   setLocal((p) => ({ ...p, publicEmail: e.target.value }))
                 }
                 placeholder="hello@org.com"
-                className={inputBase}
+                className="input-base"
               />
             </div>
 
             <div className="flex flex-col gap-2">
-              <label className={labelBase} htmlFor="publicPhone">
+              <label className="label-base" htmlFor="publicPhone">
                 Public phone
               </label>
               <input
@@ -155,13 +328,13 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
                   setLocal((p) => ({ ...p, publicPhone: e.target.value }))
                 }
                 placeholder="+1 555 123 4567"
-                className={inputBase}
+                className="input-base"
               />
             </div>
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className={labelBase} htmlFor="websiteUrl">
+            <label className="label-base" htmlFor="websiteUrl">
               Website URL
             </label>
             <input
@@ -172,13 +345,13 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
                 setLocal((p) => ({ ...p, websiteUrl: e.target.value }))
               }
               placeholder="https://yourorg.com"
-              className={inputBase}
+              className="input-base"
             />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex flex-col gap-2">
-              <label className={labelBase} htmlFor="logoFile">
+              <label className="label-base" htmlFor="logoFile">
                 {form.logo.label}
               </label>
               <input
@@ -186,7 +359,7 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
                 name="logoFile"
                 type="file"
                 accept="image/png,image/jpeg,image/webp"
-                className={inputBase}
+                className="input-base"
                 onChange={(e) => onSelectLogo(e.target.files?.[0] ?? null)}
               />
               {logoPreviewUrl ? (
@@ -203,7 +376,7 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
             </div>
 
             <div className="flex flex-col gap-2">
-              <label className={labelBase} htmlFor="coverFile">
+              <label className="label-base" htmlFor="coverFile">
                 {form.cover.label}
               </label>
               <input
@@ -211,7 +384,7 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
                 name="coverFile"
                 type="file"
                 accept="image/png,image/jpeg,image/webp"
-                className={inputBase}
+                className="input-base"
                 onChange={(e) => onSelectCover(e.target.files?.[0] ?? null)}
               />
               {coverPreviewUrl ? (
@@ -230,7 +403,7 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
 
           <div className="flex flex-col gap-2">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-              <label className={labelBase} htmlFor="contactNote">
+              <label className="label-base" htmlFor="contactNote">
                 Contact note (Markdown)
               </label>
               <button
@@ -262,7 +435,7 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
                   setLocal((p) => ({ ...p, contactNote: e.target.value }))
                 }
                 placeholder="Example: **Sponsorships** — email [partners@org.com](mailto:partners@org.com)"
-                className={`${inputBase} min-h-[120px] resize-none`}
+                className="input-base min-h-[120px] resize-none"
               />
             )}
           </div>
@@ -289,7 +462,7 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
               {isPending ? "Creating…" : submitLabel}
             </button>
           </div>
-        </form>
+        </Form>
       </div>
     </section>
   );
