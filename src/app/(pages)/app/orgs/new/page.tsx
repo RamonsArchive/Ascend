@@ -4,7 +4,12 @@ import NewOrgFormSection from "@/src/components/orgComponents/NewOrgFormSection"
 import { auth } from "@/src/lib/auth";
 import { headers } from "next/headers";
 
-const NewOrgsPage = async () => {
+const NewOrgsPage = async ({
+  searchParams,
+}: {
+  searchParams: Promise<{ pathname: string }>;
+}) => {
+  const path = (await searchParams).pathname || "/organizations/create";
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -16,7 +21,7 @@ const NewOrgsPage = async () => {
 
       <div className="relative flex flex-col items-center justify-center w-full gap-12 md:gap-16 lg:gap-20">
         <NewOrgHero />
-        <NewOrgFormSection isLoggedIn={isLoggedIn} />
+        <NewOrgFormSection isLoggedIn={isLoggedIn} path={path} />
       </div>
     </div>
   );

@@ -4,8 +4,11 @@ export const authClient = createAuthClient({
   baseURL: "http://localhost:3000",
 });
 
-export const signInWithGoogle = () =>
-  authClient.signIn.social({ provider: "google" });
+export const signInWithGoogle = (callbackURL?: string) =>
+  authClient.signIn.social({
+    provider: "google",
+    callbackURL,
+  });
 
 export const signOut = () => authClient.signOut();
 

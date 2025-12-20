@@ -25,7 +25,7 @@ const EventCard = ({
 }) => {
   const dateRange = useMemo(
     () => formatDateRange(event.startAt ?? null, event.endAt ?? null),
-    [event.endAt, event.startAt]
+    [event.endAt, event.startAt],
   );
 
   const badge = useMemo(() => {

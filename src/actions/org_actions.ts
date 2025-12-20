@@ -19,13 +19,6 @@ function slugify(input: string) {
     .replace(/^-|-$/g, "");
 }
 
-async function generateOrgSlug(name: string) {
-  const base = slugify(name);
-  // You can also do a quick query first, but it's still race-prone.
-  // Best is to attempt and catch P2002 in a loop.
-  return base;
-}
-
 export const createOrganization = async (
   _prevState: ActionState,
   formData: FormData
@@ -112,9 +105,14 @@ export const createOrganization = async (
           });
 
           return createdOrg;
-        } catch (e: any) {
+        } catch (e: unknown) {
           // Prisma unique constraint
-          if (e?.code === "P2002") {
+          if (
+            typeof e === "object" &&
+            e !== null &&
+            "code" in e &&
+            (e as { code?: string }).code === "P2002"
+          ) {
             // increment slug: ascend -> ascend-2 -> ascend-3
             slug =
               attempt === 0 ? `${baseSlug}-2` : `${baseSlug}-${attempt + 2}`;

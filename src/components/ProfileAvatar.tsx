@@ -3,8 +3,10 @@ import React, { useCallback, useMemo } from "react";
 import Image from "next/image";
 import { UserIcon } from "lucide-react";
 import { signInWithGoogle, signOut, useSession } from "../lib/auth-client";
+import { usePathname } from "next/navigation";
 
 const ProfileAvatar = () => {
+  const pathname = usePathname();
   const { data: session, refetch } = useSession();
 
   const userImage = useMemo(() => session?.user?.image ?? null, [session]);
@@ -18,8 +20,8 @@ const ProfileAvatar = () => {
       return;
     }
 
-    await signInWithGoogle();
-  }, [isSignedIn, refetch]);
+    await signInWithGoogle(pathname);
+  }, [isSignedIn, refetch, pathname]);
 
   return (
     <button

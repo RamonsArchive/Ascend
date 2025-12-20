@@ -1,6 +1,13 @@
 "use client";
 
-import React, { useMemo, useRef, useState, useActionState } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useActionState,
+  useCallback,
+} from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
@@ -21,8 +28,13 @@ import {
   validateImageFile,
 } from "@/src/lib/utils";
 import { newOrgFormSchema } from "@/src/lib/validation";
+import { signInWithGoogle } from "@/src/lib/auth-client";
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
+
+const DRAFT_KEY = "ascend:new-org-create:draft:v1";
+const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
+const CREATE_NEXT = "/organizations/create";
 
 const initialState: ActionState = {
   status: "INITIAL",
@@ -43,6 +55,53 @@ type NewOrgClientErrors = Partial<
     string
   >
 >;
+
+function formatPhoneDisplayFromDigits(digits: string) {
+  const cleaned = digits.replace(/[^0-9]/g, "");
+  if (cleaned.length >= 6) {
+    return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`;
+  }
+  if (cleaned.length >= 3) {
+    return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
+  }
+  return cleaned;
+}
+
+function readDraftFromStorage() {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as {
+      savedAt: number;
+      data: {
+        name: string;
+        description: string;
+        publicEmail: string;
+        publicPhone: string;
+        websiteUrl: string;
+        contactNote: string;
+      };
+    };
+
+    if (!parsed?.savedAt || !parsed?.data) {
+      localStorage.removeItem(DRAFT_KEY);
+      return null;
+    }
+
+    const age = Date.now() - parsed.savedAt;
+    if (age > DRAFT_TTL_MS) {
+      localStorage.removeItem(DRAFT_KEY);
+      return null;
+    }
+
+    return parsed;
+  } catch {
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+    } catch {}
+    return null;
+  }
+}
 
 function fileFromFormDataEntry(entry: FormDataEntryValue | null) {
   if (!entry) return undefined;
@@ -66,11 +125,19 @@ function payloadFromFormData(formData: FormData) {
   };
 }
 
-const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
+const NewOrgForm = ({
+  submitLabel,
+  isLoggedIn,
+  path,
+}: {
+  submitLabel: string;
+  isLoggedIn: boolean;
+  path: string;
+}) => {
   const { form } = new_org_data;
   const allowedImageMimeTypes = useMemo(
     () => new Set(["image/png", "image/jpeg", "image/webp"]),
-    [],
+    []
   );
 
   const submitButtonRef = useRef<HTMLButtonElement>(null);
@@ -99,18 +166,50 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
   const [statusMessage, setStatusMessage] = useState("");
   const [showContactPreview, setShowContactPreview] = useState(false);
   const [showDescriptionPreview, setShowDescriptionPreview] = useState(false);
-  const [storeFormData, setStoreFormData] = useState({
-    name: "",
-    description: "",
-    publicEmail: "",
-    publicPhone: "",
-    websiteUrl: "",
-    contactNote: "",
+  const [storeFormData, setStoreFormData] = useState(() => {
+    const draft = readDraftFromStorage();
+    return (
+      draft?.data ?? {
+        name: "",
+        description: "",
+        publicEmail: "",
+        publicPhone: "",
+        websiteUrl: "",
+        contactNote: "",
+      }
+    );
   });
-  const [phoneDisplay, setPhoneDisplay] = useState("");
+  const [phoneDisplay, setPhoneDisplay] = useState(() => {
+    const draft = readDraftFromStorage();
+    return formatPhoneDisplayFromDigits(draft?.data.publicPhone ?? "");
+  });
 
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
+
+  const persistDraft = () => {
+    try {
+      const draft = {
+        savedAt: Date.now(),
+        data: storeFormData,
+      };
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    } catch {
+      // ignore storage failures (private mode, quota, etc.)
+    }
+  };
+
+  const redirectToLogin = useCallback(async () => {
+    await signInWithGoogle(path);
+  }, [path]);
+
+  useEffect(() => {
+    // After login, clear the saved draft (files are never persisted).
+    if (!isLoggedIn) return;
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+    } catch {}
+  }, [isLoggedIn]);
 
   const handleFormChange = (key: string, value: string) => {
     if (key === "publicPhone") {
@@ -227,7 +326,7 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
       tl.to(allLabels, { opacity: 1, y: 0, stagger: 0.02 }, 0).to(
         allInputs,
         { opacity: 1, y: 0, stagger: 0.04 },
-        0.05,
+        0.05
       );
       if (allPreviewButtons.length > 0) {
         tl.to(allPreviewButtons, { opacity: 1, y: 0, stagger: 0.02 }, 0.05);
@@ -282,7 +381,7 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
 
   const submitForm = async (
     _state: ActionState,
-    formData: FormData,
+    formData: FormData
   ): Promise<ActionState> => {
     try {
       setErrors({});
@@ -291,16 +390,34 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
       await newOrgFormSchema.parseAsync(payload);
 
       // check if logged in
-
+      if (!isLoggedIn) {
+        persistDraft();
+        setStatusMessage("Redirecting to sign in…");
+        toast.error("SIGN IN REQUIRED", {
+          description:
+            "Sign in with Google to create an organization. We saved your draft (files need to be reselected).",
+        });
+        redirectToLogin();
+        return parseServerActionResponse({
+          status: "ERROR",
+          error: "SIGN_IN_REQUIRED",
+          data: null,
+        });
+      }
       const result = await createOrganization(initialState, formData);
       if (result.status === "ERROR") {
         if (
+          result.error &&
           result.error.includes("MUST BE LOGGED IN TO CREATE AN ORGANIZATION")
         ) {
-          setStatusMessage("You must be logged in to create an organization.");
-          toast.error("ERROR", {
-            description: "You must be logged in to create an organization.",
+          // Session might be stale client-side; persist draft and send them to login.
+          persistDraft();
+          setStatusMessage("Redirecting to sign in…");
+          toast.error("SIGN IN REQUIRED", {
+            description:
+              "Sign in with Google to create an organization. We saved your draft (files need to be reselected).",
           });
+          redirectToLogin();
           return result;
         }
         setStatusMessage("Something went wrong. Please try again.");
@@ -321,7 +438,7 @@ const NewOrgForm = ({ submitLabel }: { submitLabel: string }) => {
     } catch (error) {
       console.error(error);
       setStatusMessage(
-        "An error occurred while submitting the form. Please try again.",
+        "An error occurred while submitting the form. Please try again."
       );
 
       if (error instanceof z.ZodError) {
