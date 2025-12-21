@@ -10,6 +10,12 @@ const EditOrgMembersHero = () => {
           <h1 className="text-3xl md:text-5xl font-semibold text-white leading-tight">
             {hero.title}
           </h1>
+          <div className="text-white/70 text-sm md:text-base leading-relaxed max-w-4xl">
+            {hero.subtitle}
+          </div>
+          <div className="text-white/60 text-sm leading-relaxed max-w-4xl">
+            {hero.description}
+          </div>
         </div>
       </div>
     </section>

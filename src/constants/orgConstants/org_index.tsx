@@ -133,6 +133,37 @@ export const org_sponsors_data = {
   },
 };
 
+export const org_members_data = {
+  hero: {
+    title: "Members",
+    subtitle: "Manage roles and access for your organization.",
+    description:
+      "Search members, filter by role, and update access. OWNER and ADMIN can manage members; ownership transfer is intentionally locked for now.",
+  },
+  section: {
+    title: "Organization members",
+    description:
+      "Keep your team organized. Update roles for members and remove access when needed.",
+  },
+  filters: {
+    searchLabel: "Search members",
+    searchPlaceholder: "Search by name or email…",
+    roleLabel: "Filter by role",
+    roleAll: "All roles",
+  },
+  roles: {
+    owner: "OWNER",
+    admin: "ADMIN",
+    member: "MEMBER",
+  },
+  card: {
+    roleLabel: "Role",
+    roleHelp: "OWNER transfer is locked for now.",
+    removeCta: "Remove member",
+    saveCta: "Save role",
+  },
+};
+
 export const org_nav_links = (orgSlug: string) =>
   [
     { label: "Overview", href: `/app/orgs/${orgSlug}` },

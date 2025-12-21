@@ -3,7 +3,7 @@ import EditOrgSponsorsSection from "@/src/components/orgComponents/EditOrgSponso
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/src/lib/auth";
 import { headers } from "next/headers";
-import { Organization, OrgMembership } from "@prisma/client";
+import { Organization } from "@prisma/client";
 import { isAdminOrOwnerOfOrg, fetchOrgData } from "@/src/actions/org_actions";
 import Link from "next/link";
 import {
