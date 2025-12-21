@@ -10,6 +10,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
+import Image from "next/image";
 
 import type { ActionState } from "@/src/lib/global_types";
 import {
@@ -51,6 +52,8 @@ const AddOrgSponsorForm = ({ orgId }: { orgId?: string }) => {
 
   const [statusMessage, setStatusMessage] = useState("");
   const [showDescriptionPreview, setShowDescriptionPreview] = useState(false);
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
   const [formData, setFormData] = useState(() => ({
     sponsorName: "",
     sponsorWebsite: "",
@@ -143,8 +146,54 @@ const AddOrgSponsorForm = ({ orgId }: { orgId?: string }) => {
       sponsorWebsite: "",
       sponsorDescription: "",
     });
+    setLogoPreviewUrl(null);
+    setCoverPreviewUrl(null);
     if (logoRef.current) logoRef.current.value = "";
     if (coverRef.current) coverRef.current.value = "";
+  };
+
+  const onSelectLogo = (file: File | null) => {
+    if (!file) {
+      setLogoPreviewUrl(null);
+      return;
+    }
+
+    const ok = validateImageFile({
+      file,
+      options: { allowedMimeTypes: allowedImageMimeTypes, maxBytes: TEN_MB },
+    });
+    if (!ok) {
+      toast.error("ERROR", {
+        description: "Logo must be a PNG, JPG, or WEBP. Max size is 10MB.",
+      });
+      if (logoRef.current) logoRef.current.value = "";
+      setLogoPreviewUrl(null);
+      return;
+    }
+
+    setLogoPreviewUrl(URL.createObjectURL(file));
+  };
+
+  const onSelectCover = (file: File | null) => {
+    if (!file) {
+      setCoverPreviewUrl(null);
+      return;
+    }
+
+    const ok = validateImageFile({
+      file,
+      options: { allowedMimeTypes: allowedImageMimeTypes, maxBytes: TEN_MB },
+    });
+    if (!ok) {
+      toast.error("ERROR", {
+        description: "Cover must be a PNG, JPG, or WEBP. Max size is 10MB.",
+      });
+      if (coverRef.current) coverRef.current.value = "";
+      setCoverPreviewUrl(null);
+      return;
+    }
+
+    setCoverPreviewUrl(URL.createObjectURL(file));
   };
 
   const submitSponsorForm = async (
@@ -418,8 +467,22 @@ const AddOrgSponsorForm = ({ orgId }: { orgId?: string }) => {
               ref={logoRef}
               type="file"
               accept="image/png,image/jpeg,image/webp"
+              onChange={(e) => onSelectLogo(e.target.files?.[0] ?? null)}
               className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] file:mr-4 file:rounded-xl file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-white/80 file:hover:bg-white/15 file:transition-colors"
             />
+            {logoPreviewUrl ? (
+              <div className="flex flex-col gap-2">
+                <div className="relative w-full max-w-xs h-28 rounded-2xl overflow-hidden border border-white/10 bg-white/5">
+                  <Image
+                    src={logoPreviewUrl}
+                    alt="Sponsor logo preview"
+                    fill
+                    sizes="320px"
+                    className="object-contain p-3"
+                  />
+                </div>
+              </div>
+            ) : null}
             {errors.logoFile ? (
               <p className="text-red-500 text-xs md:text-sm">
                 {errors.logoFile}
@@ -437,8 +500,22 @@ const AddOrgSponsorForm = ({ orgId }: { orgId?: string }) => {
               ref={coverRef}
               type="file"
               accept="image/png,image/jpeg,image/webp"
+              onChange={(e) => onSelectCover(e.target.files?.[0] ?? null)}
               className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] file:mr-4 file:rounded-xl file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-white/80 file:hover:bg-white/15 file:transition-colors"
             />
+            {coverPreviewUrl ? (
+              <div className="flex flex-col gap-2">
+                <div className="relative w-full max-w-xs h-28 rounded-2xl overflow-hidden border border-white/10 bg-white/5">
+                  <Image
+                    src={coverPreviewUrl}
+                    alt="Sponsor cover preview"
+                    fill
+                    sizes="320px"
+                    className="object-cover"
+                  />
+                </div>
+              </div>
+            ) : null}
             {errors.coverFile ? (
               <p className="text-red-500 text-xs md:text-sm">
                 {errors.coverFile}

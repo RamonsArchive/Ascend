@@ -70,6 +70,10 @@ const EditOrgSponsorForm = ({
     order: initialSponsor.order ?? 0,
   }));
 
+  const [orderInput, setOrderInput] = useState<string>(() =>
+    String(initialSponsor.order ?? 0)
+  );
+
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(() => {
     const key =
       initialSponsor.logoKey ?? initialSponsor.sponsor.logoKey ?? null;
@@ -113,7 +117,7 @@ const EditOrgSponsorForm = ({
         isActive: formData.isActive,
         displayName: formData.displayName,
         blurb: formData.blurb,
-        order: formData.order,
+        order: Math.max(0, Number(orderInput) || 0),
         logoFile: logoFile ?? undefined,
         removeLogo,
       });
@@ -163,7 +167,7 @@ const EditOrgSponsorForm = ({
       fd.set("isActive", formData.isActive ? "true" : "false");
       fd.set("displayName", formData.displayName ?? "");
       fd.set("blurb", formData.blurb ?? "");
-      fd.set("order", String(formData.order ?? 0));
+      fd.set("order", String(Math.max(0, Number(orderInput) || 0)));
       fd.set("removeLogo", removeLogo ? "true" : "false");
       if (logoKey) fd.set("logoKey", logoKey);
 
@@ -367,21 +371,23 @@ const EditOrgSponsorForm = ({
             <div className="flex flex-col gap-2">
               <label className="text-xs md:text-sm text-white/75">Order</label>
               <input
-                type="number"
-                value={formData.order}
+                type="text"
+                inputMode="numeric"
+                value={orderInput}
                 onFocus={(e) => {
                   // Makes typing replace the current value (prevents "03" style UX)
                   e.currentTarget.select();
                 }}
                 onChange={(e) =>
-                  setFormData((p) => ({
-                    ...p,
-                    order:
-                      e.target.value === ""
-                        ? 0
-                        : Math.max(0, Number(e.target.value) || 0),
-                  }))
+                  setOrderInput(
+                    e.target.value
+                      .replace(/[^\d]/g, "")
+                      .replace(/^0+(?=\d)/, "")
+                  )
                 }
+                onBlur={() => {
+                  setOrderInput(orderInput === "" ? "0" : orderInput);
+                }}
                 className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
               />
               {errors.order ? (
@@ -444,6 +450,19 @@ const EditOrgSponsorForm = ({
               onChange={(e) => onSelectLogo(e.target.files?.[0] ?? null)}
               className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] file:mr-4 file:rounded-xl file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-white/80 file:hover:bg-white/15 file:transition-colors"
             />
+            {logoPreviewUrl ? (
+              <div className="flex flex-col gap-2">
+                <div className="relative w-full max-w-xs h-28 rounded-2xl overflow-hidden border border-white/10 bg-white/5">
+                  <Image
+                    src={logoPreviewUrl}
+                    alt="Org logo override preview"
+                    fill
+                    sizes="320px"
+                    className="object-contain p-3"
+                  />
+                </div>
+              </div>
+            ) : null}
 
             <div className="flex flex-col gap-2">
               {initialSponsor.logoKey ? (

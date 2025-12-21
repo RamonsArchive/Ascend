@@ -13,6 +13,7 @@ import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 import type { ActionState } from "@/src/lib/global_types";
 import {
@@ -75,6 +76,7 @@ const AddSponsorToOrgModal = ({
     defaultSponsorId ?? ""
   );
   const [showBlurbPreview, setShowBlurbPreview] = useState(false);
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
 
   const [formData, setFormData] = useState(() => ({
     tier: "COMMUNITY" as SponsorTier,
@@ -83,6 +85,8 @@ const AddSponsorToOrgModal = ({
     displayName: "",
     blurb: "",
   }));
+
+  const [orderInput, setOrderInput] = useState<string>("0");
 
   useEffect(() => {
     if (isOpen) {
@@ -112,6 +116,7 @@ const AddSponsorToOrgModal = ({
     setSearch("");
     setSelectedSponsorId("");
     setShowBlurbPreview(false);
+    setLogoPreviewUrl(null);
     setFormData({
       tier: "COMMUNITY",
       isActive: true,
@@ -119,8 +124,31 @@ const AddSponsorToOrgModal = ({
       displayName: "",
       blurb: "",
     });
+    setOrderInput("0");
     if (logoRef.current) logoRef.current.value = "";
     onClose();
+  };
+
+  const onSelectLogo = (file: File | null) => {
+    if (!file) {
+      setLogoPreviewUrl(null);
+      return;
+    }
+
+    const ok = validateImageFile({
+      file,
+      options: { allowedMimeTypes: allowedImageMimeTypes, maxBytes: TEN_MB },
+    });
+    if (!ok) {
+      toast.error("ERROR", {
+        description: "Logo must be a PNG, JPG, or WEBP. Max size is 10MB.",
+      });
+      if (logoRef.current) logoRef.current.value = "";
+      setLogoPreviewUrl(null);
+      return;
+    }
+
+    setLogoPreviewUrl(URL.createObjectURL(file));
   };
 
   const submitAttach = async (
@@ -133,13 +161,14 @@ const AddSponsorToOrgModal = ({
       setErrors({});
 
       const logoFile = logoRef.current?.files?.[0] ?? null;
+      const orderValue = Math.max(0, Number(orderInput) || 0);
 
       await addExistingSponsorToOrgClientSchema.parseAsync({
         orgId,
         sponsorId: selectedSponsorId,
         tier: formData.tier,
         isActive: formData.isActive,
-        order: formData.order,
+        order: orderValue,
         displayName: formData.displayName,
         blurb: formData.blurb,
         logoFile: logoFile ?? undefined,
@@ -188,7 +217,7 @@ const AddSponsorToOrgModal = ({
       fd.set("sponsorId", selectedSponsorId);
       fd.set("tier", formData.tier);
       fd.set("isActive", formData.isActive ? "true" : "false");
-      fd.set("order", String(formData.order ?? 0));
+      fd.set("order", String(orderValue));
       fd.set("displayName", formData.displayName ?? "");
       fd.set("blurb", formData.blurb ?? "");
       if (logoKey) fd.set("logoKey", logoKey);
@@ -429,15 +458,21 @@ const AddSponsorToOrgModal = ({
                       Order
                     </label>
                     <input
-                      type="number"
-                      value={formData.order}
+                      type="text"
+                      inputMode="numeric"
+                      value={orderInput}
                       onFocus={(e) => e.currentTarget.select()}
                       onChange={(e) =>
-                        setFormData((p) => ({
-                          ...p,
-                          order: Math.max(0, Number(e.target.value) || 0),
-                        }))
+                        setOrderInput(
+                          e.target.value
+                            .replace(/[^\d]/g, "")
+                            .replace(/^0+(?=\d)/, "")
+                        )
                       }
+                      onBlur={() => {
+                        const normalized = orderInput === "" ? "0" : orderInput;
+                        setOrderInput(normalized);
+                      }}
                       className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
                     />
                     {errors.order ? (
@@ -501,8 +536,22 @@ const AddSponsorToOrgModal = ({
                     ref={logoRef}
                     type="file"
                     accept="image/png,image/jpeg,image/webp"
+                    onChange={(e) => onSelectLogo(e.target.files?.[0] ?? null)}
                     className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] file:mr-4 file:rounded-xl file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-white/80 file:hover:bg-white/15 file:transition-colors"
                   />
+                  {logoPreviewUrl ? (
+                    <div className="flex flex-col gap-2">
+                      <div className="relative w-full max-w-xs h-28 rounded-2xl overflow-hidden border border-white/10 bg-white/5">
+                        <Image
+                          src={logoPreviewUrl}
+                          alt="Org logo override preview"
+                          fill
+                          sizes="320px"
+                          className="object-contain p-3"
+                        />
+                      </div>
+                    </div>
+                  ) : null}
                   {errors.logoFile ? (
                     <p className="text-red-500 text-xs md:text-sm">
                       {errors.logoFile}

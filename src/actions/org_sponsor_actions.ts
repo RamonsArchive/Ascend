@@ -23,7 +23,7 @@ function slugify(input: string) {
 
 export const createSponsorProfile = async (
   _prevState: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -142,7 +142,7 @@ export const createSponsorProfile = async (
 
 export const updateSponsorProfile = async (
   _prevState: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -285,7 +285,7 @@ export const updateSponsorProfile = async (
 
 export const setSponsorVisibility = async (
   _prevState: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -368,7 +368,7 @@ export const setSponsorVisibility = async (
 };
 
 export const fetchSponsorLibrary = async (
-  query?: string
+  query?: string,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -450,7 +450,7 @@ async function assertAdminOrOwner(orgId: string, userId: string) {
 
 export const addExistingSponsorToOrg = async (
   _prevState: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });

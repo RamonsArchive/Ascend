@@ -37,7 +37,7 @@ async function assertAdminOrOwner(orgId: string, userId: string) {
 
 export const updateOrgSponsor = async (
   _prevState: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -305,7 +305,7 @@ export const updateOrgSponsor = async (
 
 export const removeSponsorFromOrg = async (
   _prevState: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });

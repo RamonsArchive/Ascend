@@ -27,8 +27,7 @@ const OrgSponsorsPage = async ({
   if (!isLoggedIn) {
     redirect(`/login?next=/app/orgs/${orgSlug}/sponsors`);
   }
-  const org = await fetchOrgData(orgSlug);
-  console.log("org", org);
+  const org = await fetchOrgData(orgSlug); // might want to fetch only the org and not the members in future
   if (org.status === "ERROR") return notFound();
   const { id } = org.data as Organization;
 
@@ -69,7 +68,7 @@ const OrgSponsorsPage = async ({
   if (orgSponsors.status === "ERROR") return notFound();
   const sponsors = orgSponsors.data as OrgSponsorWithSponsor[];
 
-  const library = await fetchSponsorLibrary();
+  const library = await fetchSponsorLibrary(); // might want to fetch only top 50 or something in future
   if (library.status === "ERROR") return notFound();
   const sponsorLibrary = library.data as SponsorLibraryItem[];
 
