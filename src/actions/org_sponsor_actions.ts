@@ -2,7 +2,7 @@
 
 import crypto from "crypto";
 import { headers } from "next/headers";
-import { unstable_cache, updateTag } from "next/cache";
+import { updateTag } from "next/cache";
 import { auth } from "@/src/lib/auth";
 import { prisma } from "@/src/lib/prisma";
 import { checkRateLimit } from "@/src/lib/rate-limiter";
@@ -389,47 +389,41 @@ export const fetchSponsorLibrary = async (
     const q = (query ?? "").trim();
     const userId = session.user.id;
 
-    const cached = unstable_cache(
-      async () => {
-        return await prisma.sponsor.findMany({
-          where: {
-            AND: [
-              {
-                OR: [
-                  { createdById: userId },
-                  { visibility: SponsorVisibility.PUBLIC },
-                ],
-              },
-              q
-                ? {
-                    OR: [
-                      { name: { contains: q } },
-                      { websiteKey: { contains: q } },
-                    ],
-                  }
-                : {},
+    const sponsors = await prisma.sponsor.findMany({
+      where: {
+        AND: [
+          {
+            OR: [
+              { createdById: userId },
+              { visibility: SponsorVisibility.PUBLIC },
             ],
           },
-          orderBy: [{ updatedAt: "desc" }],
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            websiteKey: true,
-            description: true,
-            logoKey: true,
-            coverKey: true,
-            visibility: true,
-            createdById: true,
-            updatedAt: true,
-          },
-        });
+          q
+            ? {
+                OR: [
+                  { name: { contains: q } },
+                  { websiteKey: { contains: q } },
+                ],
+              }
+            : {},
+        ],
       },
-      [`sponsor-library`, userId, q],
-      { tags: [`sponsor-library-${userId}`] }
-    );
+      orderBy: [{ updatedAt: "desc" }],
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        websiteKey: true,
+        description: true,
+        logoKey: true,
+        coverKey: true,
+        visibility: true,
+        createdById: true,
+        updatedAt: true,
+      },
+    });
 
-    const sponsors = await cached();
+    updateTag(`sponsor-library-${session.user.id}`);
 
     return parseServerActionResponse({
       status: "SUCCESS",
@@ -590,33 +584,28 @@ export const fetchOrgSponsors = async (orgId: string): Promise<ActionState> => {
 
     await assertAdminOrOwner(orgId, session.user.id);
 
-    const cached = unstable_cache(
-      async () => {
-        return await prisma.organizationSponsor.findMany({
-          where: { orgId },
-          orderBy: [{ order: "asc" }, { createdAt: "desc" }],
-          include: {
-            sponsor: {
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-                websiteKey: true,
-                description: true,
-                logoKey: true,
-                coverKey: true,
-                visibility: true,
-                createdById: true,
-              },
-            },
+    const sponsors = await prisma.organizationSponsor.findMany({
+      where: { orgId },
+      orderBy: [{ order: "asc" }, { createdAt: "desc" }],
+      include: {
+        sponsor: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            websiteKey: true,
+            description: true,
+            logoKey: true,
+            coverKey: true,
+            visibility: true,
+            createdById: true,
           },
-        });
+        },
       },
-      ["org-sponsors", orgId],
-      { tags: [`org-sponsors-${orgId}`] }
-    );
+    });
 
-    const sponsors = await cached();
+    updateTag(`org-sponsors-${orgId}`);
+
     return parseServerActionResponse({
       status: "SUCCESS",
       error: "",
