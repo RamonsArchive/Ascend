@@ -22,7 +22,7 @@ function slugify(input: string) {
 
 export const createOrganization = async (
   _prevState: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -228,6 +228,72 @@ export const getAllOrganizations = async () => {
     return parseServerActionResponse({
       status: "ERROR",
       error: "Failed to get all organizations",
+      data: null,
+    }) as ActionState;
+  }
+};
+
+export const fetchOrgData = async (orgSlug: string) => {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user?.id) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "MUST BE LOGGED IN TO FETCH ORGANIZATION DATA",
+        data: null,
+      }) as ActionState;
+    }
+    const isRateLimited = await checkRateLimit("fetchOrgData");
+    if (isRateLimited.status === "ERROR") return isRateLimited;
+    const org = await prisma.organization.findUnique({
+      where: { slug: orgSlug },
+    });
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data: org,
+    }) as ActionState;
+  } catch (error) {
+    console.error(error);
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to fetch organization data",
+      data: null,
+    }) as ActionState;
+  }
+};
+
+export const isMemberofOrg = async (orgId: string, userId: string) => {
+  try {
+    const membership = await prisma.orgMembership.findUnique({
+      where: { orgId_userId: { orgId, userId } },
+    });
+    if (!membership) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "User is not a member of the organization",
+        data: null,
+      }) as ActionState;
+    }
+
+    if (membership.role !== "OWNER" && membership.role !== "ADMIN") {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "User is not a member of the organization",
+        data: null,
+      }) as ActionState;
+    }
+
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data: membership,
+    }) as ActionState;
+  } catch (error) {
+    console.error(error);
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to check if user is a member of the organization",
       data: null,
     }) as ActionState;
   }

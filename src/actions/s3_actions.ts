@@ -70,3 +70,16 @@ export async function createOrgImageUpload(opts: {
     fields: presigned.fields,
   };
 }
+
+/** Best-effort delete for old finalized objects. */
+export async function deleteS3ObjectIfExists(key: string | null | undefined) {
+  assertEnv();
+  if (!key) return;
+
+  try {
+    await s3.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }));
+  } catch (e) {
+    // Don't fail the request because an old image couldn't be deleted
+    console.warn("Failed to delete S3 object:", key, e);
+  }
+}
