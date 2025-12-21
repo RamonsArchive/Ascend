@@ -141,7 +141,7 @@ export const updateOrgSponsor = async (
       }
     }
 
-    updateTag(`update-org-sponsor-${orgId}`);
+    updateTag(`org-sponsors-${orgId}`);
     return parseServerActionResponse({
       status: "SUCCESS",
       error: "",
@@ -333,11 +333,20 @@ export const removeSponsorFromOrg = async (
 
     await assertAdminOrOwner(orgId, session.user.id);
 
+    const existing = await prisma.organizationSponsor.findUnique({
+      where: { orgId_sponsorId: { orgId, sponsorId } },
+      select: { logoKey: true },
+    });
+
     await prisma.organizationSponsor.delete({
       where: { orgId_sponsorId: { orgId, sponsorId } },
     });
 
-    updateTag(`remove-org-sponsor-${orgId}`);
+    if (existing?.logoKey) {
+      await deleteS3ObjectIfExists(existing.logoKey);
+    }
+
+    updateTag(`org-sponsors-${orgId}`);
 
     return parseServerActionResponse({
       status: "SUCCESS",

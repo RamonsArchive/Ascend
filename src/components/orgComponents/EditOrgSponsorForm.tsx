@@ -3,12 +3,11 @@
 import React, { useMemo, useRef, useState, useActionState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { useGSAP } from "@gsap/react";
-import gsap from "gsap";
-import SplitText from "gsap/SplitText";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import ReactMarkdown from "react-markdown";
+import rehypeSanitize from "rehype-sanitize";
+import remarkGfm from "remark-gfm";
 
 import type { ActionState } from "@/src/lib/global_types";
 import {
@@ -24,22 +23,14 @@ import {
 } from "@/src/actions/org_sponsor_edit_actions";
 import { editOrgSponsorClientSchema } from "@/src/lib/validation";
 import type { OrgSponsorWithSponsor } from "@/src/components/orgComponents/EditOrgSponsorsSection";
-
-gsap.registerPlugin(ScrollTrigger, SplitText);
+import { tierBadgeClasses } from "@/src/lib/utils";
+import type { SponsorTier } from "@/src/lib/global_types";
 
 const initialState: ActionState = {
   status: "INITIAL",
   error: "",
   data: null,
 };
-
-type SponsorTier =
-  | "TITLE"
-  | "PLATINUM"
-  | "GOLD"
-  | "SILVER"
-  | "BRONZE"
-  | "COMMUNITY";
 
 type EditSponsorErrors = Partial<
   Record<
@@ -61,23 +52,15 @@ const EditOrgSponsorForm = ({
     []
   );
 
-  const triggerId = `org-sponsor-form-${initialSponsor.sponsorId}`;
-
   const submitButtonRef = useRef<HTMLButtonElement>(null);
   const removeButtonRef = useRef<HTMLButtonElement>(null);
-
-  const tierLabelRef = useRef<HTMLLabelElement>(null);
-  const activeLabelRef = useRef<HTMLLabelElement>(null);
-  const displayNameLabelRef = useRef<HTMLLabelElement>(null);
-  const blurbLabelRef = useRef<HTMLLabelElement>(null);
-  const orderLabelRef = useRef<HTMLLabelElement>(null);
-  const logoLabelRef = useRef<HTMLLabelElement>(null);
 
   const logoRef = useRef<HTMLInputElement>(null);
 
   const [errors, setErrors] = useState<EditSponsorErrors>({});
   const [statusMessage, setStatusMessage] = useState("");
   const [removeLogo, setRemoveLogo] = useState(false);
+  const [showBlurbPreview, setShowBlurbPreview] = useState(false);
 
   const [formData, setFormData] = useState(() => ({
     tier: (initialSponsor.tier as SponsorTier) ?? "COMMUNITY",
@@ -92,77 +75,6 @@ const EditOrgSponsorForm = ({
       initialSponsor.logoKey ?? initialSponsor.sponsor.logoKey ?? null;
     return key ? (s3KeyToPublicUrl(key) as string) : null;
   });
-
-  useGSAP(() => {
-    let cleanup: undefined | (() => void);
-
-    const initAnimations = () => {
-      if (
-        !tierLabelRef.current ||
-        !activeLabelRef.current ||
-        !displayNameLabelRef.current ||
-        !blurbLabelRef.current ||
-        !orderLabelRef.current ||
-        !logoLabelRef.current ||
-        !submitButtonRef.current
-      ) {
-        requestAnimationFrame(initAnimations);
-        return;
-      }
-
-      const triggerEl = document.getElementById(triggerId);
-      if (!triggerEl) {
-        requestAnimationFrame(initAnimations);
-        return;
-      }
-
-      const splits = [
-        new SplitText(tierLabelRef.current, { type: "words" }),
-        new SplitText(activeLabelRef.current, { type: "words" }),
-        new SplitText(displayNameLabelRef.current, { type: "words" }),
-        new SplitText(blurbLabelRef.current, { type: "words" }),
-        new SplitText(orderLabelRef.current, { type: "words" }),
-        new SplitText(logoLabelRef.current, { type: "words" }),
-      ];
-
-      const allLabels = splits.flatMap((s) => s.words);
-      const allInputs = [
-        submitButtonRef.current,
-        removeButtonRef.current,
-        ...Array.from(triggerEl.querySelectorAll("input, textarea, select")),
-      ].filter(Boolean) as HTMLElement[];
-
-      gsap.set(allLabels, { opacity: 0, y: 48 });
-      gsap.set(allInputs, { opacity: 0, y: 48 });
-
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: triggerEl,
-          start: "top 85%",
-          end: "top 40%",
-          scrub: 1,
-        },
-        defaults: { ease: "power3.out", duration: 0.6 },
-      });
-
-      tl.to(allLabels, { opacity: 1, y: 0, stagger: 0.02 }, 0).to(
-        allInputs,
-        { opacity: 1, y: 0, stagger: 0.04 },
-        0.05
-      );
-
-      requestAnimationFrame(() => ScrollTrigger.refresh());
-
-      cleanup = () => {
-        tl.scrollTrigger?.kill();
-        tl.kill();
-        splits.forEach((s) => s.revert());
-      };
-    };
-
-    initAnimations();
-    return () => cleanup?.();
-  }, [triggerId]);
 
   const onSelectLogo = (file: File | null) => {
     setRemoveLogo(false);
@@ -335,10 +247,7 @@ const EditOrgSponsorForm = ({
   const [, formAction, isPending] = useActionState(submitForm, initialState);
 
   return (
-    <div
-      id={triggerId}
-      className="marketing-card w-full rounded-3xl px-6 py-6 md:px-8 md:py-8 bg-white/4"
-    >
+    <div className="marketing-card w-full rounded-3xl px-6 py-6 md:px-8 md:py-8 bg-white/4">
       <div className="flex flex-col gap-6 md:gap-8">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-5 md:gap-6">
           <div className="flex items-start gap-3">
@@ -358,8 +267,15 @@ const EditOrgSponsorForm = ({
               )}
             </div>
             <div className="flex flex-col gap-1">
-              <div className="text-white font-semibold leading-tight">
+              <div className="text-white font-semibold leading-tight flex flex-col xs:flex-row xs:items-center gap-2">
                 {initialSponsor.sponsor.name}
+                <div
+                  className={`w-fit px-3 py-1 rounded-full border text-[11px] font-semibold tracking-wide ${tierBadgeClasses(
+                    formData.tier
+                  )}`}
+                >
+                  {formData.tier}
+                </div>
               </div>
               <div className="text-white/50 text-xs">
                 @{initialSponsor.sponsor.slug}
@@ -385,12 +301,7 @@ const EditOrgSponsorForm = ({
         <form action={formAction} className="flex flex-col gap-6 md:gap-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <div className="flex flex-col gap-2">
-              <label
-                ref={tierLabelRef}
-                className="text-xs md:text-sm text-white/75"
-              >
-                Tier
-              </label>
+              <label className="text-xs md:text-sm text-white/75">Tier</label>
               <select
                 value={formData.tier}
                 onChange={(e) =>
@@ -420,12 +331,7 @@ const EditOrgSponsorForm = ({
             </div>
 
             <div className="flex flex-col gap-2">
-              <label
-                ref={activeLabelRef}
-                className="text-xs md:text-sm text-white/75"
-              >
-                Active
-              </label>
+              <label className="text-xs md:text-sm text-white/75">Active</label>
               <button
                 type="button"
                 onClick={() =>
@@ -440,10 +346,7 @@ const EditOrgSponsorForm = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <div className="flex flex-col gap-2">
-              <label
-                ref={displayNameLabelRef}
-                className="text-xs md:text-sm text-white/75"
-              >
+              <label className="text-xs md:text-sm text-white/75">
                 Display name (optional)
               </label>
               <input
@@ -462,19 +365,21 @@ const EditOrgSponsorForm = ({
             </div>
 
             <div className="flex flex-col gap-2">
-              <label
-                ref={orderLabelRef}
-                className="text-xs md:text-sm text-white/75"
-              >
-                Order
-              </label>
+              <label className="text-xs md:text-sm text-white/75">Order</label>
               <input
                 type="number"
                 value={formData.order}
+                onFocus={(e) => {
+                  // Makes typing replace the current value (prevents "03" style UX)
+                  e.currentTarget.select();
+                }}
                 onChange={(e) =>
                   setFormData((p) => ({
                     ...p,
-                    order: Math.max(0, Number(e.target.value) || 0),
+                    order:
+                      e.target.value === ""
+                        ? 0
+                        : Math.max(0, Number(e.target.value) || 0),
                   }))
                 }
                 className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
@@ -488,30 +393,48 @@ const EditOrgSponsorForm = ({
           </div>
 
           <div className="flex flex-col gap-2">
-            <label
-              ref={blurbLabelRef}
-              className="text-xs md:text-sm text-white/75"
-            >
+            <label className="text-xs md:text-sm text-white/75">
               Blurb (optional)
             </label>
-            <textarea
-              value={formData.blurb}
-              onChange={(e) =>
-                setFormData((p) => ({ ...p, blurb: e.target.value }))
-              }
-              placeholder="Optional org-specific sponsor blurb…"
-              className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors min-h-[120px] resize-none shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
-            />
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div className="text-xs text-white/60">Markdown supported</div>
+              <button
+                type="button"
+                onClick={() => setShowBlurbPreview((p) => !p)}
+                className="px-4 py-2 rounded-2xl bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition-colors text-xs md:text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+              >
+                {showBlurbPreview ? "Edit" : "Preview"}
+              </button>
+            </div>
+
+            {showBlurbPreview ? (
+              <div className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+                <div className="prose prose-invert max-w-none prose-p:text-white/75 prose-a:text-accent-400 prose-strong:text-white">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    rehypePlugins={[rehypeSanitize]}
+                  >
+                    {formData.blurb || "*Nothing yet…*"}
+                  </ReactMarkdown>
+                </div>
+              </div>
+            ) : (
+              <textarea
+                value={formData.blurb}
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, blurb: e.target.value }))
+                }
+                placeholder="Optional org-specific sponsor blurb…"
+                className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors min-h-[140px] resize-none shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+              />
+            )}
             {errors.blurb ? (
               <p className="text-red-500 text-xs md:text-sm">{errors.blurb}</p>
             ) : null}
           </div>
 
           <div className="flex flex-col gap-2">
-            <label
-              ref={logoLabelRef}
-              className="text-xs md:text-sm text-white/75"
-            >
+            <label className="text-xs md:text-sm text-white/75">
               Org logo override (optional)
             </label>
             <input

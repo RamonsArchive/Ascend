@@ -29,6 +29,7 @@ model User {
   teamInvitesCreated   TeamInvite[]               @relation("TeamInviteCreator")
   teamJoinRequests     TeamJoinRequest[]
   teams                TeamMember[]
+  sponsorsCreated      Sponsor[]                  @relation("SponsorCreatedBy")
 
   @@unique([email])
   @@map("user")
@@ -85,24 +86,23 @@ model Verification {
   @@map("verification")
 }
 
-
 model Organization {
-  id          String          @id @default(cuid())
-  name        String
-  slug        String          @unique
-  logoKey    String?
-  coverKey    String?
-  description String?
-  publicEmail String?   // e.g. hello@org.com
-  publicPhone String?   // optional, international format
-  websiteUrl  String?
-  contactNote String?   // “Email us for sponsorships”
-  moderationStatus            ModerationStatus @default(ACTIVE)
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  events      Event[]
-  memberships OrgMembership[]
-  sponsors OrganizationSponsor[]
+  id               String                @id @default(cuid())
+  name             String
+  slug             String                @unique
+  logoKey          String?
+  coverKey         String?
+  description      String?
+  publicEmail      String? // e.g. hello@org.com
+  publicPhone      String? // optional, international format
+  websiteUrl       String?
+  contactNote      String? // “Email us for sponsorships”
+  moderationStatus ModerationStatus      @default(ACTIVE)
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  events           Event[]
+  memberships      OrgMembership[]
+  sponsors         OrganizationSponsor[]
 }
 
 model OrgMembership {
@@ -156,8 +156,8 @@ model Event {
   teamAuditLogs          TeamAuditLog[]
   teamInvites            TeamInvite[]
   joinRequests           TeamJoinRequest[]
-  moderationStatus       ModerationStatus @default(ACTIVE)
-  sponsors EventSponsor[]
+  moderationStatus       ModerationStatus           @default(ACTIVE)
+  sponsors               EventSponsor[]
 
   @@unique([orgId, slug])
   @@index([orgId])
@@ -225,7 +225,7 @@ model Team {
   invites           TeamInvite[]
   joinRequests      TeamJoinRequest[]
   members           TeamMember[]
-  moderationStatus  ModerationStatus @default(ACTIVE)
+  moderationStatus  ModerationStatus  @default(ACTIVE)
 
   @@index([eventId])
 }
@@ -331,24 +331,24 @@ model TeamAuditLog {
 }
 
 model Submission {
-  id          String           @id @default(cuid())
-  eventId     String
-  teamId      String?
-  authorId    String?
-  status      SubmissionStatus @default(DRAFT)
-  title       String
-  description String?
-  content     Json?
-  imageKeys   Json?
-  videoKey    String?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  submittedAt DateTime?
-  scores      Score[]
-  author      User?            @relation("SubmissionAuthor", fields: [authorId], references: [id])
-  event       Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  team        Team?            @relation(fields: [teamId], references: [id])
-  moderationStatus             ModerationStatus @default(ACTIVE)
+  id               String           @id @default(cuid())
+  eventId          String
+  teamId           String?
+  authorId         String?
+  status           SubmissionStatus @default(DRAFT)
+  title            String
+  description      String?
+  content          Json?
+  imageKeys        Json?
+  videoKey         String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  submittedAt      DateTime?
+  scores           Score[]
+  author           User?            @relation("SubmissionAuthor", fields: [authorId], references: [id])
+  event            Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  team             Team?            @relation(fields: [teamId], references: [id])
+  moderationStatus ModerationStatus @default(ACTIVE)
 
   @@index([eventId])
   @@index([teamId])
@@ -411,21 +411,26 @@ model ContactMessage {
   @@index([createdAt])
 }
 
-
 model Sponsor {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid())
   name        String
-  slug        String   @unique
+  slug        String  @unique
   websiteKey  String?
   description String?
-  logoKey     String?  @db.Text   // S3 key (recommended) e.g. public/sponsors/{id}/logo/v1/...
-  coverKey    String?  @db.Text   // optional
+  logoKey     String? @db.Text // S3 key (recommended) e.g. public/sponsors/{id}/logo/v1/...
+  coverKey    String? @db.Text // optional
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  visibility SponsorVisibility @default(PRIVATE) // PRIVATE | PUBLIC
 
-  orgLinks    OrganizationSponsor[]
-  eventLinks  EventSponsor[]
+  createdById String?
+  createdBy   User?   @relation("SponsorCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  orgLinks   OrganizationSponsor[]
+  eventLinks EventSponsor[]
+
+  @@index([createdById])
 }
 
 model OrganizationSponsor {
@@ -439,13 +444,13 @@ model OrganizationSponsor {
   order       Int         @default(0)
 
   // optional: custom logo for this org relationship (override global)
-  logoKey     String?     @db.Text
+  logoKey String? @db.Text
 
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  sponsor     Sponsor      @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
+  org     Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  sponsor Sponsor      @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
 
   @@unique([orgId, sponsorId])
   @@index([orgId])
@@ -464,14 +469,14 @@ model EventSponsor {
   order       Int         @default(0)
 
   // optional overrides for this specific event
-  logoKey     String?     @db.Text
-  websiteKey  String?
+  logoKey    String? @db.Text
+  websiteKey String?
 
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  event       Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  sponsor     Sponsor @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
+  event   Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  sponsor Sponsor @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
 
   @@unique([eventId, sponsorId])
   @@index([eventId])
@@ -548,11 +553,11 @@ enum TeamAuditAction {
   LEADER_TRANSFERRED
 }
 
-enum RegistrationRequestStatus { 
-  PENDING 
-  APPROVED 
-  REJECTED 
-  CANCELLED 
+enum RegistrationRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
 }
 
 enum EventVisibility {
@@ -580,4 +585,9 @@ enum SponsorTier {
   SILVER
   BRONZE
   COMMUNITY
+}
+
+enum SponsorVisibility {
+  PRIVATE
+  PUBLIC
 }

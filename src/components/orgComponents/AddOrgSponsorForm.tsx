@@ -7,6 +7,9 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import SplitText from "gsap/SplitText";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import ReactMarkdown from "react-markdown";
+import rehypeSanitize from "rehype-sanitize";
+import remarkGfm from "remark-gfm";
 
 import type { ActionState } from "@/src/lib/global_types";
 import {
@@ -16,8 +19,8 @@ import {
 } from "@/src/lib/utils";
 import { createOrgImageUpload } from "@/src/actions/s3_actions";
 import { uploadToS3PresignedPost } from "@/src/lib/s3-client";
-import { addSponsorToOrg } from "@/src/actions/org_sponsor_actions";
-import { sponsorClientFormSchema } from "@/src/lib/validation";
+import { createSponsorProfile } from "@/src/actions/org_sponsor_actions";
+import { createSponsorProfileClientSchema } from "@/src/lib/validation";
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
@@ -27,15 +30,9 @@ const initialState: ActionState = {
   data: null,
 };
 
-type SponsorTier =
-  | "TITLE"
-  | "PLATINUM"
-  | "GOLD"
-  | "SILVER"
-  | "BRONZE"
-  | "COMMUNITY";
-
-const AddOrgSponsorForm = ({ orgId }: { orgId: string }) => {
+// Sponsor profiles are global. orgId is currently ignored but kept for compatibility.
+const AddOrgSponsorForm = ({ orgId }: { orgId?: string }) => {
+  void orgId;
   const allowedImageMimeTypes = useMemo(
     () => new Set(["image/png", "image/jpeg", "image/webp"]),
     []
@@ -46,25 +43,23 @@ const AddOrgSponsorForm = ({ orgId }: { orgId: string }) => {
   const submitButtonRef = useRef<HTMLButtonElement>(null);
 
   const nameLabelRef = useRef<HTMLLabelElement>(null);
-  const tierLabelRef = useRef<HTMLLabelElement>(null);
   const websiteLabelRef = useRef<HTMLLabelElement>(null);
   const descriptionLabelRef = useRef<HTMLLabelElement>(null);
   const logoLabelRef = useRef<HTMLLabelElement>(null);
   const coverLabelRef = useRef<HTMLLabelElement>(null);
 
   const [statusMessage, setStatusMessage] = useState("");
+  const [showDescriptionPreview, setShowDescriptionPreview] = useState(false);
   const [formData, setFormData] = useState(() => ({
     sponsorName: "",
     sponsorWebsite: "",
     sponsorDescription: "",
-    tier: "COMMUNITY" as SponsorTier,
   }));
 
   const [errors, setErrors] = useState<{
     sponsorName?: string;
     sponsorWebsite?: string;
     sponsorDescription?: string;
-    tier?: string;
     logoFile?: string;
     coverFile?: string;
   }>({});
@@ -75,7 +70,6 @@ const AddOrgSponsorForm = ({ orgId }: { orgId: string }) => {
     const initAnimations = () => {
       if (
         !nameLabelRef.current ||
-        !tierLabelRef.current ||
         !websiteLabelRef.current ||
         !descriptionLabelRef.current ||
         !logoLabelRef.current ||
@@ -94,7 +88,6 @@ const AddOrgSponsorForm = ({ orgId }: { orgId: string }) => {
 
       const splits = [
         new SplitText(nameLabelRef.current, { type: "words" }),
-        new SplitText(tierLabelRef.current, { type: "words" }),
         new SplitText(websiteLabelRef.current, { type: "words" }),
         new SplitText(descriptionLabelRef.current, { type: "words" }),
         new SplitText(logoLabelRef.current, { type: "words" }),
@@ -141,6 +134,16 @@ const AddOrgSponsorForm = ({ orgId }: { orgId: string }) => {
     return () => cleanup?.();
   }, []);
 
+  const clearForm = () => {
+    setFormData({
+      sponsorName: "",
+      sponsorWebsite: "",
+      sponsorDescription: "",
+    });
+    if (logoRef.current) logoRef.current.value = "";
+    if (coverRef.current) coverRef.current.value = "";
+  };
+
   const submitSponsorForm = async (
     _state: ActionState,
     _fd: FormData
@@ -152,12 +155,10 @@ const AddOrgSponsorForm = ({ orgId }: { orgId: string }) => {
       const logoFile = logoRef.current?.files?.[0] ?? null;
       const coverFile = coverRef.current?.files?.[0] ?? null;
 
-      const parsed = await sponsorClientFormSchema.parseAsync({
-        orgId,
+      const parsed = await createSponsorProfileClientSchema.parseAsync({
         sponsorName: formData.sponsorName,
         sponsorWebsite: formData.sponsorWebsite,
         sponsorDescription: formData.sponsorDescription,
-        tier: formData.tier,
         logoFile: logoFile ?? undefined,
         coverFile: coverFile ?? undefined,
       });
@@ -231,35 +232,26 @@ const AddOrgSponsorForm = ({ orgId }: { orgId: string }) => {
         coverKey = presign.key;
       }
 
-      setStatusMessage("Adding sponsor…");
+      setStatusMessage("Creating sponsor…");
 
       const fd = new FormData();
-      fd.set("orgId", parsed.orgId);
       fd.set("sponsorName", parsed.sponsorName);
       fd.set("sponsorWebsite", parsed.sponsorWebsite ?? "");
       fd.set("sponsorDescription", parsed.sponsorDescription ?? "");
-      fd.set("tier", parsed.tier);
       if (logoKey) fd.set("logoKey", logoKey);
       if (coverKey) fd.set("coverKey", coverKey);
 
-      const result = await addSponsorToOrg(initialState, fd);
+      const result = await createSponsorProfile(initialState, fd);
       if (result.status === "ERROR") {
-        setStatusMessage(result.error || "Failed to add sponsor.");
+        setStatusMessage(result.error || "Failed to create sponsor.");
         toast.error("ERROR", { description: result.error });
         return result;
       }
 
-      setStatusMessage("Sponsor added.");
-      toast.success("SUCCESS", { description: "Sponsor added." });
+      setStatusMessage("Sponsor created.");
+      toast.success("SUCCESS", { description: "Sponsor created." });
 
-      setFormData({
-        sponsorName: "",
-        sponsorWebsite: "",
-        sponsorDescription: "",
-        tier: "COMMUNITY",
-      });
-      if (logoRef.current) logoRef.current.value = "";
-      if (coverRef.current) coverRef.current.value = "";
+      clearForm();
 
       return result;
     } catch (error) {
@@ -336,40 +328,7 @@ const AddOrgSponsorForm = ({ orgId }: { orgId: string }) => {
             ) : null}
           </div>
 
-          <div className="flex flex-col gap-2">
-            <label
-              ref={tierLabelRef}
-              className="text-xs md:text-sm text-white/75"
-            >
-              Tier
-            </label>
-            <select
-              value={formData.tier}
-              onChange={(e) =>
-                setFormData((p) => ({
-                  ...p,
-                  tier: e.target.value as SponsorTier,
-                }))
-              }
-              className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
-            >
-              {[
-                "TITLE",
-                "PLATINUM",
-                "GOLD",
-                "SILVER",
-                "BRONZE",
-                "COMMUNITY",
-              ].map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
-            {errors.tier ? (
-              <p className="text-red-500 text-xs md:text-sm">{errors.tier}</p>
-            ) : null}
-          </div>
+          <div className="hidden md:block" />
         </div>
 
         <div className="flex flex-col gap-2">
@@ -399,19 +358,43 @@ const AddOrgSponsorForm = ({ orgId }: { orgId: string }) => {
             ref={descriptionLabelRef}
             className="text-xs md:text-sm text-white/75"
           >
-            Sponsor description
+            Sponsor description (Markdown)
           </label>
-          <textarea
-            value={formData.sponsorDescription}
-            onChange={(e) =>
-              setFormData((p) => ({
-                ...p,
-                sponsorDescription: e.target.value,
-              }))
-            }
-            placeholder="Short sponsor blurb…"
-            className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors min-h-[120px] resize-none shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
-          />
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div className="text-xs text-white/60">Markdown supported</div>
+            <button
+              type="button"
+              onClick={() => setShowDescriptionPreview((p) => !p)}
+              className="px-4 py-2 rounded-2xl bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition-colors text-xs md:text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+            >
+              {showDescriptionPreview ? "Edit" : "Preview"}
+            </button>
+          </div>
+
+          {showDescriptionPreview ? (
+            <div className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+              <div className="prose prose-invert max-w-none prose-p:text-white/75 prose-a:text-accent-400 prose-strong:text-white">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeSanitize]}
+                >
+                  {formData.sponsorDescription || "*Nothing yet…*"}
+                </ReactMarkdown>
+              </div>
+            </div>
+          ) : (
+            <textarea
+              value={formData.sponsorDescription}
+              onChange={(e) =>
+                setFormData((p) => ({
+                  ...p,
+                  sponsorDescription: e.target.value,
+                }))
+              }
+              placeholder="Describe the sponsor (optional)…"
+              className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors min-h-[140px] resize-none shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+            />
+          )}
           {errors.sponsorDescription ? (
             <p className="text-red-500 text-xs md:text-sm">
               {errors.sponsorDescription}
@@ -467,7 +450,7 @@ const AddOrgSponsorForm = ({ orgId }: { orgId: string }) => {
             ref={submitButtonRef}
             className="w-full max-w-sm px-5 py-3 rounded-2xl cursor-pointer bg-white text-primary-950 font-semibold text-sm md:text-base transition-opacity hover:opacity-90 disabled:opacity-60"
           >
-            {isPending ? "Adding..." : "Add sponsor"}
+            {isPending ? "Creating..." : "Create sponsor"}
           </button>
         </div>
       </form>

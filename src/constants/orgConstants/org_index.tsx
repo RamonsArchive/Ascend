@@ -108,18 +108,22 @@ export const org_sponsors_data = {
     description:
       "Sponsors can be displayed across your org and event pages. Add new sponsors, then fine-tune tier, order, and visibility.",
   },
-  addSection: {
-    title: "Add a sponsor",
+  librarySection: {
+    title: "Your Sponsor Library",
     description:
-      "Create a sponsor and link it to your organization. You can upload a sponsor logo/cover now, and refine placement later.",
-  },
-  listSection: {
-    title: "Your sponsors",
-    description:
-      "Edit tier, ordering, visibility, and org-specific display overrides. This does not change the sponsor globally.",
-    emptyTitle: "No sponsors yet",
+      "Create and manage global sponsor profiles (private by default). You can optionally publish sponsors to the public directory later.",
+    emptyTitle: "No sponsors in your library yet",
     emptyDescription:
-      "Add your first sponsor above to start showcasing partners on your pages.",
+      "Create your first sponsor profile to start building your sponsor library.",
+  },
+  orgSection: {
+    title: "Sponsors in this Organization",
+    description:
+      "Attach a sponsor from your library (or a public sponsor) to this org. Tier, order, and overrides are configured per organization.",
+    addCtaLabel: "Add sponsor to org",
+    emptyTitle: "No sponsors linked to this org yet",
+    emptyDescription:
+      "Use “Add sponsor to org” to attach a sponsor and configure tier + placement for this organization.",
   },
   settingsLink: {
     title: "Manage sponsors",

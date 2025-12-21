@@ -6,25 +6,13 @@ import { headers } from "next/headers";
 import { Organization, OrgMembership } from "@prisma/client";
 import { isAdminOrOwnerOfOrg, fetchOrgData } from "@/src/actions/org_actions";
 import Link from "next/link";
-import { fetchOrgSponsors } from "@/src/actions/org_sponsor_actions";
+import {
+  fetchOrgSponsors,
+  fetchSponsorLibrary,
+} from "@/src/actions/org_sponsor_actions";
 import EditOrgSponsorsHero from "@/src/components/orgComponents/EditOrgSponsorsHero";
-import type { Prisma } from "@prisma/client";
-
-type OrgSponsorWithSponsor = Prisma.OrganizationSponsorGetPayload<{
-  include: {
-    sponsor: {
-      select: {
-        id: true;
-        name: true;
-        slug: true;
-        websiteKey: true;
-        description: true;
-        logoKey: true;
-        coverKey: true;
-      };
-    };
-  };
-}>;
+import type { SponsorLibraryItem } from "@/src/components/orgComponents/SponsorLibraryCard";
+import type { OrgSponsorWithSponsor } from "@/src/components/orgComponents/EditOrgSponsorsSection";
 
 const OrgSponsorsPage = async ({
   params,
@@ -43,7 +31,6 @@ const OrgSponsorsPage = async ({
   if (org.status === "ERROR") return notFound();
   const { id } = org.data as Organization;
 
-  if (org.status === "ERROR") return notFound();
   const isMember = await isAdminOrOwnerOfOrg(id, userId);
 
   const canEdit =
@@ -80,12 +67,22 @@ const OrgSponsorsPage = async ({
   const orgSponsors = await fetchOrgSponsors(id);
   if (orgSponsors.status === "ERROR") return notFound();
   const sponsors = orgSponsors.data as OrgSponsorWithSponsor[];
+
+  const library = await fetchSponsorLibrary();
+  if (library.status === "ERROR") return notFound();
+  const sponsorLibrary = library.data as SponsorLibraryItem[];
+
   return (
     <div className="relative w-full">
       <div className="absolute inset-0 pointer-events-none marketing-bg" />
       <div className="relative flex flex-col items-center justify-center w-full gap-12 md:gap-16 lg:gap-20">
         <EditOrgSponsorsHero />
-        <EditOrgSponsorsSection orgId={id} initialSponsors={sponsors} />
+        <EditOrgSponsorsSection
+          orgId={id}
+          initialSponsors={sponsors}
+          sponsorLibrary={sponsorLibrary}
+          currentUserId={userId}
+        />
       </div>
     </div>
   );

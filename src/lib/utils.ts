@@ -1,3 +1,5 @@
+import type { SponsorTier } from "@/src/lib/global_types";
+
 export const parseServerActionResponse = <T>(response: T): T => {
   return JSON.parse(JSON.stringify(response));
 };
@@ -121,3 +123,22 @@ export const validateImageFile = ({
   if (!isUnderFileSize(file, options.maxBytes)) return false;
   return true;
 };
+
+export function tierBadgeClasses(tier: SponsorTier) {
+  switch (tier) {
+    case "TITLE":
+      return "bg-amber-400/15 text-amber-200 border-amber-400/20";
+    case "PLATINUM":
+      return "bg-sky-400/15 text-sky-200 border-sky-400/20";
+    case "GOLD":
+      return "bg-yellow-400/15 text-yellow-200 border-yellow-400/20";
+    case "SILVER":
+      return "bg-slate-300/15 text-slate-200 border-slate-300/20";
+    case "BRONZE":
+      return "bg-orange-400/15 text-orange-200 border-orange-400/20";
+    case "COMMUNITY":
+      return "bg-emerald-400/15 text-emerald-200 border-emerald-400/20";
+    default:
+      return "bg-white/5 text-white/70 border-white/10";
+  }
+}

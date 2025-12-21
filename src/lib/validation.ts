@@ -312,15 +312,24 @@ export const editOrgClientSchema = z.object({
   removeCover: z.boolean().optional(),
 });
 
-export const sponsorClientFormSchema = z.object({
-  orgId: z.string().min(1),
+export const createSponsorProfileClientSchema = z.object({
   sponsorName: z
     .string()
     .min(1, { message: "Sponsor name is required" })
     .max(100),
-  sponsorWebsite: z.string().optional(),
-  sponsorDescription: z.string().max(500).optional(),
-  tier: z.enum(["TITLE", "PLATINUM", "GOLD", "SILVER", "BRONZE", "COMMUNITY"]),
+  sponsorWebsite: z.preprocess(
+    emptyToUndefined,
+    z.string().url({ message: "Invalid website URL" }).optional()
+  ),
+  sponsorDescription: z.preprocess(
+    emptyToUndefined,
+    z
+      .string()
+      .max(2000, {
+        message: "Description must be less than 2000 characters",
+      })
+      .optional()
+  ),
   logoFile: z
     .custom<File | undefined>((val) => val == null || val instanceof File, {
       message: "Invalid logo file",
@@ -333,13 +342,77 @@ export const sponsorClientFormSchema = z.object({
     .optional(),
 });
 
+export const addExistingSponsorToOrgClientSchema = z.object({
+  orgId: z.string().min(1),
+  sponsorId: z.string().min(1),
+  tier: z.enum(["TITLE", "PLATINUM", "GOLD", "SILVER", "BRONZE", "COMMUNITY"]),
+  isActive: z.boolean(),
+  order: z
+    .number()
+    .int()
+    .min(0, { message: "Order must be 0 or greater" })
+    .max(9999, { message: "Order is too large" }),
+  displayName: z.preprocess(emptyToUndefined, z.string().max(120).optional()),
+  blurb: z.preprocess(
+    emptyToUndefined,
+    z
+      .string()
+      .max(2000, { message: "Blurb must be less than 2000 characters" })
+      .optional()
+  ),
+  logoFile: z
+    .custom<File | undefined>((val) => val == null || val instanceof File, {
+      message: "Invalid logo file",
+    })
+    .optional(),
+});
+
+export const updateSponsorProfileClientSchema = z.object({
+  sponsorId: z.string().min(1),
+  sponsorName: z
+    .string()
+    .min(1, { message: "Sponsor name is required" })
+    .max(100),
+  sponsorWebsite: z.preprocess(
+    emptyToUndefined,
+    z.string().url({ message: "Invalid website URL" }).optional()
+  ),
+  sponsorDescription: z.preprocess(
+    emptyToUndefined,
+    z
+      .string()
+      .max(2000, {
+        message: "Description must be less than 2000 characters",
+      })
+      .optional()
+  ),
+  logoFile: z
+    .custom<File | undefined>((val) => val == null || val instanceof File, {
+      message: "Invalid logo file",
+    })
+    .optional(),
+  coverFile: z
+    .custom<File | undefined>((val) => val == null || val instanceof File, {
+      message: "Invalid cover file",
+    })
+    .optional(),
+  removeLogo: z.boolean().optional(),
+  removeCover: z.boolean().optional(),
+});
+
 export const editOrgSponsorClientSchema = z.object({
   orgId: z.string().min(1),
   sponsorId: z.string().min(1),
   tier: z.enum(["TITLE", "PLATINUM", "GOLD", "SILVER", "BRONZE", "COMMUNITY"]),
   isActive: z.boolean(),
   displayName: z.preprocess(emptyToUndefined, z.string().max(120).optional()),
-  blurb: z.preprocess(emptyToUndefined, z.string().max(500).optional()),
+  blurb: z.preprocess(
+    emptyToUndefined,
+    z
+      .string()
+      .max(2000, { message: "Blurb must be less than 2000 characters" })
+      .optional()
+  ),
   order: z
     .number()
     .int()

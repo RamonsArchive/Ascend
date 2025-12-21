@@ -25,3 +25,11 @@ export type NewOrgFormDataType = {
   coverFile: File | null;
   contactNote: string;
 };
+
+export type SponsorTier =
+  | "TITLE"
+  | "PLATINUM"
+  | "GOLD"
+  | "SILVER"
+  | "BRONZE"
+  | "COMMUNITY";
