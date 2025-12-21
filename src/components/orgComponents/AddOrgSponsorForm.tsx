@@ -41,6 +41,7 @@ const AddOrgSponsorForm = ({ orgId }: { orgId?: string }) => {
   const logoRef = useRef<HTMLInputElement>(null);
   const coverRef = useRef<HTMLInputElement>(null);
   const submitButtonRef = useRef<HTMLButtonElement>(null);
+  const previewButtonRef = useRef<HTMLButtonElement>(null);
 
   const nameLabelRef = useRef<HTMLLabelElement>(null);
   const websiteLabelRef = useRef<HTMLLabelElement>(null);
@@ -74,7 +75,8 @@ const AddOrgSponsorForm = ({ orgId }: { orgId?: string }) => {
         !descriptionLabelRef.current ||
         !logoLabelRef.current ||
         !coverLabelRef.current ||
-        !submitButtonRef.current
+        !submitButtonRef.current ||
+        !previewButtonRef.current
       ) {
         requestAnimationFrame(initAnimations);
         return;
@@ -97,6 +99,7 @@ const AddOrgSponsorForm = ({ orgId }: { orgId?: string }) => {
       const allLabels = splits.flatMap((s) => s.words);
       const allInputs = [
         submitButtonRef.current,
+        previewButtonRef.current,
         ...Array.from(
           triggerEl.querySelectorAll("input, textarea, select")
         ).filter(Boolean),
@@ -365,6 +368,7 @@ const AddOrgSponsorForm = ({ orgId }: { orgId?: string }) => {
             <button
               type="button"
               onClick={() => setShowDescriptionPreview((p) => !p)}
+              ref={previewButtonRef}
               className="px-4 py-2 rounded-2xl bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition-colors text-xs md:text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
             >
               {showDescriptionPreview ? "Edit" : "Preview"}

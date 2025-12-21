@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useMemo, useRef, useState, useActionState } from "react";
+import React, {
+  useMemo,
+  useRef,
+  useState,
+  useActionState,
+  useEffect,
+} from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import ReactMarkdown from "react-markdown";
@@ -77,6 +83,14 @@ const AddSponsorToOrgModal = ({
     displayName: "",
     blurb: "",
   }));
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+  }, [isOpen]);
 
   const filteredSponsors = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -242,7 +256,7 @@ const AddSponsorToOrgModal = ({
         onClick={close}
       />
 
-      <div className="relative w-full max-w-3xl">
+      <div className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-white/5">
         <div className="marketing-card w-full rounded-3xl px-6 py-6 md:px-8 md:py-8 bg-white/4">
           <div className="flex flex-col gap-6 md:gap-8">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">

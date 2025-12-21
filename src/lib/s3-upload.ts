@@ -113,7 +113,7 @@ export async function finalizeOrgImageFromTmp(opts: {
       Bucket: BUCKET,
       Key: finalKey,
       CopySource: copySource,
-    }),
+    })
   );
 
   await s3.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: tmpKey }));
@@ -147,7 +147,7 @@ export async function finalizeSponsorImageFromTmp(opts: {
       Bucket: BUCKET,
       Key: finalKey,
       CopySource: copySource,
-    }),
+    })
   );
 
   await s3.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: tmpKey }));
