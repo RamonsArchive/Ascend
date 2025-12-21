@@ -22,7 +22,7 @@ function slugify(input: string) {
 
 export const createOrganization = async (
   _prevState: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });

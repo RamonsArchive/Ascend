@@ -4,41 +4,39 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL") // This is the connection URL for the database
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id            String    @id
-  name          String    @db.Text
-  email         String
-  emailVerified Boolean   @default(false)
-  image         String?   @db.Text
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  sessions      Session[]
-  accounts      Account[]
-
+  id                   String                     @id
+  name                 String                     @db.Text
+  email                String                     @unique
+  emailVerified        Boolean                    @default(false)
+  image                String?                    @db.Text
+  createdAt            DateTime                   @default(now())
+  updatedAt            DateTime                   @updatedAt
   eventParticipants    EventParticipant[]
   registrationRequests EventRegistrationRequest[]
   judgeLinks           JudgeAssignment[]
   memberships          OrgMembership[]
   scoresGiven          Score[]                    @relation("ScoreJudge")
+  sponsorsCreated      Sponsor[]                  @relation("SponsorCreatedBy")
   submissions          Submission[]               @relation("SubmissionAuthor")
   teamAuditActor       TeamAuditLog[]             @relation("TeamAuditActor")
   teamAuditTarget      TeamAuditLog[]             @relation("TeamAuditTarget")
   teamInvitesCreated   TeamInvite[]               @relation("TeamInviteCreator")
   teamJoinRequests     TeamJoinRequest[]
   teams                TeamMember[]
-  sponsorsCreated      Sponsor[]                  @relation("SponsorCreatedBy")
+  accounts             Account[]
+  sessions             Session[]
 
-  @@unique([email])
   @@map("user")
 }
 
 model Session {
   id        String   @id
   expiresAt DateTime
-  token     String
+  token     String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   ipAddress String?  @db.Text
@@ -46,9 +44,7 @@ model Session {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([token])
-  // Note: MySQL typically creates an index for FK columns; keeping an explicit
-  // index here can cause name conflicts if the DB already created one.
+  @@index([userId])
   @@map("session")
 }
 
@@ -57,7 +53,6 @@ model Account {
   accountId             String    @db.Text
   providerId            String    @db.Text
   userId                String
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?   @db.Text
   refreshToken          String?   @db.Text
   idToken               String?   @db.Text
@@ -67,10 +62,9 @@ model Account {
   password              String?   @db.Text
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Note: MySQL requires the FK column to be indexed; an index is typically
-  // created implicitly. Keeping an explicit index here can cause conflicts
-  // when the DB already has an index with the same name.
+  @@index([userId])
   @@map("account")
 }
 
@@ -90,16 +84,16 @@ model Organization {
   id               String                @id @default(cuid())
   name             String
   slug             String                @unique
-  logoKey          String?
-  coverKey         String?
   description      String?
-  publicEmail      String? // e.g. hello@org.com
-  publicPhone      String? // optional, international format
-  websiteUrl       String?
-  contactNote      String? // “Email us for sponsorships”
-  moderationStatus ModerationStatus      @default(ACTIVE)
   createdAt        DateTime              @default(now())
   updatedAt        DateTime              @updatedAt
+  contactNote      String?
+  moderationStatus ModerationStatus      @default(ACTIVE)
+  publicEmail      String?
+  publicPhone      String?
+  websiteUrl       String?
+  coverKey         String?
+  logoKey          String?
   events           Event[]
   memberships      OrgMembership[]
   sponsors         OrganizationSponsor[]
@@ -124,7 +118,6 @@ model Event {
   orgId                  String
   name                   String
   slug                   String
-  coverKey               String?
   type                   EventType
   status                 EventStatus                @default(DRAFT)
   heroTitle              String
@@ -145,10 +138,13 @@ model Event {
   allowSelfJoinRequests  Boolean                    @default(true)
   createdAt              DateTime                   @default(now())
   updatedAt              DateTime                   @updatedAt
+  moderationStatus       ModerationStatus           @default(ACTIVE)
+  coverKey               String?
   announcements          Announcement[]
   org                    Organization               @relation(fields: [orgId], references: [id], onDelete: Cascade)
   participants           EventParticipant[]
   registrationRequests   EventRegistrationRequest[]
+  sponsors               EventSponsor[]
   judgeAssignments       JudgeAssignment[]
   submissions            Submission[]
   submissionSchema       SubmissionSchema?
@@ -156,8 +152,6 @@ model Event {
   teamAuditLogs          TeamAuditLog[]
   teamInvites            TeamInvite[]
   joinRequests           TeamJoinRequest[]
-  moderationStatus       ModerationStatus           @default(ACTIVE)
-  sponsors               EventSponsor[]
 
   @@unique([orgId, slug])
   @@index([orgId])
@@ -219,21 +213,21 @@ model Team {
   lookingForMembers Boolean           @default(true)
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
+  moderationStatus  ModerationStatus  @default(ACTIVE)
   submissions       Submission[]
   event             Event             @relation(fields: [eventId], references: [id], onDelete: Cascade)
   auditLogs         TeamAuditLog[]
   invites           TeamInvite[]
   joinRequests      TeamJoinRequest[]
   members           TeamMember[]
-  moderationStatus  ModerationStatus  @default(ACTIVE)
 
   @@index([eventId])
 }
 
 /// TeamMember design notes:
-///   - eventId is stored directly to enforce:
-///       one-team-per-user-per-event via @@unique([eventId, userId])
-///   - LEADER transfer and kicking must be audited and optionally locked after event start.
+/// - eventId is stored directly to enforce:
+/// one-team-per-user-per-event via @@unique([eventId, userId])
+/// - LEADER transfer and kicking must be audited and optionally locked after event start.
 model TeamMember {
   id      String   @id @default(cuid())
   eventId String
@@ -250,12 +244,12 @@ model TeamMember {
 }
 
 /// Email-only invites:
-///   - Leader enters an email -> invite created with token
-///   - Recipient signs in -> must match User.email -> accept via /.../team/invites/:token
-///   - Acceptance must check:
-///       - Event.maxTeamSize capacity
-///       - TeamMember @@unique([eventId, userId]) (not already on a team)
-///       - Optional lockTeamChangesAtStart policy if event has started
+/// - Leader enters an email -> invite created with token
+/// - Recipient signs in -> must match User.email -> accept via /.../team/invites/:token
+/// - Acceptance must check:
+/// - Event.maxTeamSize capacity
+/// - TeamMember @@unique([eventId, userId]) (not already on a team)
+/// - Optional lockTeamChangesAtStart policy if event has started
 model TeamInvite {
   id              String       @id @default(cuid())
   eventId         String
@@ -278,12 +272,12 @@ model TeamInvite {
 }
 
 /// Join requests:
-///   - A user sees a team on Find Teams -> sends request with message
-///   - Team leader accepts/declines
-///   - Acceptance must check:
-///       - Event.maxTeamSize capacity
-///       - TeamMember @@unique([eventId, userId]) (not already on a team)
-///       - allowSelfJoinRequests policy
+/// - A user sees a team on Find Teams -> sends request with message
+/// - Team leader accepts/declines
+/// - Acceptance must check:
+/// - Event.maxTeamSize capacity
+/// - TeamMember @@unique([eventId, userId]) (not already on a team)
+/// - allowSelfJoinRequests policy
 model TeamJoinRequest {
   id        String            @id @default(cuid())
   eventId   String
@@ -304,12 +298,12 @@ model TeamJoinRequest {
 }
 
 /// Audit log:
-///   - Write a row for sensitive actions:
-///       - kicking
-///       - leader transfer
-///       - invite send/revoke/accept/decline
-///       - join request lifecycle
-///   - Helps prevent repudiation and enables organizer review.
+/// - Write a row for sensitive actions:
+/// - kicking
+/// - leader transfer
+/// - invite send/revoke/accept/decline
+/// - join request lifecycle
+/// - Helps prevent repudiation and enables organizer review.
 model TeamAuditLog {
   id           String          @id @default(cuid())
   eventId      String
@@ -339,16 +333,16 @@ model Submission {
   title            String
   description      String?
   content          Json?
-  imageKeys        Json?
-  videoKey         String?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
   submittedAt      DateTime?
+  moderationStatus ModerationStatus @default(ACTIVE)
+  imageKeys        Json?
+  videoKey         String?
   scores           Score[]
   author           User?            @relation("SubmissionAuthor", fields: [authorId], references: [id])
   event            Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
   team             Team?            @relation(fields: [teamId], references: [id])
-  moderationStatus ModerationStatus @default(ACTIVE)
 
   @@index([eventId])
   @@index([teamId])
@@ -412,45 +406,38 @@ model ContactMessage {
 }
 
 model Sponsor {
-  id          String  @id @default(cuid())
+  id          String                @id @default(cuid())
   name        String
-  slug        String  @unique
-  websiteKey  String?
+  slug        String                @unique
   description String?
-  logoKey     String? @db.Text // S3 key (recommended) e.g. public/sponsors/{id}/logo/v1/...
-  coverKey    String? @db.Text // optional
-
-  createdAt  DateTime          @default(now())
-  updatedAt  DateTime          @updatedAt
-  visibility SponsorVisibility @default(PRIVATE) // PRIVATE | PUBLIC
-
+  logoKey     String?               @db.Text
+  coverKey    String?               @db.Text
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  websiteKey  String?
   createdById String?
-  createdBy   User?   @relation("SponsorCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-
-  orgLinks   OrganizationSponsor[]
-  eventLinks EventSponsor[]
+  visibility  SponsorVisibility     @default(PRIVATE)
+  eventLinks  EventSponsor[]
+  orgLinks    OrganizationSponsor[]
+  createdBy   User?                 @relation("SponsorCreatedBy", fields: [createdById], references: [id])
 
   @@index([createdById])
 }
 
 model OrganizationSponsor {
-  id          String      @id @default(cuid())
+  id          String       @id @default(cuid())
   orgId       String
   sponsorId   String
-  tier        SponsorTier @default(COMMUNITY)
-  isActive    Boolean     @default(true)
+  tier        SponsorTier  @default(COMMUNITY)
+  isActive    Boolean      @default(true)
   displayName String?
   blurb       String?
-  order       Int         @default(0)
-
-  // optional: custom logo for this org relationship (override global)
-  logoKey String? @db.Text
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  org     Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  sponsor Sponsor      @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
+  order       Int          @default(0)
+  logoKey     String?      @db.Text
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  sponsor     Sponsor      @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
 
   @@unique([orgId, sponsorId])
   @@index([orgId])
@@ -467,16 +454,12 @@ model EventSponsor {
   displayName String?
   blurb       String?
   order       Int         @default(0)
-
-  // optional overrides for this specific event
-  logoKey    String? @db.Text
-  websiteKey String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  event   Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  sponsor Sponsor @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
+  logoKey     String?     @db.Text
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  websiteKey  String?
+  event       Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  sponsor     Sponsor     @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
 
   @@unique([eventId, sponsorId])
   @@index([eventId])

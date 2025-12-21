@@ -28,6 +28,7 @@ const OrgSponsorsPage = async ({
     redirect(`/login?next=/app/orgs/${orgSlug}/sponsors`);
   }
   const org = await fetchOrgData(orgSlug);
+  console.log("org", org);
   if (org.status === "ERROR") return notFound();
   const { id } = org.data as Organization;
 

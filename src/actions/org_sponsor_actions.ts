@@ -123,7 +123,6 @@ export const createSponsorProfile = async (
       const fallbackSlug = `${baseSlug}-${crypto.randomBytes(3).toString("hex")}`;
       return await createSponsorWithSlug(fallbackSlug);
     });
-    updateTag(`sponsor-library-${session.user.id}`);
     updateTag(`sponsor-${created.id}`);
 
     return parseServerActionResponse({
@@ -268,7 +267,6 @@ export const updateSponsorProfile = async (
     }
 
     updateTag(`sponsor-${sponsorId}`);
-    updateTag(`sponsor-library-${session.user.id}`);
 
     return parseServerActionResponse({
       status: "SUCCESS",
@@ -353,7 +351,6 @@ export const setSponsorVisibility = async (
     });
 
     updateTag(`sponsor-${sponsorId}`);
-    updateTag(`sponsor-library-${session.user.id}`);
 
     return parseServerActionResponse({
       status: "SUCCESS",
@@ -422,8 +419,6 @@ export const fetchSponsorLibrary = async (
         updatedAt: true,
       },
     });
-
-    updateTag(`sponsor-library-${session.user.id}`);
 
     return parseServerActionResponse({
       status: "SUCCESS",
@@ -597,14 +592,10 @@ export const fetchOrgSponsors = async (orgId: string): Promise<ActionState> => {
             description: true,
             logoKey: true,
             coverKey: true,
-            visibility: true,
-            createdById: true,
           },
         },
       },
     });
-
-    updateTag(`org-sponsors-${orgId}`);
 
     return parseServerActionResponse({
       status: "SUCCESS",
