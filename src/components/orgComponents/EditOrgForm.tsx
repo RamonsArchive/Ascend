@@ -1,13 +1,6 @@
 "use client";
 
-import React, {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useActionState,
-  useCallback,
-} from "react";
+import React, { useMemo, useRef, useState, useActionState } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
@@ -17,8 +10,8 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import SplitText from "gsap/SplitText";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useRouter } from "next/navigation";
 
-import { createOrganization } from "@/src/actions/org_actions";
 import { edit_org_data } from "@/src/constants/orgConstants/org_index";
 import type { ActionState } from "@/src/lib/global_types";
 import {
@@ -27,17 +20,13 @@ import {
   updatePhoneNumber,
   validateImageFile,
 } from "@/src/lib/utils";
-import { newOrgClientFormSchema } from "@/src/lib/validation";
-import { signInWithGoogle } from "@/src/lib/auth-client";
+import { editOrgClientSchema } from "@/src/lib/validation";
 import { createOrgImageUpload } from "@/src/actions/s3_actions";
 import { uploadToS3PresignedPost } from "@/src/lib/s3-client";
-import { useRouter } from "next/navigation";
-import { Organization } from "@prisma/client";
+import { updateOrganization } from "@/src/actions/org_edit_actions";
+import { s3KeyToPublicUrl } from "@/src/lib/s3-client";
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
-
-const DRAFT_KEY = "ascend:new-org-create:draft:v1";
-const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
 
 const initialState: ActionState = {
   status: "INITIAL",
@@ -45,7 +34,7 @@ const initialState: ActionState = {
   data: null,
 };
 
-type NewOrgClientErrors = Partial<
+type EditOrgClientErrors = Partial<
   Record<
     | "name"
     | "description"
@@ -70,78 +59,16 @@ function formatPhoneDisplayFromDigits(digits: string) {
   return cleaned;
 }
 
-function readDraftFromStorage() {
-  try {
-    const raw = localStorage.getItem(DRAFT_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as {
-      savedAt: number;
-      data: {
-        name: string;
-        description: string;
-        publicEmail: string;
-        publicPhone: string;
-        websiteUrl: string;
-        contactNote: string;
-      };
-    };
-
-    if (!parsed?.savedAt || !parsed?.data) {
-      localStorage.removeItem(DRAFT_KEY);
-      return null;
-    }
-
-    const age = Date.now() - parsed.savedAt;
-    if (age > DRAFT_TTL_MS) {
-      localStorage.removeItem(DRAFT_KEY);
-      return null;
-    }
-
-    return parsed;
-  } catch {
-    try {
-      localStorage.removeItem(DRAFT_KEY);
-    } catch {}
-    return null;
-  }
-}
-
-function fileFromFormDataEntry(entry: FormDataEntryValue | null) {
-  if (!entry) return undefined;
-  if (entry instanceof File && entry.size > 0) return entry;
-  return undefined;
-}
-
-function payloadFromFormData(formData: FormData) {
-  const rawLogo = formData.get("logoFile");
-  const rawCover = formData.get("coverFile");
-
-  return {
-    name: (formData.get("name")?.toString() ?? "").trim(),
-    description: (formData.get("description")?.toString() ?? "").trim(),
-    publicEmail: (formData.get("publicEmail")?.toString() ?? "").trim(),
-    publicPhone: (formData.get("publicPhone")?.toString() ?? "").trim(),
-    websiteUrl: (formData.get("websiteUrl")?.toString() ?? "").trim(),
-    contactNote: (formData.get("contactNote")?.toString() ?? "").trim(),
-    logoFile: fileFromFormDataEntry(rawLogo),
-    coverFile: fileFromFormDataEntry(rawCover),
-  };
-}
-
 const EditOrgForm = ({
   submitLabel,
-  isLoggedIn,
-  path,
   orgId,
   initialOrg,
 }: {
   submitLabel: string;
-  isLoggedIn: boolean;
-  path: string;
   orgId: string;
   initialOrg: {
     name: string;
-    description: string;
+    description: string | null;
     publicEmail: string | null;
     publicPhone: string | null;
     websiteUrl: string | null;
@@ -151,6 +78,8 @@ const EditOrgForm = ({
   };
 }) => {
   const router = useRouter();
+  const { form } = edit_org_data;
+
   const allowedImageMimeTypes = useMemo(
     () => new Set(["image/png", "image/jpeg", "image/webp"]),
     []
@@ -178,10 +107,11 @@ const EditOrgForm = ({
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
   const contactNoteRef = useRef<HTMLTextAreaElement>(null);
 
-  const [errors, setErrors] = useState<NewOrgClientErrors>({});
+  const [errors, setErrors] = useState<EditOrgClientErrors>({});
   const [statusMessage, setStatusMessage] = useState("");
   const [showContactPreview, setShowContactPreview] = useState(false);
   const [showDescriptionPreview, setShowDescriptionPreview] = useState(false);
+
   const [storeFormData, setStoreFormData] = useState(() => ({
     name: initialOrg.name ?? "",
     description: initialOrg.description ?? "",
@@ -194,30 +124,22 @@ const EditOrgForm = ({
   const [phoneDisplay, setPhoneDisplay] = useState(() =>
     formatPhoneDisplayFromDigits(initialOrg.publicPhone ?? "")
   );
-  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
-  const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
+
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(() =>
+    initialOrg.logoKey ? (s3KeyToPublicUrl(initialOrg.logoKey) as string) : null
+  );
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(() =>
+    initialOrg.coverKey
+      ? (s3KeyToPublicUrl(initialOrg.coverKey) as string)
+      : null
+  );
 
   const [removeLogo, setRemoveLogo] = useState(false);
   const [removeCover, setRemoveCover] = useState(false);
 
-  const redirectToLogin = useCallback(async () => {
-    await signInWithGoogle(path);
-  }, [path]);
-
-  useEffect(() => {
-    // After login, clear the saved draft (files are never persisted).
-    if (!isLoggedIn) return;
-    try {
-      localStorage.removeItem(DRAFT_KEY);
-    } catch {}
-  }, [isLoggedIn]);
-
   const handleFormChange = (key: string, value: string) => {
     if (key === "publicPhone") {
-      if (value.length > 12) {
-        // including dashes
-        return;
-      }
+      if (value.length > 12) return; // includes dashes
       updatePhoneNumber(value, phoneDisplay, setPhoneDisplay);
       const cleanPhone = value.replace(/[^0-9]/g, "");
       setStoreFormData({ ...storeFormData, publicPhone: cleanPhone });
@@ -254,7 +176,7 @@ const EditOrgForm = ({
         return;
       }
 
-      const triggerEl = document.getElementById("new-org-form");
+      const triggerEl = document.getElementById("edit-org-form");
       if (!triggerEl) {
         requestAnimationFrame(initAnimations);
         return;
@@ -318,6 +240,7 @@ const EditOrgForm = ({
       if (allPreviewButtons.length > 0) {
         gsap.set(allPreviewButtons, { opacity: 0, y: 48 });
       }
+
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: triggerEl,
@@ -333,9 +256,11 @@ const EditOrgForm = ({
         { opacity: 1, y: 0, stagger: 0.04 },
         0.05
       );
+
       if (allPreviewButtons.length > 0) {
         tl.to(allPreviewButtons, { opacity: 1, y: 0, stagger: 0.02 }, 0.05);
       }
+
       requestAnimationFrame(() => ScrollTrigger.refresh());
 
       cleanup = () => {
@@ -356,71 +281,37 @@ const EditOrgForm = ({
     return () => cleanup?.();
   }, []);
 
-  const resetForm = () => {
-    setErrors({});
-    setStatusMessage("");
-    setShowContactPreview(false);
-    setShowDescriptionPreview(false);
-    setStoreFormData({
-      name: "",
-      description: "",
-      publicEmail: "",
-      publicPhone: "",
-      websiteUrl: "",
-      contactNote: "",
-    });
-    setPhoneDisplay("");
-
-    if (nameRef.current) nameRef.current.value = "";
-    if (descriptionRef.current) descriptionRef.current.value = "";
-    if (publicEmailRef.current) publicEmailRef.current.value = "";
-    if (publicPhoneRef.current) publicPhoneRef.current.value = "";
-    if (websiteUrlRef.current) websiteUrlRef.current.value = "";
-    if (contactNoteRef.current) contactNoteRef.current.value = "";
-    if (logoRef.current) logoRef.current.value = "";
-    if (coverRef.current) coverRef.current.value = "";
-
-    setLogoPreviewUrl(null);
-    setCoverPreviewUrl(null);
-  };
-
   const submitForm = async (
     _state: ActionState,
     formData: FormData
   ): Promise<ActionState> => {
     try {
       setErrors({});
+
+      // Ensure phone digits are submitted
       if (storeFormData.publicPhone) {
         const cleanNumber = storeFormData.publicPhone.replace(/[^0-9]/g, "");
         formData.set("publicPhone", cleanNumber);
       }
-      const payload = payloadFromFormData(formData);
-      console.log("payload", payload);
-      await newOrgClientFormSchema.parseAsync(payload);
-      console.log("parsed");
 
-      if (!isLoggedIn) {
-        persistDraft();
-        setStatusMessage("Redirecting to sign in…");
-        toast.error("SIGN IN REQUIRED", {
-          description:
-            "Sign in with Google to create an organization. We saved your draft (files need to be reselected).",
-        });
-        redirectToLogin();
-        return parseServerActionResponse({
-          status: "ERROR",
-          error: "SIGN_IN_REQUIRED",
-          data: null,
-        });
-      }
-
-      setStatusMessage("Uploading images…");
-
-      // Grab files directly from inputs (don’t rely on FormData for File after we re-build it)
       const logoFile = logoRef.current?.files?.[0] ?? null;
       const coverFile = coverRef.current?.files?.[0] ?? null;
-      console.log("logoFile", logoFile);
-      console.log("coverFile", coverFile);
+
+      await editOrgClientSchema.parseAsync({
+        orgId,
+        name: storeFormData.name,
+        description: storeFormData.description,
+        publicEmail: storeFormData.publicEmail,
+        publicPhone: storeFormData.publicPhone,
+        websiteUrl: storeFormData.websiteUrl,
+        contactNote: storeFormData.contactNote,
+        logoFile: logoFile ?? undefined,
+        coverFile: coverFile ?? undefined,
+        removeLogo,
+        removeCover,
+      });
+
+      setStatusMessage("Uploading images…");
 
       let logoKey: string | null = null;
       let coverKey: string | null = null;
@@ -431,14 +322,12 @@ const EditOrgForm = ({
           fileName: logoFile.name,
           contentType: logoFile.type,
         });
-        console.log("presign", presign);
         await uploadToS3PresignedPost({
           url: presign.url,
           fields: presign.fields,
           file: logoFile,
         });
         logoKey = presign.key;
-        console.log("logoKey", logoKey);
       }
 
       if (coverFile) {
@@ -447,60 +336,50 @@ const EditOrgForm = ({
           fileName: coverFile.name,
           contentType: coverFile.type,
         });
-        console.log("presign", presign);
         await uploadToS3PresignedPost({
           url: presign.url,
           fields: presign.fields,
           file: coverFile,
         });
         coverKey = presign.key;
-        console.log("coverKey", coverKey);
       }
 
-      setStatusMessage("Creating organization…");
+      setStatusMessage("Saving changes…");
 
-      // Build a NEW FormData without files; send keys instead
       const fd = new FormData();
+      fd.set("orgId", orgId);
       fd.set("name", storeFormData.name);
       fd.set("description", storeFormData.description);
       fd.set("publicEmail", storeFormData.publicEmail);
       fd.set("publicPhone", storeFormData.publicPhone); // digits already
       fd.set("websiteUrl", storeFormData.websiteUrl);
       fd.set("contactNote", storeFormData.contactNote);
+      fd.set("removeLogo", removeLogo ? "true" : "false");
+      fd.set("removeCover", removeCover ? "true" : "false");
       if (logoKey) fd.set("logoKey", logoKey);
       if (coverKey) fd.set("coverKey", coverKey);
-      console.log("publicPhone", storeFormData.publicPhone);
 
-      console.log("fd", fd);
-      const result = await createOrganization(initialState, fd);
-      console.log("result", result);
-
+      const result = await updateOrganization(initialState, fd);
       if (result.status === "ERROR") {
+        if (result.error === "NOT_AUTHORIZED") {
+          setStatusMessage("Not authorized to edit this organization.");
+          toast.error("ERROR", { description: "Not authorized." });
+          return result;
+        }
         setStatusMessage("Something went wrong. Please try again.");
-        toast.error("ERROR", {
-          description:
-            result.error || "Something went wrong. Please try again.",
-        });
+        toast.error("ERROR", { description: result.error });
         return result;
       }
 
-      resetForm();
-      setStatusMessage("Organization created successfully.");
-      toast.success("SUCCESS", {
-        description: "Organization created successfully.",
-      });
-
-      const orgSlug = (result.data as { slug: string }).slug;
-      console.log("orgSlug", orgSlug);
-      // push to new org page not public page
-      router.push(`/app/orgs/${orgSlug}/settings`);
+      setStatusMessage("Saved.");
+      toast.success("SUCCESS", { description: "Organization updated." });
+      router.refresh();
 
       return result;
     } catch (error) {
       console.error(error);
-      setStatusMessage(
-        "An error occurred while submitting the form. Please try again."
-      );
+      setStatusMessage("Please fix the highlighted fields.");
+
       if (error instanceof z.ZodError) {
         const fieldErrors = z.flattenError(error).fieldErrors as Record<
           string,
@@ -510,24 +389,26 @@ const EditOrgForm = ({
         Object.keys(fieldErrors).forEach((key) => {
           formattedErrors[key] = fieldErrors[key]?.[0] || "";
         });
-        setErrors(formattedErrors);
+        setErrors(formattedErrors as EditOrgClientErrors);
         toast.error("ERROR", {
-          description: Object.values(formattedErrors).join(", "),
+          description: Object.values(formattedErrors)
+            .filter(Boolean)
+            .join(", "),
         });
         return parseServerActionResponse({
           status: "ERROR",
-          error: Object.values(formattedErrors).join(", "),
+          error: Object.values(formattedErrors).filter(Boolean).join(", "),
           data: null,
         });
       }
+
       toast.error("ERROR", {
-        description:
-          "An error occurred while submitting the form. Please try again.",
+        description: "An error occurred while saving. Please try again.",
       });
 
       return parseServerActionResponse({
         status: "ERROR",
-        error: "An error occurred while submitting the form",
+        error: "An error occurred while saving",
         data: null,
       });
     }
@@ -536,10 +417,9 @@ const EditOrgForm = ({
   const [, formAction, isPending] = useActionState(submitForm, initialState);
 
   const onSelectLogo = (file: File | null) => {
-    if (!file) {
-      setLogoPreviewUrl(null);
-      return;
-    }
+    setRemoveLogo(false);
+    if (!file) return;
+
     const ok = validateImageFile({
       file,
       options: { allowedMimeTypes: allowedImageMimeTypes, maxBytes: TEN_MB },
@@ -549,17 +429,15 @@ const EditOrgForm = ({
         description: "Logo must be a PNG, JPG, or WEBP. Max size is 10MB.",
       });
       if (logoRef.current) logoRef.current.value = "";
-      setLogoPreviewUrl(null);
       return;
     }
     setLogoPreviewUrl(URL.createObjectURL(file));
   };
 
   const onSelectCover = (file: File | null) => {
-    if (!file) {
-      setCoverPreviewUrl(null);
-      return;
-    }
+    setRemoveCover(false);
+    if (!file) return;
+
     const ok = validateImageFile({
       file,
       options: { allowedMimeTypes: allowedImageMimeTypes, maxBytes: TEN_MB },
@@ -569,7 +447,6 @@ const EditOrgForm = ({
         description: "Cover must be a PNG, JPG, or WEBP. Max size is 10MB.",
       });
       if (coverRef.current) coverRef.current.value = "";
-      setCoverPreviewUrl(null);
       return;
     }
     setCoverPreviewUrl(URL.createObjectURL(file));
@@ -581,7 +458,7 @@ const EditOrgForm = ({
         <form
           action={formAction}
           className="flex flex-col gap-8 md:gap-10"
-          id="new-org-form"
+          id="edit-org-form"
         >
           <div className="flex flex-col gap-6 md:gap-8">
             <div className="flex flex-col gap-2 overflow-hidden">
@@ -613,7 +490,7 @@ const EditOrgForm = ({
                 <label
                   htmlFor="description"
                   ref={descriptionLabelRef}
-                  className="text-xs md:text-sm text-white/75"
+                  className="text-xs md:text-sm text-white/75 flex items-center gap-1"
                 >
                   {form.description.label}
                   <span className="text-xs text-red-500">*</span>
@@ -652,6 +529,7 @@ const EditOrgForm = ({
                   }
                 />
               )}
+
               {errors.description ? (
                 <p className="text-red-400 text-xs md:text-sm">
                   {errors.description}
@@ -666,13 +544,13 @@ const EditOrgForm = ({
                   ref={publicEmailLabelRef}
                   className="text-xs md:text-sm text-white/75"
                 >
-                  Public email
+                  {form.publicEmail.label}
                 </label>
                 <input
                   id="publicEmail"
                   name="publicEmail"
                   ref={publicEmailRef}
-                  placeholder="hello@org.com"
+                  placeholder={form.publicEmail.placeholder}
                   className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
                   value={storeFormData.publicEmail}
                   onChange={(e) =>
@@ -692,13 +570,13 @@ const EditOrgForm = ({
                   ref={publicPhoneLabelRef}
                   className="text-xs md:text-sm text-white/75"
                 >
-                  Public phone
+                  {form.publicPhone.label}
                 </label>
                 <input
                   id="publicPhone"
                   name="publicPhone"
                   ref={publicPhoneRef}
-                  placeholder="5551234567"
+                  placeholder={form.publicPhone.placeholder}
                   className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
                   value={phoneDisplay}
                   onChange={(e) =>
@@ -719,13 +597,13 @@ const EditOrgForm = ({
                 ref={websiteUrlLabelRef}
                 className="text-xs md:text-sm text-white/75"
               >
-                Website URL
+                {form.websiteUrl.label}
               </label>
               <input
                 id="websiteUrl"
                 name="websiteUrl"
                 ref={websiteUrlRef}
-                placeholder="https://yourorg.com"
+                placeholder={form.websiteUrl.placeholder}
                 className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
                 value={storeFormData.websiteUrl}
                 onChange={(e) => handleFormChange("websiteUrl", e.target.value)}
@@ -755,17 +633,35 @@ const EditOrgForm = ({
                   className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] file:mr-4 file:rounded-xl file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-white/80 file:hover:bg-white/15 file:transition-colors"
                   onChange={(e) => onSelectLogo(e.target.files?.[0] ?? null)}
                 />
-                {logoPreviewUrl ? (
-                  <div className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-                    <div className="text-xs text-white/60">Preview</div>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={logoPreviewUrl}
-                      alt="Logo preview"
-                      className="w-16 h-16 object-contain rounded-xl bg-black/30 border border-white/10"
-                    />
-                  </div>
-                ) : null}
+
+                <div className="flex flex-col gap-2">
+                  {logoPreviewUrl ? (
+                    <div className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+                      <div className="text-xs text-white/60">Preview</div>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={logoPreviewUrl}
+                        alt="Logo preview"
+                        className="w-16 h-16 object-contain rounded-xl bg-black/30 border border-white/10"
+                      />
+                    </div>
+                  ) : null}
+
+                  {initialOrg.logoKey ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRemoveLogo(true);
+                        if (logoRef.current) logoRef.current.value = "";
+                        setLogoPreviewUrl(null);
+                      }}
+                      className="text-xs text-white/70 hover:text-white underline text-left"
+                    >
+                      Remove logo
+                    </button>
+                  ) : null}
+                </div>
+
                 {errors.logoFile ? (
                   <p className="text-red-400 text-xs md:text-sm">
                     {errors.logoFile}
@@ -790,17 +686,35 @@ const EditOrgForm = ({
                   className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] file:mr-4 file:rounded-xl file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-white/80 file:hover:bg-white/15 file:transition-colors"
                   onChange={(e) => onSelectCover(e.target.files?.[0] ?? null)}
                 />
-                {coverPreviewUrl ? (
-                  <div className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-                    <div className="text-xs text-white/60">Preview</div>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={coverPreviewUrl}
-                      alt="Cover preview"
-                      className="w-full h-28 object-cover rounded-xl border border-white/10"
-                    />
-                  </div>
-                ) : null}
+
+                <div className="flex flex-col gap-2">
+                  {coverPreviewUrl ? (
+                    <div className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-white/5 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+                      <div className="text-xs text-white/60">Preview</div>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={coverPreviewUrl}
+                        alt="Cover preview"
+                        className="w-full h-28 object-cover rounded-xl border border-white/10"
+                      />
+                    </div>
+                  ) : null}
+
+                  {initialOrg.coverKey ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRemoveCover(true);
+                        if (coverRef.current) coverRef.current.value = "";
+                        setCoverPreviewUrl(null);
+                      }}
+                      className="text-xs text-white/70 hover:text-white underline text-left"
+                    >
+                      Remove cover
+                    </button>
+                  ) : null}
+                </div>
+
                 {errors.coverFile ? (
                   <p className="text-red-400 text-xs md:text-sm">
                     {errors.coverFile}
@@ -816,7 +730,7 @@ const EditOrgForm = ({
                   ref={contactNoteLabelRef}
                   className="text-xs md:text-sm text-white/75"
                 >
-                  Contact note (Markdown)
+                  {form.contactNote.label}
                 </label>
                 <button
                   type="button"
@@ -844,7 +758,7 @@ const EditOrgForm = ({
                   id="contactNote"
                   name="contactNote"
                   ref={contactNoteRef}
-                  placeholder="Example: **Sponsorships** — email [partners@org.com](mailto:partners@org.com)"
+                  placeholder={form.contactNote.placeholder}
                   className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors min-h-[160px] resize-none shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
                   value={storeFormData.contactNote}
                   onChange={(e) =>
@@ -852,6 +766,7 @@ const EditOrgForm = ({
                   }
                 />
               )}
+
               {errors.contactNote ? (
                 <p className="text-red-400 text-xs md:text-sm">
                   {errors.contactNote}
@@ -866,7 +781,7 @@ const EditOrgForm = ({
                 className="w-full max-w-sm px-5 py-3 rounded-2xl cursor-pointer bg-white text-primary-950 font-semibold text-sm md:text-base transition-opacity hover:opacity-90 disabled:opacity-60"
                 disabled={isPending}
               >
-                {isPending ? "Creating..." : submitLabel}
+                {isPending ? "Saving..." : submitLabel}
               </button>
             </div>
           </div>

@@ -43,6 +43,63 @@ export const new_org_data = {
   },
 };
 
+export const edit_org_data = {
+  seo: {
+    title: "Organization settings — Ascend",
+    description:
+      "Update your organization profile, branding, and contact info.",
+  },
+  hero: {
+    title: "Organization settings",
+    subtitle:
+      "Update your profile, branding, and public contact information. Changes are reflected across your org pages.",
+    description:
+      "These details appear on your public organization page and inside the app. Keep them accurate so participants and sponsors can reach you.",
+  },
+  formSection: {
+    title: "Profile & branding",
+    description:
+      "Update your org name, description (Markdown supported), logo, cover image, and public contact details.",
+  },
+  form: {
+    name: {
+      label: "Organization name",
+      placeholder: "Enter organization name",
+    },
+    description: {
+      label: "Description (Markdown)",
+      placeholder:
+        "Describe what your org does, who it’s for, and what you host…",
+    },
+    publicEmail: {
+      label: "Public email",
+      placeholder: "hello@org.com",
+    },
+    publicPhone: {
+      label: "Public phone",
+      placeholder: "5551234567",
+    },
+    websiteUrl: {
+      label: "Website URL",
+      placeholder: "https://yourorg.com",
+    },
+    logo: {
+      label: "Logo",
+    },
+    cover: {
+      label: "Cover image",
+    },
+    contactNote: {
+      label: "Contact note (Markdown)",
+      placeholder:
+        "Example: **Sponsorships** — email [partners@org.com](mailto:partners@org.com)",
+    },
+  },
+  cta: {
+    label: "Save changes",
+  },
+};
+
 export const org_nav_links = (orgSlug: string) =>
   [
     { label: "Overview", href: `/app/orgs/${orgSlug}` },

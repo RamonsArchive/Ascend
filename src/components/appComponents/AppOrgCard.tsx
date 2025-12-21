@@ -2,7 +2,7 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { Organization, OrgMembership } from "@prisma/client";
-import { s3KeyToPublicUrl } from "@/src/lib/s3";
+import { s3KeyToPublicUrl } from "@/src/lib/s3-client";
 
 type OrgWithMemberships = Organization & { memberships?: OrgMembership[] };
 

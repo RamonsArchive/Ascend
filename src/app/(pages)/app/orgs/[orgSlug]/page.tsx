@@ -4,7 +4,7 @@ import { redirect, notFound } from "next/navigation";
 
 import { auth } from "@/src/lib/auth";
 import { prisma } from "@/src/lib/prisma";
-import OrgDashboardHero from "@/src/components/orgComponents/dashboard/OrgDashboardHero";
+import OrgDashboardHero from "@/src/components/orgComponents/OrgDashboardHero";
 
 const OrgOverviewPage = async ({
   params,

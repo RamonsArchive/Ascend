@@ -4,7 +4,7 @@ import { auth } from "@/src/lib/auth";
 import { headers } from "next/headers";
 import crypto from "crypto";
 import { createPresignedPost } from "@aws-sdk/s3-presigned-post";
-import { S3Client } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
 const REGION = process.env.AWS_REGION!;
 const BUCKET = process.env.AWS_S3_BUCKET_NAME!;

@@ -1,18 +1,22 @@
 import React from "react";
 import EditOrgForm from "./EditOrgForm";
 import { edit_org_data } from "@/src/constants/orgConstants/org_index";
-import { Organization } from "@prisma/client";
 
 const EditOrgFormSection = ({
-  isLoggedIn,
-  path,
   orgId,
   initialOrg,
 }: {
-  isLoggedIn: boolean;
-  path: string;
   orgId: string;
-  initialOrg: Organization;
+  initialOrg: {
+    name: string;
+    description: string | null;
+    publicEmail: string | null;
+    publicPhone: string | null;
+    websiteUrl: string | null;
+    contactNote: string | null;
+    logoKey: string | null;
+    coverKey: string | null;
+  };
 }) => {
   return (
     <section className="flex flex-col items-center justify-center w-full">
@@ -28,8 +32,6 @@ const EditOrgFormSection = ({
 
         <EditOrgForm
           submitLabel={edit_org_data.cta.label}
-          isLoggedIn={isLoggedIn}
-          path={path}
           orgId={orgId}
           initialOrg={initialOrg}
         />

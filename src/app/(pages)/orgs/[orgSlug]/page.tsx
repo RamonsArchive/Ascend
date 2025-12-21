@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 
 import { prisma } from "@/src/lib/prisma";
 import { auth } from "@/src/lib/auth";
-import PublicOrgHero from "@/src/components/orgComponents/public/PublicOrgHero";
+import PublicOrgHero from "@/src/components/orgComponents/PublicOrgHero";
 
 const PublicOrgPage = async ({
   params,

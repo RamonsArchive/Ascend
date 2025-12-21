@@ -221,3 +221,93 @@ export const editOrgServerSchema = z.object({
   removeLogo: z.boolean().optional(),
   removeCover: z.boolean().optional(),
 });
+
+export const editOrgClientSchema = z.object({
+  orgId: z.string().min(1, { message: "Missing organization id" }),
+
+  name: z
+    .string()
+    .min(1, { message: "Organization name is required" })
+    .max(100, { message: "Name must be less than 100 characters" }),
+
+  description: z.preprocess(
+    emptyToUndefined,
+    z.string().min(1, { message: "Description is required" }).max(1000, {
+      message: "Description must be less than 1000 characters",
+    })
+  ),
+
+  publicEmail: z.preprocess(
+    emptyToUndefined,
+    z.string().email({ message: "Invalid email address" }).optional()
+  ),
+
+  publicPhone: z
+    .string()
+    .optional()
+    .refine((val) => !val || /^[0-9]{10}$/.test(val), {
+      message: "Phone number must be 10 digits",
+    }),
+
+  websiteUrl: z.preprocess(
+    emptyToUndefined,
+    z.string().url({ message: "Invalid website URL" }).optional()
+  ),
+
+  contactNote: z.preprocess(
+    emptyToUndefined,
+    z
+      .string()
+      .max(2000, { message: "Contact note must be less than 2000 characters" })
+      .optional()
+  ),
+
+  logoFile: z
+    .custom<File | undefined>((val) => val == null || val instanceof File, {
+      message: "Invalid logo file",
+    })
+    .optional()
+    .refine(
+      (val) => {
+        if (!val) return true;
+        return validateImageFile({
+          file: val,
+          options: {
+            allowedMimeTypes: new Set([
+              "image/png",
+              "image/jpeg",
+              "image/webp",
+            ]),
+            maxBytes: TEN_MB,
+          },
+        });
+      },
+      { message: "Logo must be a PNG, JPG, or WEBP. Max size is 10MB." }
+    ),
+
+  coverFile: z
+    .custom<File | undefined>((val) => val == null || val instanceof File, {
+      message: "Invalid cover file",
+    })
+    .optional()
+    .refine(
+      (val) => {
+        if (!val) return true;
+        return validateImageFile({
+          file: val,
+          options: {
+            allowedMimeTypes: new Set([
+              "image/png",
+              "image/jpeg",
+              "image/webp",
+            ]),
+            maxBytes: TEN_MB,
+          },
+        });
+      },
+      { message: "Cover must be a PNG, JPG, or WEBP. Max size is 10MB." }
+    ),
+
+  removeLogo: z.boolean().optional(),
+  removeCover: z.boolean().optional(),
+});

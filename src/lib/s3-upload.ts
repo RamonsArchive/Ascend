@@ -22,6 +22,7 @@ function assertEnv() {
 const s3 = new S3Client({ region: REGION });
 
 export type OrgAssetKind = "logo" | "cover";
+export type SponsorAssetKind = "logo" | "cover";
 
 function extFrom(fileName: string, mime: string) {
   const dot = fileName.lastIndexOf(".");
@@ -112,7 +113,41 @@ export async function finalizeOrgImageFromTmp(opts: {
       Bucket: BUCKET,
       Key: finalKey,
       CopySource: copySource,
-    }),
+    })
+  );
+
+  await s3.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: tmpKey }));
+
+  return finalKey;
+}
+
+export async function finalizeSponsorImageFromTmp(opts: {
+  sponsorId: string;
+  kind: SponsorAssetKind;
+  tmpKey: string;
+}): Promise<string> {
+  assertEnv();
+
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user?.id) throw new Error("UNAUTHORIZED");
+
+  const { sponsorId, kind, tmpKey } = opts;
+  ensureTmpKey(tmpKey);
+
+  const ext = extFromKey(tmpKey);
+  const uuid = crypto.randomUUID();
+
+  const finalKey = `public/sponsors/${sponsorId}/${kind}/v1/${uuid}.${ext}`;
+
+  const encodedKey = encodeURIComponent(tmpKey).replace(/%2F/g, "/");
+  const copySource = `${BUCKET}/${encodedKey}`;
+
+  await s3.send(
+    new CopyObjectCommand({
+      Bucket: BUCKET,
+      Key: finalKey,
+      CopySource: copySource,
+    })
   );
 
   await s3.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: tmpKey }));
