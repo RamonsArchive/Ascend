@@ -14,12 +14,12 @@ type Member = {
 };
 
 const EditOrgMembersSection = ({
-  orgSlug,
+  orgId,
   members,
   currentUserId,
   viewerRole,
 }: {
-  orgSlug: string;
+  orgId: string;
   members: Member[];
   currentUserId: string;
   viewerRole: "OWNER" | "ADMIN";
@@ -106,7 +106,7 @@ const EditOrgMembersSection = ({
           {filtered.map((member) => (
             <EditOrgMemberCard
               key={member.id}
-              orgSlug={orgSlug}
+              orgId={orgId}
               member={member}
               currentUserId={currentUserId}
               viewerRole={viewerRole}

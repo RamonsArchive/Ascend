@@ -310,3 +310,61 @@ export const isAdminOrOwnerOfOrg = async (orgId: string, userId: string) => {
     }) as ActionState;
   }
 };
+
+export async function assertOrgAdminOrOwner(orgSlug: string, userId: string) {
+  const org = await fetchOrgData(orgSlug);
+  if (org.status === "ERROR" || !org.data) throw new Error("ORG_NOT_FOUND");
+  const orgId = (org.data as { id: string }).id;
+
+  const membership = await prisma.orgMembership.findUnique({
+    where: { orgId_userId: { orgId, userId } },
+    select: { role: true },
+  });
+  if (!membership) throw new Error("NOT_AUTHORIZED");
+  if (membership.role !== "OWNER" && membership.role !== "ADMIN") {
+    throw new Error("NOT_AUTHORIZED");
+  }
+  return parseServerActionResponse({
+    status: "SUCCESS",
+    error: "",
+    data: { orgId, userRole: membership.role },
+  }) as ActionState;
+}
+
+export const assertOrgAdminOrOwnerWithId = async (
+  orgId: string,
+  userId: string,
+) => {
+  try {
+    const membership = await prisma.orgMembership.findUnique({
+      where: { orgId_userId: { orgId, userId } },
+      select: { role: true },
+    });
+    if (!membership) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "User is not a member of the organization",
+        data: null,
+      }) as ActionState;
+    }
+    if (membership.role !== "OWNER" && membership.role !== "ADMIN") {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "User is not a member of the organization",
+        data: null,
+      }) as ActionState;
+    }
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data: { orgId, userRole: membership.role },
+    }) as ActionState;
+  } catch (error) {
+    console.error(error);
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to check if user is a member of the organization",
+      data: null,
+    }) as ActionState;
+  }
+};

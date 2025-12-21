@@ -43,12 +43,12 @@ function roleBadgeClasses(role: Member["role"]) {
 }
 
 const EditOrgMemberCard = ({
-  orgSlug,
+  orgId,
   member,
   currentUserId,
   viewerRole,
 }: {
-  orgSlug: string;
+  orgId: string;
   member: Member;
   currentUserId: string;
   viewerRole: "OWNER" | "ADMIN";
@@ -76,7 +76,7 @@ const EditOrgMemberCard = ({
 
   const submitRole = async (
     _state: ActionState,
-    _fd: FormData
+    _fd: FormData,
   ): Promise<ActionState> => {
     try {
       void _state;
@@ -91,7 +91,7 @@ const EditOrgMemberCard = ({
 
       setStatusMessage("Saving…");
       const fd = new FormData();
-      fd.set("orgSlug", orgSlug);
+      fd.set("orgId", orgId);
       fd.set("memberId", member.id);
       fd.set("role", role);
 
@@ -152,7 +152,7 @@ const EditOrgMemberCard = ({
     try {
       setStatusMessage("Removing…");
       const fd = new FormData();
-      fd.set("orgSlug", orgSlug);
+      fd.set("orgId", orgId);
       fd.set("memberId", member.id);
 
       const result = await removeOrgMember(initialState, fd);
@@ -200,7 +200,7 @@ const EditOrgMemberCard = ({
                 </div>
                 <div
                   className={`w-fit px-3 py-1 rounded-full border text-[11px] font-semibold tracking-wide ${roleBadgeClasses(
-                    member.role
+                    member.role,
                   )}`}
                 >
                   {member.role}

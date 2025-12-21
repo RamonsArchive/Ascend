@@ -4,11 +4,15 @@ import React from "react";
 import { notFound, redirect } from "next/navigation";
 
 import { fetchOrgMembers } from "@/src/actions/org_members_actions";
-import { isAdminOrOwnerOfOrg, fetchOrgData } from "@/src/actions/org_actions";
+import {
+  isAdminOrOwnerOfOrg,
+  fetchOrgData,
+  assertOrgAdminOrOwner,
+} from "@/src/actions/org_actions";
 import EditOrgMembersHero from "@/src/components/orgComponents/EditOrgMembersHero";
 import EditOrgMembersSection from "@/src/components/orgComponents/EditOrgMembersSection";
 import { Organization, OrgMembership } from "@prisma/client";
-import type { Prisma } from "@prisma/client";
+import type { OrgRole, Prisma } from "@prisma/client";
 
 type OrgMember = Prisma.OrgMembershipGetPayload<{
   select: {
@@ -35,21 +39,14 @@ const OrgMembersPage = async ({
     redirect(`/login?next=/app/orgs/${orgSlug}/members`);
   }
 
-  const org = await fetchOrgData(orgSlug);
-  if (org.status === "ERROR") return notFound();
-  const { id } = org.data as Organization;
+  const hasPermissions = await assertOrgAdminOrOwner(orgSlug, userId);
+  if (hasPermissions.status === "ERROR") return notFound();
+  const { orgId, userRole } = hasPermissions.data as {
+    orgId: string;
+    userRole: OrgRole | null;
+  };
 
-  const isMember = await isAdminOrOwnerOfOrg(id, userId);
-  const canEdit =
-    isMember.status === "SUCCESS" &&
-    ((isMember.data as OrgMembership)?.role === "OWNER" ||
-      (isMember.data as OrgMembership)?.role === "ADMIN");
-  const viewerRole =
-    isMember.status === "SUCCESS"
-      ? ((isMember.data as OrgMembership)?.role ?? null)
-      : null;
-
-  if (!canEdit) {
+  if (userRole !== "OWNER" && userRole !== "ADMIN") {
     return (
       <div className="relative w-full">
         <div className="absolute inset-0 pointer-events-none marketing-bg" />
@@ -67,7 +64,7 @@ const OrgMembersPage = async ({
     );
   }
 
-  const members = await fetchOrgMembers(orgSlug);
+  const members = await fetchOrgMembers(orgId);
   if (members.status === "ERROR") return notFound();
   const membersData = members.data as OrgMemberResponse[];
   return (
@@ -79,7 +76,7 @@ const OrgMembersPage = async ({
           orgSlug={orgSlug}
           members={membersData}
           currentUserId={userId}
-          viewerRole={viewerRole as "OWNER" | "ADMIN"}
+          viewerRole={userRole as "OWNER" | "ADMIN"}
         />
       </div>
     </div>
