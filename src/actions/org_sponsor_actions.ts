@@ -9,6 +9,7 @@ import { parseServerActionResponse } from "@/src/lib/utils";
 import type { ActionState } from "@/src/lib/global_types";
 import { finalizeSponsorImageFromTmp } from "@/src/lib/s3-upload";
 import type { SponsorTier } from "@prisma/client";
+import { updateTag } from "next/cache";
 
 function slugify(input: string) {
   return input
@@ -169,6 +170,7 @@ export const addSponsorToOrg = async (
       const fallbackSlug = `${baseSlug}-${crypto.randomBytes(3).toString("hex")}`;
       return await createSponsorWithSlug(fallbackSlug);
     });
+    updateTag(`add-org-sponsor-${orgId}`);
 
     return parseServerActionResponse({
       status: "SUCCESS",

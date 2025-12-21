@@ -316,9 +316,10 @@ const AddOrgSponsorForm = ({ orgId }: { orgId: string }) => {
           <div className="flex flex-col gap-2">
             <label
               ref={nameLabelRef}
-              className="text-xs md:text-sm text-white/75"
+              className="text-xs md:text-sm text-white/75 flex items-center gap-1"
             >
               Sponsor name
+              <span className="text-xs text-red-500">*</span>
             </label>
             <input
               value={formData.sponsorName}

@@ -10,6 +10,7 @@ import type { SponsorTier } from "@prisma/client";
 
 import { finalizeSponsorImageFromTmp } from "@/src/lib/s3-upload";
 import { deleteS3ObjectIfExists } from "@/src/actions/s3_actions";
+import { updateTag } from "next/cache";
 
 const allowedTiers = new Set<SponsorTier>([
   "TITLE",
@@ -36,7 +37,7 @@ async function assertAdminOrOwner(orgId: string, userId: string) {
 
 export const updateOrgSponsor = async (
   _prevState: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -140,6 +141,7 @@ export const updateOrgSponsor = async (
       }
     }
 
+    updateTag(`update-org-sponsor-${orgId}`);
     return parseServerActionResponse({
       status: "SUCCESS",
       error: "",
@@ -303,7 +305,7 @@ export const updateOrgSponsor = async (
 
 export const removeSponsorFromOrg = async (
   _prevState: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -334,6 +336,8 @@ export const removeSponsorFromOrg = async (
     await prisma.organizationSponsor.delete({
       where: { orgId_sponsorId: { orgId, sponsorId } },
     });
+
+    updateTag(`remove-org-sponsor-${orgId}`);
 
     return parseServerActionResponse({
       status: "SUCCESS",
