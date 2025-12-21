@@ -55,3 +55,20 @@ export async function uploadOrgImage(opts: {
 
   return { key };
 }
+
+// src/lib/s3.ts
+export function s3KeyToPublicUrl(key?: string | null) {
+  if (!key) return null;
+
+  if (key.startsWith("http")) return key;
+
+  const bucket = process.env.NEXT_PUBLIC_AWS_S3_BUCKET_NAME;
+  const region = process.env.NEXT_PUBLIC_AWS_REGION;
+
+  if (!bucket || !region) {
+    console.error("Missing NEXT_PUBLIC_AWS_* env vars");
+    return null;
+  }
+
+  return `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
+}

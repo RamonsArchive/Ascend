@@ -41,7 +41,7 @@ export async function createOrgImageUpload(opts: {
     throw new Error("UNAUTHORIZED");
   }
 
-  const { kind, fileName, contentType } = opts;
+  const { kind, contentType } = opts;
 
   // You can keep this simple or use orgId once org exists.
   // This uses userId and random UUID so it’s always unique.

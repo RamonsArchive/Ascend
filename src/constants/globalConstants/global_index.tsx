@@ -11,11 +11,13 @@
 // - “Events” is global and public so users can discover what’s live right now.
 //
 
+// add dashboard link
 export const nav_links = [
   { label: "Home", href: "/", alt: "Home" },
   { label: "Events", href: "/events", alt: "Events" },
   { label: "About", href: "/about", alt: "About" },
   { label: "Contact", href: "/contact", alt: "Contact" },
+  { label: "Dashboard", href: "/app", alt: "Dashboard" },
 ] as const;
 
 export const nav_cta = {

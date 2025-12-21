@@ -248,7 +248,11 @@ const OrgNav = ({ orgSlug }: { orgSlug: string }) => {
       />
 
       {/* Mobile Menu */}
-      <OrgMobileMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+      <OrgMobileMenu
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+        orgSlug={orgSlug}
+      />
     </>
   );
 };

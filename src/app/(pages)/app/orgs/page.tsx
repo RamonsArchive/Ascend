@@ -1,20 +1,22 @@
-import { auth } from "@/src/lib/auth";
-import { redirect } from "next/navigation";
+import React from "react";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+
+import { auth } from "@/src/lib/auth";
 import { getAllOrganizations } from "@/src/actions/org_actions";
-import AppHero from "@/src/components/appComponents/AppHero";
 import AppOrganizationsSection from "@/src/components/appComponents/AppOrganizationsSection";
 import type { Organization, OrgMembership } from "@prisma/client";
 
-const AppPage = async () => {
+const MyOrganizationsPage = async () => {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user?.id) {
-    redirect(`/login?next=/app`);
+    redirect(`/login?next=/app/orgs`);
   }
 
   const organizations = await getAllOrganizations();
-  if (organizations.status === "ERROR")
+  if (organizations.status === "ERROR") {
     return <div>Error: {organizations.error}</div>;
+  }
 
   type OrgWithMemberships = Organization & { memberships: OrgMembership[] };
   const orgs = organizations.data as OrgWithMemberships[];
@@ -23,16 +25,16 @@ const AppPage = async () => {
     <div className="relative w-full">
       <div className="absolute inset-0 pointer-events-none marketing-bg" />
       <div className="relative flex flex-col items-center justify-center w-full gap-12 md:gap-16 lg:gap-20">
-        <AppHero userName={session.user.name ?? ""} />
         <AppOrganizationsSection
-          title="Your organizations"
-          description="Jump into any org you manage. Create a new one when you’re ready."
+          title="My organizations"
+          description="Switch organizations, manage members, and create events."
           orgs={orgs}
-          ctaHref="/app/orgs"
-          ctaLabel="View all"
+          ctaHref="/app/orgs/new"
+          ctaLabel="Create organization"
         />
       </div>
     </div>
   );
 };
-export default AppPage;
+
+export default MyOrganizationsPage;
