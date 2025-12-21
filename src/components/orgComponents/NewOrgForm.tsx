@@ -214,6 +214,10 @@ const NewOrgForm = ({
 
   const handleFormChange = (key: string, value: string) => {
     if (key === "publicPhone") {
+      if (value.length > 12) {
+        // including dashes
+        return;
+      }
       updatePhoneNumber(value, phoneDisplay, setPhoneDisplay);
       const cleanPhone = value.replace(/[^0-9]/g, "");
       setStoreFormData({ ...storeFormData, publicPhone: cleanPhone });
@@ -390,7 +394,6 @@ const NewOrgForm = ({
         const cleanNumber = storeFormData.publicPhone.replace(/[^0-9]/g, "");
         formData.set("publicPhone", cleanNumber);
       }
-      console.log("formData", JSON.stringify(formData, null, 2));
       const payload = payloadFromFormData(formData);
       console.log("payload", payload);
       await newOrgClientFormSchema.parseAsync(payload);
@@ -416,6 +419,8 @@ const NewOrgForm = ({
       // Grab files directly from inputs (don’t rely on FormData for File after we re-build it)
       const logoFile = logoRef.current?.files?.[0] ?? null;
       const coverFile = coverRef.current?.files?.[0] ?? null;
+      console.log("logoFile", logoFile);
+      console.log("coverFile", coverFile);
 
       let logoKey: string | null = null;
       let coverKey: string | null = null;
@@ -426,6 +431,7 @@ const NewOrgForm = ({
           fileName: logoFile.name,
           contentType: logoFile.type,
         });
+        console.log("presign", presign);
         await uploadToS3PresignedPost({
           url: presign.url,
           fields: presign.fields,
@@ -441,6 +447,7 @@ const NewOrgForm = ({
           fileName: coverFile.name,
           contentType: coverFile.type,
         });
+        console.log("presign", presign);
         await uploadToS3PresignedPost({
           url: presign.url,
           fields: presign.fields,
@@ -489,14 +496,35 @@ const NewOrgForm = ({
       setStatusMessage(
         "An error occurred while submitting the form. Please try again."
       );
+      if (error instanceof z.ZodError) {
+        const fieldErrors = z.flattenError(error).fieldErrors as Record<
+          string,
+          string[]
+        >;
+        const formattedErrors: Record<string, string> = {};
+        Object.keys(fieldErrors).forEach((key) => {
+          formattedErrors[key] = fieldErrors[key]?.[0] || "";
+        });
+        setErrors(formattedErrors);
+        toast.error("ERROR", {
+          description: Object.values(formattedErrors).join(", "),
+        });
+        return parseServerActionResponse({
+          status: "ERROR",
+          error: Object.values(formattedErrors).join(", "),
+          data: null,
+        });
+      }
       toast.error("ERROR", {
-        description: error instanceof Error ? error.message : "Unknown error",
+        description:
+          "An error occurred while submitting the form. Please try again.",
       });
-      return {
+
+      return parseServerActionResponse({
         status: "ERROR",
         error: "An error occurred while submitting the form",
         data: null,
-      };
+      });
     }
   };
 

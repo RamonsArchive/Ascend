@@ -13,7 +13,6 @@ const NewOrgsPage = async ({
   const session = await auth.api.getSession({
     headers: await headers(),
   });
-  console.log("session", session);
   const isLoggedIn = !!session?.user?.id;
   return (
     <div className="relative w-full">

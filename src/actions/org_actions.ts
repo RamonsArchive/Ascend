@@ -34,6 +34,8 @@ export const createOrganization = async (
       }) as ActionState;
     }
 
+    console.log("formData...", formData);
+
     const name = (formData.get("name")?.toString() ?? "").trim();
     const description = (formData.get("description")?.toString() ?? "").trim();
     const publicEmail = (formData.get("publicEmail")?.toString() ?? "").trim();

@@ -100,6 +100,7 @@ export async function finalizeOrgImageFromTmp(opts: {
   const uuid = crypto.randomUUID();
 
   const finalKey = `public/orgs/${orgId}/${kind}/v1/${uuid}.${ext}`;
+  console.log("finalKey", finalKey);
 
   // ✅ Correct CopySource encoding:
   // encodeURIComponent encodes "/" too, AWS wants slashes preserved

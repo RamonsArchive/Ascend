@@ -5,6 +5,7 @@ export async function uploadToS3PresignedPost(opts: {
 }) {
   const { url, fields, file } = opts;
 
+  console.log("uploadToS3PresignedPost", opts);
   const fd = new FormData();
   // Important: fields FIRST, then file LAST for S3 POST
   Object.entries(fields).forEach(([k, v]) => fd.append(k, v));

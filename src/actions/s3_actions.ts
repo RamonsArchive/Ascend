@@ -34,6 +34,7 @@ export async function createOrgImageUpload(opts: {
   contentType: string;
 }) {
   assertEnv();
+  console.log("createOrgImageUpload", opts);
 
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user?.id) {
@@ -55,14 +56,10 @@ export async function createOrgImageUpload(opts: {
     Key: key,
     Conditions: [
       ["content-length-range", 1, MAX_BYTES],
-      ["eq", "$Content-Type", "image/"],
-
-      // Optional hardening:
-      // ["eq", "$acl", "private"],  // only if your bucket allows ACLs (many don't)
+      ["eq", "$Content-Type", contentType], // ✅ locks to "image/png" etc
     ],
     Fields: {
       "Content-Type": contentType,
-      // "acl": "private", // usually avoid ACLs; use bucket policy instead
     },
     Expires: 60, // seconds
   });
