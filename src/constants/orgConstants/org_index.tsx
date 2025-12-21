@@ -100,6 +100,35 @@ export const edit_org_data = {
   },
 };
 
+export const org_sponsors_data = {
+  hero: {
+    title: "Sponsors",
+    subtitle:
+      "Add, organize, and manage sponsor placement for your organization and events.",
+    description:
+      "Sponsors can be displayed across your org and event pages. Add new sponsors, then fine-tune tier, order, and visibility.",
+  },
+  addSection: {
+    title: "Add a sponsor",
+    description:
+      "Create a sponsor and link it to your organization. You can upload a sponsor logo/cover now, and refine placement later.",
+  },
+  listSection: {
+    title: "Your sponsors",
+    description:
+      "Edit tier, ordering, visibility, and org-specific display overrides. This does not change the sponsor globally.",
+    emptyTitle: "No sponsors yet",
+    emptyDescription:
+      "Add your first sponsor above to start showcasing partners on your pages.",
+  },
+  settingsLink: {
+    title: "Manage sponsors",
+    description:
+      "Add sponsors, set tiers, and control visibility from the Sponsors page.",
+    ctaLabel: "Open sponsors",
+  },
+};
+
 export const org_nav_links = (orgSlug: string) =>
   [
     { label: "Overview", href: `/app/orgs/${orgSlug}` },

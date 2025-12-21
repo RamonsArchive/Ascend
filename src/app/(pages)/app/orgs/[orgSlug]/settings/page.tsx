@@ -1,12 +1,13 @@
 import React from "react";
 import EditOrgHero from "@/src/components/orgComponents/EditOrgHero";
 import EditOrgFormSection from "@/src/components/orgComponents/EditOrgFormSection";
-import EditOrgSponsorsSection from "@/src/components/orgComponents/EditOrgSponsorsSection";
 import { auth } from "@/src/lib/auth";
 import { headers } from "next/headers";
-import { prisma } from "@/src/lib/prisma";
+import { Organization, OrgMembership } from "@prisma/client";
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
+import { fetchOrgData, isAdminOrOwnerofOrg } from "@/src/actions/org_actions";
+import LinkToSponsorsPage from "@/src/components/orgComponents/LinkToSponsorsPage";
 
 const EditOrgPage = async ({
   params,
@@ -22,26 +23,27 @@ const EditOrgPage = async ({
     redirect(`/login?next=/app/orgs/${orgSlug}/settings`);
   }
 
-  const org = await prisma.organization.findUnique({
-    where: { slug: orgSlug },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      publicEmail: true,
-      publicPhone: true,
-      websiteUrl: true,
-      contactNote: true,
-      logoKey: true,
-      coverKey: true,
-      memberships: { select: { userId: true, role: true } },
-    },
-  });
+  const org = await fetchOrgData(orgSlug);
+  if (org.status === "ERROR") return notFound();
+  const {
+    id,
+    name,
+    description,
+    publicEmail,
+    publicPhone,
+    websiteUrl,
+    contactNote,
+    logoKey,
+    coverKey,
+  } = org.data as Organization;
 
-  if (!org) return notFound();
+  if (org.status === "ERROR") return notFound();
+  const isMember = await isAdminOrOwnerofOrg(id, userId);
 
-  const membership = org.memberships.find((m) => m.userId === userId);
-  const canEdit = membership?.role === "OWNER" || membership?.role === "ADMIN";
+  const canEdit =
+    isMember.status === "SUCCESS" &&
+    ((isMember.data as OrgMembership)?.role === "OWNER" ||
+      (isMember.data as OrgMembership)?.role === "ADMIN");
 
   if (!canEdit) {
     return (
@@ -74,19 +76,19 @@ const EditOrgPage = async ({
       <div className="relative flex flex-col items-center justify-center w-full gap-12 md:gap-16 lg:gap-20">
         <EditOrgHero />
         <EditOrgFormSection
-          orgId={org.id}
+          orgId={id}
           initialOrg={{
-            name: org.name,
-            description: org.description,
-            publicEmail: org.publicEmail,
-            publicPhone: org.publicPhone,
-            websiteUrl: org.websiteUrl,
-            contactNote: org.contactNote,
-            logoKey: org.logoKey,
-            coverKey: org.coverKey,
+            name: name,
+            description: description,
+            publicEmail: publicEmail,
+            publicPhone: publicPhone,
+            websiteUrl: websiteUrl,
+            contactNote: contactNote,
+            logoKey: logoKey,
+            coverKey: coverKey,
           }}
         />
-        <EditOrgSponsorsSection orgId={org.id} />
+        <LinkToSponsorsPage orgSlug={orgSlug} />
       </div>
     </div>
   );

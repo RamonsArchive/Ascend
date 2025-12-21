@@ -82,7 +82,7 @@ const EditOrgForm = ({
 
   const allowedImageMimeTypes = useMemo(
     () => new Set(["image/png", "image/jpeg", "image/webp"]),
-    []
+    [],
   );
 
   const submitButtonRef = useRef<HTMLButtonElement>(null);
@@ -122,16 +122,18 @@ const EditOrgForm = ({
   }));
 
   const [phoneDisplay, setPhoneDisplay] = useState(() =>
-    formatPhoneDisplayFromDigits(initialOrg.publicPhone ?? "")
+    formatPhoneDisplayFromDigits(initialOrg.publicPhone ?? ""),
   );
 
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(() =>
-    initialOrg.logoKey ? (s3KeyToPublicUrl(initialOrg.logoKey) as string) : null
+    initialOrg.logoKey
+      ? (s3KeyToPublicUrl(initialOrg.logoKey) as string)
+      : null,
   );
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(() =>
     initialOrg.coverKey
       ? (s3KeyToPublicUrl(initialOrg.coverKey) as string)
-      : null
+      : null,
   );
 
   const [removeLogo, setRemoveLogo] = useState(false);
@@ -254,7 +256,7 @@ const EditOrgForm = ({
       tl.to(allLabels, { opacity: 1, y: 0, stagger: 0.02 }, 0).to(
         allInputs,
         { opacity: 1, y: 0, stagger: 0.04 },
-        0.05
+        0.05,
       );
 
       if (allPreviewButtons.length > 0) {
@@ -283,7 +285,7 @@ const EditOrgForm = ({
 
   const submitForm = async (
     _state: ActionState,
-    formData: FormData
+    formData: FormData,
   ): Promise<ActionState> => {
     try {
       setErrors({});

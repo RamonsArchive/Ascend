@@ -1,5 +1,5 @@
 import React from "react";
-import EditOrgForm from "./EditOrgForm";
+import EditOrgForm from "@/src/components/orgComponents/EditOrgForm";
 import { edit_org_data } from "@/src/constants/orgConstants/org_index";
 
 const EditOrgFormSection = ({

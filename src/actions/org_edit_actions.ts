@@ -13,7 +13,7 @@ import { deleteS3ObjectIfExists } from "@/src/actions/s3_actions";
 
 export const updateOrganization = async (
   _prevState: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });

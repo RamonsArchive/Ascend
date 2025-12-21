@@ -21,7 +21,7 @@ function slugify(input: string) {
 
 export const addSponsorToOrg = async (
   _prevState: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -180,6 +180,66 @@ export const addSponsorToOrg = async (
     return parseServerActionResponse({
       status: "ERROR",
       error: "Failed to add sponsor",
+      data: null,
+    }) as ActionState;
+  }
+};
+
+export const fetchOrgSponsors = async (orgId: string): Promise<ActionState> => {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user?.id) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "MUST BE LOGGED IN",
+        data: null,
+      }) as ActionState;
+    }
+
+    const isRateLimited = await checkRateLimit("fetchOrgSponsors");
+    if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
+
+    const membership = await prisma.orgMembership.findFirst({
+      where: { orgId, userId: session.user.id },
+      select: { role: true },
+    });
+    if (
+      !membership ||
+      (membership.role !== "OWNER" && membership.role !== "ADMIN")
+    ) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "NOT_AUTHORIZED",
+        data: null,
+      }) as ActionState;
+    }
+    const sponsors = await prisma.organizationSponsor.findMany({
+      where: { orgId },
+      orderBy: [{ order: "asc" }, { createdAt: "desc" }],
+      include: {
+        sponsor: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            websiteKey: true,
+            description: true,
+            logoKey: true,
+            coverKey: true,
+          },
+        },
+      },
+    });
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data: sponsors,
+    }) as ActionState;
+  } catch (error) {
+    console.error(error);
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to fetch org sponsors",
       data: null,
     }) as ActionState;
   }

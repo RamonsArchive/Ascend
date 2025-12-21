@@ -311,3 +311,44 @@ export const editOrgClientSchema = z.object({
   removeLogo: z.boolean().optional(),
   removeCover: z.boolean().optional(),
 });
+
+export const sponsorClientFormSchema = z.object({
+  orgId: z.string().min(1),
+  sponsorName: z
+    .string()
+    .min(1, { message: "Sponsor name is required" })
+    .max(100),
+  sponsorWebsite: z.string().optional(),
+  sponsorDescription: z.string().max(500).optional(),
+  tier: z.enum(["TITLE", "PLATINUM", "GOLD", "SILVER", "BRONZE", "COMMUNITY"]),
+  logoFile: z
+    .custom<File | undefined>((val) => val == null || val instanceof File, {
+      message: "Invalid logo file",
+    })
+    .optional(),
+  coverFile: z
+    .custom<File | undefined>((val) => val == null || val instanceof File, {
+      message: "Invalid cover file",
+    })
+    .optional(),
+});
+
+export const editOrgSponsorClientSchema = z.object({
+  orgId: z.string().min(1),
+  sponsorId: z.string().min(1),
+  tier: z.enum(["TITLE", "PLATINUM", "GOLD", "SILVER", "BRONZE", "COMMUNITY"]),
+  isActive: z.boolean(),
+  displayName: z.preprocess(emptyToUndefined, z.string().max(120).optional()),
+  blurb: z.preprocess(emptyToUndefined, z.string().max(500).optional()),
+  order: z
+    .number()
+    .int()
+    .min(0, { message: "Order must be 0 or greater" })
+    .max(9999, { message: "Order is too large" }),
+  logoFile: z
+    .custom<File | undefined>((val) => val == null || val instanceof File, {
+      message: "Invalid logo file",
+    })
+    .optional(),
+  removeLogo: z.boolean().optional(),
+});

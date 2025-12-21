@@ -22,7 +22,7 @@ function slugify(input: string) {
 
 export const createOrganization = async (
   _prevState: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -247,6 +247,18 @@ export const fetchOrgData = async (orgSlug: string) => {
     if (isRateLimited.status === "ERROR") return isRateLimited;
     const org = await prisma.organization.findUnique({
       where: { slug: orgSlug },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        publicEmail: true,
+        publicPhone: true,
+        websiteUrl: true,
+        contactNote: true,
+        logoKey: true,
+        coverKey: true,
+        memberships: { select: { userId: true, role: true } },
+      },
     });
     return parseServerActionResponse({
       status: "SUCCESS",
@@ -263,7 +275,7 @@ export const fetchOrgData = async (orgSlug: string) => {
   }
 };
 
-export const isMemberofOrg = async (orgId: string, userId: string) => {
+export const isAdminOrOwnerOfOrg = async (orgId: string, userId: string) => {
   try {
     const membership = await prisma.orgMembership.findUnique({
       where: { orgId_userId: { orgId, userId } },
