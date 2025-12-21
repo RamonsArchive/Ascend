@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/src/lib/auth";
 import { headers } from "next/headers";
 import { Organization, OrgMembership } from "@prisma/client";
-import { isAdminOrOwnerofOrg, fetchOrgData } from "@/src/actions/org_actions";
+import { isAdminOrOwnerOfOrg, fetchOrgData } from "@/src/actions/org_actions";
 import Link from "next/link";
 import { fetchOrgSponsors } from "@/src/actions/org_sponsor_actions";
 import EditOrgSponsorsHero from "@/src/components/orgComponents/EditOrgSponsorsHero";
@@ -44,7 +44,7 @@ const OrgSponsorsPage = async ({
   const { id } = org.data as Organization;
 
   if (org.status === "ERROR") return notFound();
-  const isMember = await isAdminOrOwnerofOrg(id, userId);
+  const isMember = await isAdminOrOwnerOfOrg(id, userId);
 
   const canEdit =
     isMember.status === "SUCCESS" &&

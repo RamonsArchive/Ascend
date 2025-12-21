@@ -6,7 +6,7 @@ import { headers } from "next/headers";
 import { Organization, OrgMembership } from "@prisma/client";
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
-import { fetchOrgData, isAdminOrOwnerofOrg } from "@/src/actions/org_actions";
+import { fetchOrgData, isAdminOrOwnerOfOrg } from "@/src/actions/org_actions";
 import LinkToSponsorsPage from "@/src/components/orgComponents/LinkToSponsorsPage";
 
 const EditOrgPage = async ({
@@ -38,7 +38,7 @@ const EditOrgPage = async ({
   } = org.data as Organization;
 
   if (org.status === "ERROR") return notFound();
-  const isMember = await isAdminOrOwnerofOrg(id, userId);
+  const isMember = await isAdminOrOwnerOfOrg(id, userId);
 
   const canEdit =
     isMember.status === "SUCCESS" &&
