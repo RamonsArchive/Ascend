@@ -1,0 +1,64 @@
+High Level Amazon structre 
+
+public/
+private/
+tmp/
+
+
+public/
+  orgs/{orgId}/
+    logo/v1/{uuid}.{ext}
+    cover/v1/{uuid}.{ext}
+
+  events/{eventId}/
+    cover/v1/{uuid}.{ext}
+
+  sponsors/{sponsorId}/
+    logo/v1/{uuid}.{ext}
+    cover/v1/{uuid}.{ext}
+
+private/
+  users/{userId}/avatar/v1/{uuid}.{ext}
+
+  events/{eventId}/submissions/{submissionId}/
+    images/v1/{uuid}.{ext}
+    files/v1/{uuid}.{ext}
+    video/v1/{uuid}.{ext}
+
+tmp/
+  uploads/{anonOrUserId}/{uuid}.{ext}
+
+
+High level Next.js strucutre:
+
+src/app/
+  (public)/
+    orgs/
+      [orgSlug]/
+        page.tsx
+      [orgSlug]/events/[eventSlug]/
+        page.tsx
+
+  (app)/               # protected group
+    app/
+      layout.tsx       # auth gate here
+      orgs/
+        page.tsx       # list my orgs
+        new/
+          page.tsx
+        [orgSlug]/
+          layout.tsx   # org-level guard + nav
+          page.tsx     # dashboard home
+          settings/
+            page.tsx
+          members/
+            page.tsx
+          events/
+            page.tsx
+            new/
+              page.tsx
+            [eventSlug]/
+              settings/
+                page.tsx
+          sponsors/
+            page.tsx

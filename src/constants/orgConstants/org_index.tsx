@@ -42,3 +42,12 @@ export const new_org_data = {
     label: "Create Organization",
   },
 };
+
+export const org_nav_links = (orgSlug: string) =>
+  [
+    { label: "Overview", href: `/app/orgs/${orgSlug}` },
+    { label: "Events", href: `/app/orgs/${orgSlug}/events` },
+    { label: "Members", href: `/app/orgs/${orgSlug}/members` },
+    { label: "Sponsors", href: `/app/orgs/${orgSlug}/sponsors` },
+    { label: "Settings", href: `/app/orgs/${orgSlug}/settings` },
+  ] as const;

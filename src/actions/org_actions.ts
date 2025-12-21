@@ -196,3 +196,39 @@ export async function updateOrgImage(opts: {
     data,
   });
 }
+
+export const getAllOrganizations = async () => {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user?.id) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "MUST BE LOGGED IN TO CREATE AN ORGANIZATION",
+        data: null,
+      }) as ActionState;
+    }
+    const isRateLimited = await checkRateLimit("getAllOrganizations");
+    if (isRateLimited.status === "ERROR") return isRateLimited;
+    const organizations = await prisma.organization.findMany({
+      include: {
+        memberships: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data: organizations,
+    }) as ActionState;
+  } catch (error) {
+    console.error(error);
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to get all organizations",
+      data: null,
+    }) as ActionState;
+  }
+};

@@ -16,6 +16,7 @@ export type FormDataType = {
 export type NewOrgFormDataType = {
   name: string;
   description: string;
+
   publicEmail: string;
   publicPhone: string;
   websiteUrl: string;

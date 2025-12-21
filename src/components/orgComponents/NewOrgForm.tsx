@@ -31,6 +31,7 @@ import { newOrgClientFormSchema } from "@/src/lib/validation";
 import { signInWithGoogle } from "@/src/lib/auth-client";
 import { createOrgImageUpload } from "@/src/actions/s3_actions";
 import { uploadToS3PresignedPost } from "@/src/lib/s3-client";
+import { useRouter } from "next/navigation";
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
@@ -135,6 +136,7 @@ const NewOrgForm = ({
   isLoggedIn: boolean;
   path: string;
 }) => {
+  const router = useRouter();
   const { form } = new_org_data;
   const allowedImageMimeTypes = useMemo(
     () => new Set(["image/png", "image/jpeg", "image/webp"]),
@@ -489,6 +491,11 @@ const NewOrgForm = ({
       toast.success("SUCCESS", {
         description: "Organization created successfully.",
       });
+
+      const orgSlug = (result.data as { slug: string }).slug;
+      console.log("orgSlug", orgSlug);
+      // push to new org page not public page
+      router.push(`/app/orgs/${orgSlug}/settings`);
 
       return result;
     } catch (error) {
