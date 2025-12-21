@@ -39,13 +39,10 @@ const EditOrgPage = async ({
 
   if (org.status === "ERROR") return notFound();
   const isMember = await isAdminOrOwnerOfOrg(id, userId);
+  if (isMember.status === "ERROR") return notFound();
+  const isAdminOrOwner = isMember.data as OrgMembership;
 
-  const canEdit =
-    isMember.status === "SUCCESS" &&
-    ((isMember.data as OrgMembership)?.role === "OWNER" ||
-      (isMember.data as OrgMembership)?.role === "ADMIN");
-
-  if (!canEdit) {
+  if (!isAdminOrOwner) {
     return (
       <div className="relative w-full">
         <div className="absolute inset-0 pointer-events-none marketing-bg" />

@@ -43,7 +43,7 @@ const EditOrgSponsorsSection = ({
   const { librarySection, orgSection } = org_sponsors_data;
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [defaultSponsorId, setDefaultSponsorId] = React.useState<string | null>(
-    null,
+    null
   );
 
   return (
@@ -81,7 +81,7 @@ const EditOrgSponsorsSection = ({
           </div>
         ) : (
           <div className="flex flex-col gap-6 md:gap-8">
-            {sponsorLibrary.map((s) => (
+            {sponsorLibrary.slice(0, 5).map((s) => (
               <SponsorLibraryCard
                 key={s.id}
                 sponsor={s}

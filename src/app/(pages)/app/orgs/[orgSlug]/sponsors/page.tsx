@@ -32,13 +32,7 @@ const OrgSponsorsPage = async ({
   const { id } = org.data as Organization;
 
   const isMember = await isAdminOrOwnerOfOrg(id, userId);
-
-  const canEdit =
-    isMember.status === "SUCCESS" &&
-    ((isMember.data as OrgMembership)?.role === "OWNER" ||
-      (isMember.data as OrgMembership)?.role === "ADMIN");
-
-  if (!canEdit) {
+  if (isMember.status === "ERROR") {
     return (
       <div className="relative w-full">
         <div className="absolute inset-0 pointer-events-none marketing-bg" />
