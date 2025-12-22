@@ -166,3 +166,34 @@ export function parseOptionalDateFromMinutes(minutesStr: string | null) {
   const d = new Date(Date.now() + m * 60_000);
   return d;
 }
+
+export function statusPill(
+  status: "PENDING" | "ACCEPTED" | "DECLINED" | "CANCELLED"
+) {
+  // same palette vibes as your app: whites, subtle borders
+  switch (status) {
+    case "PENDING":
+      return "bg-white/5 border border-white/10 text-white/80";
+    case "ACCEPTED":
+      return "bg-white/10 border border-white/15 text-white";
+    case "DECLINED":
+      return "bg-white/5 border border-white/10 text-white/60";
+    case "CANCELLED":
+      return "bg-white/5 border border-white/10 text-white/60";
+  }
+}
+
+export function statusLabel(
+  status: "PENDING" | "ACCEPTED" | "DECLINED" | "CANCELLED"
+) {
+  switch (status) {
+    case "PENDING":
+      return "Pending";
+    case "ACCEPTED":
+      return "Approved";
+    case "DECLINED":
+      return "Declined";
+    case "CANCELLED":
+      return "Cancelled";
+  }
+}

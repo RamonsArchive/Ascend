@@ -1,4 +1,5 @@
-import { Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
+
 export type ActionState = {
   status: "INITIAL" | "PENDING" | "SUCCESS" | "ERROR";
   error: string | null;
@@ -46,9 +47,24 @@ export type OrgSponsorWithSponsor = Prisma.OrganizationSponsorGetPayload<{
         description: true;
         logoKey: true;
         coverKey: true;
-        visibility: true;
-        createdById: true;
       };
     };
   };
 }>;
+
+export type OrgJoinRequestWithUser = Prisma.OrgJoinRequestGetPayload<{
+  include: {
+    user: {
+      select: {
+        id: true;
+        name: true;
+        email: true;
+        image: true;
+      };
+    };
+  };
+}>;
+
+export type JoinSettingsErrors = Partial<
+  Record<"joinMode" | "allowJoinRequests", string>
+>;

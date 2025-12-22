@@ -11,6 +11,7 @@ import type { OrgJoinRequest, OrgRole, Prisma } from "@prisma/client";
 import AddOrgMemberSection from "@/src/components/orgComponents/AddOrgMemberSection";
 import Link from "next/link";
 import { fetchOrgJoinRequests } from "@/src/actions/org_invites_actions";
+import type { OrgJoinRequestWithUser } from "@/src/lib/global_types";
 
 type OrgMember = Prisma.OrgMembershipGetPayload<{
   select: {
@@ -139,17 +140,13 @@ const OrgMembersPage = async ({
         </div>
       </div>
     );
-  const joinRequestsData = joinRequests.data as OrgJoinRequest[];
+  const joinRequestsData = joinRequests.data as OrgJoinRequestWithUser[];
   return (
     <div className="relative w-full">
       <div className="absolute inset-0 pointer-events-none marketing-bg" />
       <div className="relative flex flex-col items-center justify-center w-full gap-12 md:gap-16 lg:gap-20">
         <EditOrgMembersHero />
-        <AddOrgMemberSection
-          orgId={orgId}
-          currentUserId={userId}
-          joinRequests={joinRequestsData}
-        />
+        <AddOrgMemberSection orgId={orgId} joinRequests={joinRequestsData} />
         <EditOrgMembersSection
           orgId={orgId}
           members={membersData}

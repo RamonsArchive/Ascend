@@ -8,37 +8,34 @@ datasource db {
 }
 
 model User {
-  id                   String                     @id
-  name                 String                     @db.Text
-  email                String                     @unique
-  emailVerified        Boolean                    @default(false)
-  image                String?                    @db.Text
-  createdAt            DateTime                   @default(now())
-  updatedAt            DateTime                   @updatedAt
-  eventParticipants    EventParticipant[]
-  registrationRequests EventRegistrationRequest[]
-  judgeLinks           JudgeAssignment[]
-  memberships          OrgMembership[]
-  scoresGiven          Score[]                    @relation("ScoreJudge")
-  sponsorsCreated      Sponsor[]                  @relation("SponsorCreatedBy")
-  submissions          Submission[]               @relation("SubmissionAuthor")
-  teamAuditActor       TeamAuditLog[]             @relation("TeamAuditActor")
-  teamAuditTarget      TeamAuditLog[]             @relation("TeamAuditTarget")
-  teamInvitesCreated   TeamInvite[]               @relation("TeamInviteCreator")
-  teamJoinRequests     TeamJoinRequest[]
-  orgJoinRequests      OrgJoinRequest[]
-  orgInvites          OrgInvite[]
-  orgInviteLinks      OrgInviteLink[]
-
-  // ✅ NEW: event staff workflow
-  eventStaffMemberships EventStaffMembership[]
-  eventStaffInvites     EventStaffInvite[]        @relation("EventStaffInviteCreator")
-  eventStaffInviteLinks EventStaffInviteLink[]    @relation("EventStaffInviteLinkCreator")
+  id                     String                     @id
+  name                   String                     @db.Text
+  email                  String                     @unique
+  emailVerified          Boolean                    @default(false)
+  image                  String?                    @db.Text
+  createdAt              DateTime                   @default(now())
+  updatedAt              DateTime                   @updatedAt
+  eventParticipants      EventParticipant[]
+  registrationRequests   EventRegistrationRequest[]
+  eventStaffInvites      EventStaffInvite[]         @relation("EventStaffInviteCreator")
+  eventStaffInviteLinks  EventStaffInviteLink[]     @relation("EventStaffInviteLinkCreator")
   eventStaffJoinRequests EventStaffJoinRequest[]
-
-  teams                TeamMember[]
-  accounts             Account[]
-  sessions             Session[]
+  eventStaffMemberships  EventStaffMembership[]
+  judgeLinks             JudgeAssignment[]
+  orgInvites             OrgInvite[]
+  orgInviteLinks         OrgInviteLink[]
+  orgJoinRequests        OrgJoinRequest[]
+  memberships            OrgMembership[]
+  scoresGiven            Score[]                    @relation("ScoreJudge")
+  sponsorsCreated        Sponsor[]                  @relation("SponsorCreatedBy")
+  submissions            Submission[]               @relation("SubmissionAuthor")
+  teamAuditActor         TeamAuditLog[]             @relation("TeamAuditActor")
+  teamAuditTarget        TeamAuditLog[]             @relation("TeamAuditTarget")
+  teamInvitesCreated     TeamInvite[]               @relation("TeamInviteCreator")
+  teamJoinRequests       TeamJoinRequest[]
+  teams                  TeamMember[]
+  accounts               Account[]
+  sessions               Session[]
 
   @@map("user")
 }
@@ -91,30 +88,27 @@ model Verification {
 }
 
 model Organization {
-  id               String                @id @default(cuid())
-  name             String
-  slug             String                @unique
-  description      String?
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
-  contactNote      String?
-  moderationStatus ModerationStatus      @default(ACTIVE)
-  publicEmail      String?
-  publicPhone      String?
-  websiteUrl       String?
-  coverKey         String?
-  logoKey          String?
-  
-
-  joinMode             OrgJoinMode      @default(INVITE_ONLY)
-  allowJoinRequests    Boolean          @default(false)
-
-  events           Event[]
-  memberships      OrgMembership[]
-  sponsors         OrganizationSponsor[]
-  invites          OrgInvite[]
-  inviteLinks      OrgInviteLink[]
-  joinRequests     OrgJoinRequest[]
+  id                String                @id @default(cuid())
+  name              String
+  slug              String                @unique
+  description       String?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+  contactNote       String?
+  moderationStatus  ModerationStatus      @default(ACTIVE)
+  publicEmail       String?
+  publicPhone       String?
+  websiteUrl        String?
+  coverKey          String?
+  logoKey           String?
+  allowJoinRequests Boolean               @default(false)
+  joinMode          OrgJoinMode           @default(INVITE_ONLY)
+  events            Event[]
+  invites           OrgInvite[]
+  inviteLinks       OrgInviteLink[]
+  joinRequests      OrgJoinRequest[]
+  memberships       OrgMembership[]
+  sponsors          OrganizationSponsor[]
 }
 
 model OrgMembership {
@@ -142,9 +136,8 @@ model OrgInvite {
   createdByUserId String
   createdAt       DateTime     @default(now())
   expiresAt       DateTime?
-
-  org     Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  creator User         @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+  creator         User         @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+  org             Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
   @@index([orgId])
   @@index([email])
@@ -156,16 +149,15 @@ model OrgInviteLink {
   orgId           String
   token           String       @unique
   role            OrgRole      @default(MEMBER)
-  status          InviteStatus @default(PENDING) // use REVOKED to disable
-  maxUses         Int?         // null = unlimited
+  status          InviteStatus @default(PENDING)
+  maxUses         Int?
   uses            Int          @default(0)
   expiresAt       DateTime?
   note            String?
   createdByUserId String
   createdAt       DateTime     @default(now())
-
-  org     Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  creator User         @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+  creator         User         @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+  org             Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
   @@index([orgId])
   @@index([createdByUserId])
@@ -179,9 +171,8 @@ model OrgJoinRequest {
   status    JoinRequestStatus @default(PENDING)
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
-
-  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  org       Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([orgId, userId])
   @@index([orgId])
@@ -216,16 +207,17 @@ model Event {
   updatedAt              DateTime                   @updatedAt
   moderationStatus       ModerationStatus           @default(ACTIVE)
   coverKey               String?
-
-  // ✅ NEW: staff access workflow (separate from participants/judges/teams)
-  staffJoinMode          EventStaffJoinMode         @default(INVITE_ONLY)
   allowStaffJoinRequests Boolean                    @default(false)
-
+  staffJoinMode          EventStaffJoinMode         @default(INVITE_ONLY)
   announcements          Announcement[]
   org                    Organization               @relation(fields: [orgId], references: [id], onDelete: Cascade)
   participants           EventParticipant[]
   registrationRequests   EventRegistrationRequest[]
   sponsors               EventSponsor[]
+  staffInvites           EventStaffInvite[]
+  staffInviteLinks       EventStaffInviteLink[]
+  staffJoinRequests      EventStaffJoinRequest[]
+  staffMemberships       EventStaffMembership[]
   judgeAssignments       JudgeAssignment[]
   submissions            Submission[]
   submissionSchema       SubmissionSchema?
@@ -233,12 +225,6 @@ model Event {
   teamAuditLogs          TeamAuditLog[]
   teamInvites            TeamInvite[]
   joinRequests           TeamJoinRequest[]
-
-  // ✅ NEW relations
-  staffMemberships       EventStaffMembership[]
-  staffInvites           EventStaffInvite[]
-  staffInviteLinks       EventStaffInviteLink[]
-  staffJoinRequests      EventStaffJoinRequest[]
 
   @@unique([orgId, slug])
   @@index([orgId])
@@ -290,9 +276,8 @@ model EventStaffMembership {
   userId    String
   role      EventStaffRole @default(STAFF)
   createdAt DateTime       @default(now())
-
-  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event     Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([eventId, userId])
   @@index([eventId])
@@ -300,19 +285,18 @@ model EventStaffMembership {
 }
 
 model EventStaffInvite {
-  id              String       @id @default(cuid())
-  eventId          String
-  email            String
-  role             EventStaffRole @default(STAFF)
-  token            String       @unique
-  status           InviteStatus @default(PENDING)
-  message          String?
-  createdByUserId  String
-  createdAt        DateTime     @default(now())
-  expiresAt        DateTime?
-
-  event   Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  creator User  @relation("EventStaffInviteCreator", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  id              String         @id @default(cuid())
+  eventId         String
+  email           String
+  role            EventStaffRole @default(STAFF)
+  token           String         @unique
+  status          InviteStatus   @default(PENDING)
+  message         String?
+  createdByUserId String
+  createdAt       DateTime       @default(now())
+  expiresAt       DateTime?
+  creator         User           @relation("EventStaffInviteCreator", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  event           Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@index([eventId])
   @@index([email])
@@ -320,20 +304,19 @@ model EventStaffInvite {
 }
 
 model EventStaffInviteLink {
-  id              String       @id @default(cuid())
-  eventId          String
-  token            String       @unique
-  role             EventStaffRole @default(STAFF)
-  status           InviteStatus @default(PENDING) // use REVOKED to disable
-  maxUses          Int?         // null = unlimited
-  uses             Int          @default(0)
-  expiresAt        DateTime?
-  note             String?
-  createdByUserId  String
-  createdAt        DateTime     @default(now())
-
-  event   Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  creator User  @relation("EventStaffInviteLinkCreator", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  id              String         @id @default(cuid())
+  eventId         String
+  token           String         @unique
+  role            EventStaffRole @default(STAFF)
+  status          InviteStatus   @default(PENDING)
+  maxUses         Int?
+  uses            Int            @default(0)
+  expiresAt       DateTime?
+  note            String?
+  createdByUserId String
+  createdAt       DateTime       @default(now())
+  creator         User           @relation("EventStaffInviteLinkCreator", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  event           Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@index([eventId])
   @@index([createdByUserId])
@@ -347,9 +330,8 @@ model EventStaffJoinRequest {
   status    JoinRequestStatus @default(PENDING)
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
-
-  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event     Event             @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([eventId, userId])
   @@index([eventId])
@@ -736,9 +718,9 @@ enum SponsorVisibility {
 }
 
 enum OrgJoinMode {
-  INVITE_ONLY     // email invite or shareable link only
-  REQUEST         // allows join requests (allowJoinRequests=true)
-  OPEN            // optional (auto-join via link or join button) - you can skip for now
+  INVITE_ONLY
+  REQUEST
+  OPEN
 }
 
 enum EventStaffJoinMode {

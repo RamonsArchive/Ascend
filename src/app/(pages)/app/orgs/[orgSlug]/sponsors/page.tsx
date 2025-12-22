@@ -3,7 +3,8 @@ import EditOrgSponsorsSection from "@/src/components/orgComponents/EditOrgSponso
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/src/lib/auth";
 import { headers } from "next/headers";
-import { assertOrgAdminOrOwner } from "@/src/actions/org_actions";
+import { Organization, OrgMembership } from "@prisma/client";
+import { assertOrgAdminOrOwner, fetchOrgData } from "@/src/actions/org_actions";
 import Link from "next/link";
 import {
   fetchOrgSponsors,
@@ -26,9 +27,12 @@ const OrgSponsorsPage = async ({
   if (!isLoggedIn) {
     redirect(`/login?next=/app/orgs/${orgSlug}/sponsors`);
   }
+  const org = await fetchOrgData(orgSlug); // might want to fetch only the org and not the members in future
+  if (org.status === "ERROR") return notFound();
+  const { id } = org.data as Organization;
 
   const hasPermissions = await assertOrgAdminOrOwner(orgSlug, userId);
-  if (hasPermissions.status === "ERROR") {
+  if (!hasPermissions.data || hasPermissions.status === "ERROR")
     return (
       <div className="relative w-full">
         <div className="absolute inset-0 pointer-events-none marketing-bg" />
@@ -39,7 +43,7 @@ const OrgSponsorsPage = async ({
                 Not authorized
               </div>
               <div className="text-white/70 text-sm leading-relaxed">
-                You need OWNER or ADMIN access to edit organization settings.
+                You need OWNER or ADMIN access to edit organization sponsors.
               </div>
               <Link
                 href={`/app/orgs/${orgSlug}`}
@@ -52,13 +56,8 @@ const OrgSponsorsPage = async ({
         </div>
       </div>
     );
-  }
-  const { orgId } = hasPermissions.data as {
-    orgId: string;
-  };
 
-  const orgSponsors = await fetchOrgSponsors(orgId);
-  console.log("orgSponsors", orgSponsors);
+  const orgSponsors = await fetchOrgSponsors(id);
   if (orgSponsors.status === "ERROR") return notFound();
   const sponsors = orgSponsors.data as OrgSponsorWithSponsor[];
 
@@ -72,7 +71,7 @@ const OrgSponsorsPage = async ({
       <div className="relative flex flex-col items-center justify-center w-full gap-12 md:gap-16 lg:gap-20">
         <EditOrgSponsorsHero />
         <EditOrgSponsorsSection
-          orgId={orgId}
+          orgId={id}
           initialSponsors={sponsors}
           sponsorLibrary={sponsorLibrary}
           currentUserId={userId}

@@ -694,7 +694,20 @@ export const fetchOrgJoinRequests = async (
 
     const joinRequests = await prisma.orgJoinRequest.findMany({
       where: { orgId },
-      select: { id: true, userId: true, message: true, status: true },
+      select: {
+        id: true,
+        userId: true,
+        message: true,
+        status: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
+        },
+      },
     });
     return parseServerActionResponse({
       status: "SUCCESS",

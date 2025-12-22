@@ -1,3 +1,5 @@
+import { OrgJoinMode } from "@prisma/client";
+
 export const new_org_data = {
   seo: {
     title: "Create an organization — Ascend",
@@ -172,3 +174,25 @@ export const org_nav_links = (orgSlug: string) =>
     { label: "Sponsors", href: `/app/orgs/${orgSlug}/sponsors` },
     { label: "Settings", href: `/app/orgs/${orgSlug}/settings` },
   ] as const;
+
+export const JOIN_MODE_OPTIONS: Array<{
+  value: OrgJoinMode;
+  label: string;
+  hint: string;
+}> = [
+  {
+    value: OrgJoinMode.INVITE_ONLY,
+    label: "Invite only",
+    hint: "Only invited emails or invite links can join.",
+  },
+  {
+    value: OrgJoinMode.REQUEST,
+    label: "Request to join",
+    hint: "People can request access. You approve/decline.",
+  },
+  {
+    value: OrgJoinMode.OPEN,
+    label: "Open",
+    hint: "Anyone can join (no approval).",
+  },
+];

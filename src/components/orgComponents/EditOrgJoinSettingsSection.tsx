@@ -6,10 +6,12 @@ const EditOrgJoinSettingsSection = ({
   orgId,
   allowJoinRequests,
   joinMode,
+  currentUserId,
 }: {
   orgId: string;
   allowJoinRequests: boolean;
   joinMode: OrgJoinMode;
+  currentUserId: string;
 }) => {
   return (
     <section className="flex flex-col items-center justify-center w-full">
@@ -25,6 +27,7 @@ const EditOrgJoinSettingsSection = ({
         orgId={orgId}
         allowJoinRequests={allowJoinRequests}
         joinMode={joinMode}
+        currentUserId={currentUserId}
       />
     </section>
   );

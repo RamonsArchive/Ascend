@@ -278,42 +278,6 @@ export const fetchOrgData = async (orgSlug: string) => {
   }
 };
 
-export const isAdminOrOwnerOfOrg = async (orgId: string, userId: string) => {
-  try {
-    const membership = await prisma.orgMembership.findUnique({
-      where: { orgId_userId: { orgId, userId } },
-    });
-    if (!membership) {
-      return parseServerActionResponse({
-        status: "ERROR",
-        error: "User is not a member of the organization",
-        data: null,
-      }) as ActionState;
-    }
-
-    if (membership.role !== "OWNER" && membership.role !== "ADMIN") {
-      return parseServerActionResponse({
-        status: "ERROR",
-        error: "User is not a member of the organization",
-        data: null,
-      }) as ActionState;
-    }
-
-    return parseServerActionResponse({
-      status: "SUCCESS",
-      error: "",
-      data: membership,
-    }) as ActionState;
-  } catch (error) {
-    console.error(error);
-    return parseServerActionResponse({
-      status: "ERROR",
-      error: "Failed to check if user is a member of the organization",
-      data: null,
-    }) as ActionState;
-  }
-};
-
 export async function assertOrgAdminOrOwner(orgSlug: string, userId: string) {
   const org = await fetchOrgData(orgSlug);
   if (org.status === "ERROR" || !org.data) throw new Error("ORG_NOT_FOUND");

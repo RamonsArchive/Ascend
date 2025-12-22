@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { TEN_MB, validateImageFile } from "./utils";
+import { OrgJoinMode } from "@prisma/client";
 
 const emptyToUndefined = (v: unknown) => {
   if (v == null) return undefined; // handles null + undefined
@@ -425,3 +426,47 @@ export const editOrgSponsorClientSchema = z.object({
     .optional(),
   removeLogo: z.boolean().optional(),
 });
+
+export const createOrgInviteEmailClientSchema = z.object({
+  orgId: z.string().min(1, "Missing orgId"),
+  email: z.string().email("Enter a valid email"),
+  role: z.enum(["MEMBER", "ADMIN"]).default("MEMBER"),
+  message: z.string().max(500, "Message is too long").optional(),
+});
+
+export const createOrgInviteLinkClientSchema = z.object({
+  orgId: z.string().min(1, "Missing orgId"),
+  role: z.enum(["MEMBER", "ADMIN"]).default("MEMBER"),
+  note: z.string().max(200, "Note is too long").optional(),
+  maxUses: z
+    .number()
+    .int("Max uses must be a whole number")
+    .positive("Max uses must be positive")
+    .max(10000, "Max uses too large")
+    .optional(),
+});
+
+export const orgJoinRequestDecisionClientSchema = z.object({
+  joinRequestId: z.string().min(1, "Missing joinRequestId"),
+  decision: z.enum(["APPROVE", "REJECT"]),
+});
+
+export const editOrgJoinSettingsClientSchema = z
+  .object({
+    orgId: z.string().min(1, "Organization is required."),
+    joinMode: z.enum(["INVITE_ONLY", "REQUEST", "OPEN"] as [
+      OrgJoinMode,
+      ...OrgJoinMode[],
+    ]),
+    allowJoinRequests: z.boolean(),
+  })
+  .superRefine((v, ctx) => {
+    // keep invariant consistent with server
+    if (v.joinMode !== OrgJoinMode.REQUEST && v.allowJoinRequests) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["allowJoinRequests"],
+        message: "Join requests can only be enabled when Join mode is REQUEST.",
+      });
+    }
+  });
