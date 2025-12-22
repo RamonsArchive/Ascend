@@ -11,6 +11,7 @@ import crypto from "crypto";
 import { finalizeOrgImageFromTmp, OrgAssetKind } from "../lib/s3-upload";
 import { OrgJoinMode } from "@prisma/client";
 import { updateTag } from "next/cache";
+import { deleteS3ObjectIfExists } from "@/src/actions/s3_actions";
 
 function slugify(input: string) {
   return input
@@ -24,7 +25,7 @@ function slugify(input: string) {
 
 export const createOrganization = async (
   _prevState: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -301,7 +302,7 @@ export async function assertOrgAdminOrOwner(orgSlug: string, userId: string) {
 
 export const assertOrgAdminOrOwnerWithId = async (
   orgId: string,
-  userId: string,
+  userId: string
 ) => {
   try {
     const membership = await prisma.orgMembership.findUnique({
@@ -340,7 +341,7 @@ export const assertOrgAdminOrOwnerWithId = async (
 export const updateOrgJoinSettings = async (
   orgId: string,
   userId: string,
-  opts: { joinMode?: OrgJoinMode; allowJoinRequests?: boolean },
+  opts: { joinMode?: OrgJoinMode; allowJoinRequests?: boolean }
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });

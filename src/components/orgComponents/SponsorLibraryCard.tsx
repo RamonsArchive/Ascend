@@ -21,6 +21,7 @@ import {
   updateSponsorProfile,
 } from "@/src/actions/org_sponsor_actions";
 import { updateSponsorProfileClientSchema } from "@/src/lib/validation";
+import { deleteSponsor } from "@/src/actions/org_sponsor_actions";
 
 export type SponsorLibraryItem = {
   id: string;
@@ -53,11 +54,12 @@ const SponsorLibraryCard = ({
 
   const allowedImageMimeTypes = useMemo(
     () => new Set(["image/png", "image/jpeg", "image/webp"]),
-    [],
+    []
   );
 
   const logoRef = useRef<HTMLInputElement>(null);
   const coverRef = useRef<HTMLInputElement>(null);
+  const createdSponsor = sponsor.createdById === currentUserId;
 
   const [isEditing, setIsEditing] = useState(false);
   const [showDescriptionPreview, setShowDescriptionPreview] = useState(false);
@@ -96,7 +98,7 @@ const SponsorLibraryCard = ({
       fd.set("sponsorId", sponsor.id);
       fd.set(
         "visibility",
-        sponsor.visibility === "PUBLIC" ? "PRIVATE" : "PUBLIC",
+        sponsor.visibility === "PUBLIC" ? "PRIVATE" : "PUBLIC"
       );
       const result = await setSponsorVisibility(initialState, fd);
       if (result.status === "ERROR") {
@@ -113,9 +115,48 @@ const SponsorLibraryCard = ({
     }
   };
 
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const onDeleteSponsor = async () => {
+    if (!canEdit) return;
+
+    const ok = window.confirm(
+      `Delete "${sponsor.name}"?\n\nThis will remove the global sponsor from your library.`
+    );
+    if (!ok) return;
+
+    try {
+      setIsDeleting(true);
+      setStatusMessage("Deleting sponsor…");
+
+      const fd = new FormData();
+      fd.set("sponsorId", sponsor.id);
+
+      const result = await deleteSponsor(initialState, fd);
+      if (result.status === "ERROR") {
+        setStatusMessage(result.error || "Failed to delete sponsor.");
+        toast.error("ERROR", { description: result.error });
+        return;
+      }
+
+      setStatusMessage("Deleted.");
+      toast.success("SUCCESS", { description: "Sponsor deleted." });
+
+      // IMPORTANT: parent list needs to refresh/re-render from server
+      // If your parent is server-rendered, use router.refresh() there or here (if you want)
+      // (You didn’t import router in this component yet.)
+    } catch (e) {
+      console.error(e);
+      setStatusMessage("Failed to delete sponsor.");
+      toast.error("ERROR", { description: "Failed to delete sponsor." });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const submitProfile = async (
     _state: ActionState,
-    _fd: FormData,
+    _fd: FormData
   ): Promise<ActionState> => {
     try {
       void _state;
@@ -133,6 +174,7 @@ const SponsorLibraryCard = ({
 
       const logoFile = logoRef.current?.files?.[0] ?? null;
       const coverFile = coverRef.current?.files?.[0] ?? null;
+      const createdSponsor = sponsor.createdById === currentUserId;
 
       await updateSponsorProfileClientSchema.parseAsync({
         sponsorId: sponsor.id,
@@ -346,6 +388,16 @@ const SponsorLibraryCard = ({
                 {sponsor.visibility === "PUBLIC"
                   ? "Make private"
                   : "Make public"}
+              </button>
+            ) : null}
+            {canEdit && createdSponsor ? (
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={onDeleteSponsor}
+                className="w-full sm:w-auto px-4 py-2 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-200 hover:bg-red-500/15 transition-colors text-xs md:text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] disabled:opacity-60"
+              >
+                {isDeleting ? "Deleting…" : "Delete sponsor"}
               </button>
             ) : null}
           </div>

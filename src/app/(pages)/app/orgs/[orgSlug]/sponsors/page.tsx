@@ -13,6 +13,7 @@ import {
 import EditOrgSponsorsHero from "@/src/components/orgComponents/EditOrgSponsorsHero";
 import type { SponsorLibraryItem } from "@/src/components/orgComponents/SponsorLibraryCard";
 import type { OrgSponsorWithSponsor } from "@/src/lib/global_types";
+import InitialOrgSponsorsSection from "@/src/components/orgComponents/InitialOrgSponsorsSection";
 
 const OrgSponsorsPage = async ({
   params,
@@ -72,9 +73,13 @@ const OrgSponsorsPage = async ({
         <EditOrgSponsorsHero />
         <EditOrgSponsorsSection
           orgId={id}
-          initialSponsors={sponsors}
           sponsorLibrary={sponsorLibrary}
           currentUserId={userId}
+        />
+        <InitialOrgSponsorsSection
+          initialSponsors={sponsors}
+          orgId={id}
+          sponsorLibrary={sponsorLibrary}
         />
       </div>
     </div>

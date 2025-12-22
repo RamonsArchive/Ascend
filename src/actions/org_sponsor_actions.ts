@@ -24,7 +24,7 @@ function slugify(input: string) {
 
 export const createSponsorProfile = async (
   _prevState: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -143,7 +143,7 @@ export const createSponsorProfile = async (
 
 export const updateSponsorProfile = async (
   _prevState: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -286,7 +286,7 @@ export const updateSponsorProfile = async (
 
 export const setSponsorVisibility = async (
   _prevState: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -369,7 +369,7 @@ export const setSponsorVisibility = async (
 };
 
 export const fetchSponsorLibrary = async (
-  query?: string,
+  query?: string
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -438,7 +438,7 @@ export const fetchSponsorLibrary = async (
 
 export const addExistingSponsorToOrg = async (
   _prevState: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -492,7 +492,7 @@ export const addExistingSponsorToOrg = async (
 
     const hasPermissions = await assertOrgAdminOrOwnerWithId(
       orgId,
-      session.user.id,
+      session.user.id
     );
     if (hasPermissions.status === "ERROR") return hasPermissions as ActionState;
 
@@ -571,7 +571,7 @@ export const fetchOrgSponsors = async (orgId: string) => {
 
     const hasPermissions = await assertOrgAdminOrOwnerWithId(
       orgId,
-      session.user.id,
+      session.user.id
     );
     if (hasPermissions.status === "ERROR") return hasPermissions as ActionState;
 
@@ -626,6 +626,91 @@ export const fetchAllPublicSponsors = async (): Promise<ActionState> => {
     return parseServerActionResponse({
       status: "ERROR",
       error: "Failed to fetch all public sponsors",
+      data: null,
+    }) as ActionState;
+  }
+};
+
+export const deleteSponsor = async (
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> => {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user?.id) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "MUST BE LOGGED IN",
+        data: null,
+      }) as ActionState;
+    }
+
+    const isRateLimited = await checkRateLimit("deleteSponsor");
+    if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
+
+    const sponsorId = (formData.get("sponsorId")?.toString() ?? "").trim();
+    if (!sponsorId) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "Missing sponsorId",
+        data: null,
+      }) as ActionState;
+    }
+
+    const existing = await prisma.sponsor.findUnique({
+      where: { id: sponsorId },
+      select: { id: true, createdById: true, logoKey: true, coverKey: true },
+    });
+
+    if (!existing) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "Sponsor not found",
+        data: null,
+      }) as ActionState;
+    }
+
+    // ONLY creator can delete global sponsor
+    if (existing.createdById !== session.user.id) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "NOT_AUTHORIZED",
+        data: null,
+      }) as ActionState;
+    }
+
+    // ✅ Safe behavior: block delete if attached to any orgs
+    const inUseCount = await prisma.organizationSponsor.count({
+      where: { sponsorId },
+    });
+
+    if (inUseCount > 0) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: `This sponsor is attached to ${inUseCount} org(s). Remove it from those orgs first.`,
+        data: null,
+      }) as ActionState;
+    }
+
+    await prisma.sponsor.delete({ where: { id: sponsorId } });
+
+    // clean up images (best-effort)
+    if (existing.logoKey) await deleteS3ObjectIfExists(existing.logoKey);
+    if (existing.coverKey) await deleteS3ObjectIfExists(existing.coverKey);
+
+    updateTag(`sponsor-${sponsorId}`);
+    updateTag(`sponsor-library-${session.user.id}`); // use whatever tag you use for the library query
+
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data: { id: sponsorId },
+    }) as ActionState;
+  } catch (error) {
+    console.error(error);
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to delete sponsor",
       data: null,
     }) as ActionState;
   }
