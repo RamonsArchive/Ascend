@@ -24,7 +24,7 @@ const allowedTiers = new Set<SponsorTier>([
 
 export const updateOrgSponsor = async (
   _prevState: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -66,7 +66,7 @@ export const updateOrgSponsor = async (
     // permission
     const hasPermissions = await assertOrgAdminOrOwnerWithId(
       orgId,
-      session.user.id
+      session.user.id,
     );
     if (hasPermissions.status === "ERROR") return hasPermissions as ActionState;
 
@@ -296,7 +296,7 @@ export const updateOrgSponsor = async (
 
 export const removeSponsorFromOrg = async (
   _prevState: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -324,7 +324,7 @@ export const removeSponsorFromOrg = async (
 
     const hasPermissions = await assertOrgAdminOrOwnerWithId(
       orgId,
-      session.user.id
+      session.user.id,
     );
     if (hasPermissions.status === "ERROR") return hasPermissions as ActionState;
 

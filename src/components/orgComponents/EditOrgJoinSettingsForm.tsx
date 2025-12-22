@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useMemo, useRef, useState, useActionState } from "react";
+import React, {
+  useMemo,
+  useRef,
+  useState,
+  useActionState,
+  useEffect,
+} from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
@@ -37,6 +43,7 @@ const EditOrgJoinSettingsForm = ({
   // IMPORTANT: pass this in from the page (session.user.id)
   currentUserId: string;
 }) => {
+  const router = useRouter();
   const joinModeLabelRef = useRef<HTMLLabelElement>(null);
   const allowLabelRef = useRef<HTMLLabelElement>(null);
   const saveButtonRef = useRef<HTMLButtonElement>(null);
@@ -52,6 +59,16 @@ const EditOrgJoinSettingsForm = ({
         initialJoinMode === OrgJoinMode.REQUEST ? !!allowJoinRequests : false,
     };
   });
+
+  // Sync form state when props change (after router.refresh())
+  useEffect(() => {
+    const nextJoinMode = joinMode ?? OrgJoinMode.INVITE_ONLY;
+    setFormData({
+      joinMode: nextJoinMode,
+      allowJoinRequests:
+        nextJoinMode === OrgJoinMode.REQUEST ? !!allowJoinRequests : false,
+    });
+  }, [joinMode, allowJoinRequests]);
 
   const allowToggleEnabled = formData.joinMode === OrgJoinMode.REQUEST;
 
@@ -82,7 +99,7 @@ const EditOrgJoinSettingsForm = ({
       const labelWords = splits.flatMap((s) => s.words);
 
       const inputs = Array.from(
-        triggerEl.querySelectorAll("select, button, input")
+        triggerEl.querySelectorAll("select, button, input"),
       ).filter(Boolean) as HTMLElement[];
 
       gsap.set(labelWords, { opacity: 0, y: 48 });
@@ -101,7 +118,7 @@ const EditOrgJoinSettingsForm = ({
       tl.to(labelWords, { opacity: 1, y: 0, stagger: 0.03 }, 0).to(
         inputs,
         { opacity: 1, y: 0, stagger: 0.05 },
-        0.06
+        0.06,
       );
 
       requestAnimationFrame(() => ScrollTrigger.refresh());
@@ -119,7 +136,7 @@ const EditOrgJoinSettingsForm = ({
 
   const submitForm = async (
     _state: ActionState,
-    _fd: FormData
+    _fd: FormData,
   ): Promise<ActionState> => {
     try {
       void _state;
@@ -151,6 +168,7 @@ const EditOrgJoinSettingsForm = ({
 
       setStatusMessage("Saved.");
       toast.success("SUCCESS", { description: "Join settings updated." });
+      router.refresh();
       return result;
     } catch (error) {
       console.error(error);
@@ -198,103 +216,107 @@ const EditOrgJoinSettingsForm = ({
   }, [formData.joinMode]);
 
   return (
-    <div className="marketing-card w-full max-w-6xl rounded-3xl px-6 py-6 md:px-8 md:py-8 bg-white/4">
-      <form
-        id="edit-org-join-settings-form"
-        action={formAction}
-        className="flex flex-col gap-6 md:gap-8"
-      >
-        <div className="flex flex-col gap-2">
-          <label
-            ref={joinModeLabelRef}
-            className="text-xs md:text-sm text-white/75"
-          >
-            Join mode
-          </label>
+    <div className="marketing-card w-full rounded-3xl px-6 py-6 md:px-8 md:py-8 bg-white/4">
+      <div className="flex flex-col gap-6 md:gap-8">
+        <form
+          id="edit-org-join-settings-form"
+          action={formAction}
+          className="flex flex-col gap-6 md:gap-8"
+        >
+          <div className="flex flex-col gap-2">
+            <label
+              ref={joinModeLabelRef}
+              className="text-xs md:text-sm text-white/75"
+            >
+              Join mode
+            </label>
 
-          <select
-            value={formData.joinMode}
-            onChange={(e) => {
-              const next = e.target.value as OrgJoinMode;
-              setFormData((p) => ({
-                ...p,
-                joinMode: next,
-                // enforce invariant locally
-                allowJoinRequests:
-                  next === OrgJoinMode.REQUEST ? p.allowJoinRequests : false,
-              }));
-            }}
-            className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
-          >
-            {JOIN_MODE_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+            <select
+              value={formData.joinMode}
+              onChange={(e) => {
+                const next = e.target.value as OrgJoinMode;
+                setFormData((p) => ({
+                  ...p,
+                  joinMode: next,
+                  // enforce invariant locally
+                  allowJoinRequests:
+                    next === OrgJoinMode.REQUEST ? p.allowJoinRequests : false,
+                }));
+              }}
+              className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+            >
+              {JOIN_MODE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
 
-          {selectedHint ? (
-            <div className="text-xs text-white/60">{selectedHint}</div>
-          ) : null}
+            {selectedHint ? (
+              <div className="text-xs text-white/60">{selectedHint}</div>
+            ) : null}
 
-          {errors.joinMode ? (
-            <p className="text-red-500 text-xs md:text-sm">{errors.joinMode}</p>
-          ) : null}
-        </div>
+            {errors.joinMode ? (
+              <p className="text-red-500 text-xs md:text-sm">
+                {errors.joinMode}
+              </p>
+            ) : null}
+          </div>
 
-        <div className="flex flex-col gap-2">
-          <label
-            ref={allowLabelRef}
-            className="text-xs md:text-sm text-white/75"
-          >
-            Join requests
-          </label>
+          <div className="flex flex-col gap-2">
+            <label
+              ref={allowLabelRef}
+              className="text-xs md:text-sm text-white/75"
+            >
+              Join requests
+            </label>
 
-          <button
-            type="button"
-            disabled={!allowToggleEnabled}
-            onClick={() => {
-              if (!allowToggleEnabled) return;
-              setFormData((p) => ({
-                ...p,
-                allowJoinRequests: !p.allowJoinRequests,
-              }));
-            }}
-            className="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition-colors text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] text-left disabled:opacity-50 disabled:hover:bg-white/5"
-          >
-            {allowToggleEnabled
-              ? formData.allowJoinRequests
-                ? "Enabled — admins can approve/decline requests"
-                : "Disabled — requests are not accepted"
-              : "Unavailable — set Join mode to REQUEST to enable"}
-          </button>
+            <button
+              type="button"
+              disabled={!allowToggleEnabled}
+              onClick={() => {
+                if (!allowToggleEnabled) return;
+                setFormData((p) => ({
+                  ...p,
+                  allowJoinRequests: !p.allowJoinRequests,
+                }));
+              }}
+              className="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition-colors text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] text-left disabled:opacity-50 disabled:hover:bg-white/5"
+            >
+              {allowToggleEnabled
+                ? formData.allowJoinRequests
+                  ? "Enabled — admins can approve/decline requests"
+                  : "Disabled — requests are not accepted"
+                : "Unavailable — set Join mode to REQUEST to enable"}
+            </button>
 
-          {errors.allowJoinRequests ? (
-            <p className="text-red-500 text-xs md:text-sm">
-              {errors.allowJoinRequests}
+            {errors.allowJoinRequests ? (
+              <p className="text-red-500 text-xs md:text-sm">
+                {errors.allowJoinRequests}
+              </p>
+            ) : null}
+          </div>
+
+          <div className="flex w-full justify-center">
+            <button
+              type="submit"
+              ref={saveButtonRef}
+              disabled={isPending}
+              className="w-full max-w-sm px-5 py-3 rounded-2xl cursor-pointer bg-white text-primary-950 font-semibold text-sm md:text-base transition-opacity hover:opacity-90 disabled:opacity-60"
+            >
+              {isPending ? "Saving..." : "Save join settings"}
+            </button>
+          </div>
+        </form>
+
+        {statusMessage ? (
+          <div className="flex items-center justify-center w-full pt-6">
+            <p className="text-white/90 text-xs md:text-sm text-center px-4 py-3 rounded-xl bg-white/5 border border-white/10">
+              {statusMessage}
             </p>
-          ) : null}
-        </div>
-
-        <div className="flex w-full justify-center">
-          <button
-            type="submit"
-            ref={saveButtonRef}
-            disabled={isPending}
-            className="w-full max-w-sm px-5 py-3 rounded-2xl cursor-pointer bg-white text-primary-950 font-semibold text-sm md:text-base transition-opacity hover:opacity-90 disabled:opacity-60"
-          >
-            {isPending ? "Saving..." : "Save join settings"}
-          </button>
-        </div>
-      </form>
-
-      {statusMessage ? (
-        <div className="flex items-center justify-center w-full pt-6">
-          <p className="text-white/90 text-xs md:text-sm text-center px-4 py-3 rounded-xl bg-white/5 border border-white/10">
-            {statusMessage}
-          </p>
-        </div>
-      ) : null}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 };

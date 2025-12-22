@@ -78,7 +78,7 @@ const OrgJoinRequestCard = ({
       tl.to(cardRef.current, { opacity: 1, y: 0 }, 0).to(
         split.words,
         { opacity: 1, y: 0, stagger: 0.02 },
-        0.05
+        0.05,
       );
 
       requestAnimationFrame(() => ScrollTrigger.refresh());
@@ -97,7 +97,7 @@ const OrgJoinRequestCard = ({
   const decide = async (
     decision: "APPROVE" | "REJECT",
     _state: ActionState,
-    _fd: FormData
+    _fd: FormData,
   ): Promise<ActionState> => {
     try {
       void _state;
@@ -123,7 +123,7 @@ const OrgJoinRequestCard = ({
       });
 
       setStatusMessage(
-        decision === "APPROVE" ? "Approving request…" : "Declining request…"
+        decision === "APPROVE" ? "Approving request…" : "Declining request…",
       );
 
       const fd = new FormData();
@@ -187,11 +187,11 @@ const OrgJoinRequestCard = ({
 
   const [, approveFormAction, approvePending] = useActionState(
     approveAction,
-    initialState
+    initialState,
   );
   const [, declineFormAction, declinePending] = useActionState(
     declineAction,
-    initialState
+    initialState,
   );
 
   const isPending = approvePending || declinePending;
@@ -239,7 +239,7 @@ const OrgJoinRequestCard = ({
           {/* Status pill */}
           <div
             className={`inline-flex items-center justify-center px-3 py-2 rounded-2xl text-xs font-semibold ${statusPill(
-              joinRequest.status
+              joinRequest.status,
             )}`}
           >
             {statusLabel(joinRequest.status)}

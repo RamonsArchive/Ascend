@@ -9,7 +9,7 @@ export const parseServerActionResponse = <T>(response: T): T => {
 export const updatePhoneNumber = (
   value: string,
   phoneNumber: string,
-  setPhoneNumber: (value: string) => void
+  setPhoneNumber: (value: string) => void,
 ) => {
   // If the user is backspacing and hit a dash, remove the digit before the dash
   const prevLength = phoneNumber.length;
@@ -39,7 +39,7 @@ export const updatePhoneNumber = (
   if (cleanedValue.length >= 6) {
     formattedValue = `${cleanedValue.slice(0, 3)}-${cleanedValue.slice(
       3,
-      6
+      6,
     )}-${cleanedValue.slice(6, 10)}`;
   } else if (cleanedValue.length >= 3) {
     formattedValue = `${cleanedValue.slice(0, 3)}-${cleanedValue.slice(3)}`;
@@ -90,7 +90,7 @@ const DEFAULT_ALLOWED_IMAGE_MIME_TYPES = new Set([
  */
 export function isAllowedImageFile(
   file: File | null | undefined,
-  allowedMimeTypes: Set<string> = DEFAULT_ALLOWED_IMAGE_MIME_TYPES
+  allowedMimeTypes: Set<string> = DEFAULT_ALLOWED_IMAGE_MIME_TYPES,
 ) {
   if (!file) return false;
   return allowedMimeTypes.has(file.type);
@@ -104,7 +104,7 @@ export function getFileExtension(filename: string) {
 
 export function isUnderFileSize(
   file: File | null | undefined,
-  maxBytes: number
+  maxBytes: number,
 ) {
   if (!file) return false;
   return file.size <= maxBytes;
@@ -168,7 +168,7 @@ export function parseOptionalDateFromMinutes(minutesStr: string | null) {
 }
 
 export function statusPill(
-  status: "PENDING" | "ACCEPTED" | "DECLINED" | "CANCELLED"
+  status: "PENDING" | "ACCEPTED" | "DECLINED" | "CANCELLED",
 ) {
   // same palette vibes as your app: whites, subtle borders
   switch (status) {
@@ -184,7 +184,7 @@ export function statusPill(
 }
 
 export function statusLabel(
-  status: "PENDING" | "ACCEPTED" | "DECLINED" | "CANCELLED"
+  status: "PENDING" | "ACCEPTED" | "DECLINED" | "CANCELLED",
 ) {
   switch (status) {
     case "PENDING":

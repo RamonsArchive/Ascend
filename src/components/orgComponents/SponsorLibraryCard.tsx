@@ -7,7 +7,6 @@ import Image from "next/image";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
-import { useRouter } from "next/navigation";
 
 import type { ActionState } from "@/src/lib/global_types";
 import {
@@ -50,7 +49,6 @@ const SponsorLibraryCard = ({
   currentUserId: string;
   onAddToOrg: (sponsorId: string) => void;
 }) => {
-  const router = useRouter();
   const canEdit = sponsor.createdById === currentUserId;
 
   const allowedImageMimeTypes = useMemo(
@@ -108,7 +106,6 @@ const SponsorLibraryCard = ({
       }
       setStatusMessage("Updated.");
       toast.success("SUCCESS", { description: "Visibility updated." });
-      router.refresh();
     } catch (e) {
       console.error(e);
       setStatusMessage("Failed to update visibility.");
@@ -241,7 +238,6 @@ const SponsorLibraryCard = ({
       setStatusMessage("Saved.");
       toast.success("SUCCESS", { description: "Sponsor updated." });
       setIsEditing(false);
-      router.refresh();
       return result;
     } catch (error) {
       console.error(error);

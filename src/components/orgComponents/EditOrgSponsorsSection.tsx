@@ -26,7 +26,7 @@ const EditOrgSponsorsSection = ({
   const { librarySection, orgSection } = org_sponsors_data;
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [defaultSponsorId, setDefaultSponsorId] = React.useState<string | null>(
-    null
+    null,
   );
   console.log("initailSponsors", initialSponsors);
   console.log("sponsorLibrary", sponsorLibrary);

@@ -19,6 +19,7 @@ import {
   parseOptionalInt,
   parseOptionalDateFromMinutes,
 } from "@/src/lib/utils";
+import { updateTag } from "next/cache";
 
 /**
  * 1) Email invite: admin enters email => we create OrgInvite + send email
@@ -31,7 +32,7 @@ import {
  */
 export const createOrgEmailInvite = async (
   _prev: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -50,7 +51,7 @@ export const createOrgEmailInvite = async (
     const emailRaw = (formData.get("email")?.toString() ?? "").trim();
     const message = (formData.get("message")?.toString() ?? "").trim() || null;
     const expiresAt = parseOptionalDateFromMinutes(
-      formData.get("expiresInMinutes")?.toString() ?? null
+      formData.get("expiresInMinutes")?.toString() ?? null,
     );
 
     if (!orgId || !emailRaw) {
@@ -142,6 +143,8 @@ export const createOrgEmailInvite = async (
       expiresAt: invite.expiresAt ?? null,
     });
 
+    updateTag(`org-email-invites-${orgId}`);
+
     return parseServerActionResponse({
       status: "SUCCESS",
       error: "",
@@ -168,7 +171,7 @@ export const createOrgEmailInvite = async (
  */
 export const createOrgInviteLink = async (
   _prev: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -185,10 +188,10 @@ export const createOrgInviteLink = async (
 
     const orgId = (formData.get("orgId")?.toString() ?? "").trim();
     const maxUses = parseOptionalInt(
-      formData.get("maxUses")?.toString() ?? null
+      formData.get("maxUses")?.toString() ?? null,
     );
     const expiresAt = parseOptionalDateFromMinutes(
-      formData.get("expiresInMinutes")?.toString() ?? null
+      formData.get("expiresInMinutes")?.toString() ?? null,
     );
     const note = (formData.get("note")?.toString() ?? "").trim() || null;
 
@@ -242,6 +245,8 @@ export const createOrgInviteLink = async (
       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
 
     const shareUrl = `${baseUrl}/app/orgs/${org.slug}/join-link/${created.token}`;
+
+    updateTag(`org-invite-links-${orgId}`);
 
     return parseServerActionResponse({
       status: "SUCCESS",
@@ -343,6 +348,8 @@ export const acceptOrgInvite = async (token: string): Promise<ActionState> => {
       return { orgId: invite.orgId };
     });
 
+    updateTag(`org-accept-invites-${invite.orgId}`);
+
     return parseServerActionResponse({
       status: "SUCCESS",
       error: "",
@@ -366,7 +373,7 @@ export const acceptOrgInvite = async (token: string): Promise<ActionState> => {
  * - join as MEMBER
  */
 export const acceptOrgInviteLink = async (
-  token: string
+  token: string,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -443,6 +450,8 @@ export const acceptOrgInviteLink = async (
       return { orgId: link.orgId };
     });
 
+    updateTag(`org-accept-invite-links-${link.orgId}`);
+
     return parseServerActionResponse({
       status: "SUCCESS",
       error: "",
@@ -467,7 +476,7 @@ export const acceptOrgInviteLink = async (
  */
 export const createOrgJoinRequest = async (
   _prev: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -536,6 +545,8 @@ export const createOrgJoinRequest = async (
         select: { id: true },
       });
 
+      updateTag(`org-create-join-requests-${org.id}`);
+
       return parseServerActionResponse({
         status: "SUCCESS",
         error: "",
@@ -569,7 +580,7 @@ export const createOrgJoinRequest = async (
  */
 export const reviewOrgJoinRequest = async (
   _prev: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -658,6 +669,8 @@ export const reviewOrgJoinRequest = async (
       return updatedReq;
     });
 
+    updateTag(`org-review-join-requests-${orgId}`);
+
     return parseServerActionResponse({
       status: "SUCCESS",
       error: "",
@@ -675,7 +688,7 @@ export const reviewOrgJoinRequest = async (
 
 export const fetchOrgJoinRequests = async (
   orgId: string,
-  userId: string
+  userId: string,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -709,6 +722,9 @@ export const fetchOrgJoinRequests = async (
         },
       },
     });
+
+    updateTag(`org-fetch-join-requests-${orgId}`);
+
     return parseServerActionResponse({
       status: "SUCCESS",
       error: "",

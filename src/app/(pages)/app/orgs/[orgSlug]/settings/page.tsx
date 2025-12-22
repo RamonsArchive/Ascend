@@ -90,6 +90,9 @@ const EditOrgPage = async ({
     joinMode,
   } = org.data as Organization;
 
+  console.log("allowJoinRequests in page", allowJoinRequests);
+  console.log("joinMode in page", joinMode);
+
   return (
     <div className="relative w-full">
       <div className="absolute inset-0 pointer-events-none marketing-bg" />

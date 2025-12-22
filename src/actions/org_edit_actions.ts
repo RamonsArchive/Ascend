@@ -15,7 +15,7 @@ import { OrgRole } from "@prisma/client";
 
 export const updateOrganization = async (
   _prevState: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -79,7 +79,7 @@ export const updateOrganization = async (
     // ---- Permission check: must be OWNER or ADMIN
     const hasPermissions = await assertOrgAdminOrOwnerWithId(
       orgId,
-      session.user.id
+      session.user.id,
     );
     if (hasPermissions.status === "ERROR") return hasPermissions as ActionState;
     const { userRole } = hasPermissions.data as {
