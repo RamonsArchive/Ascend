@@ -11,10 +11,7 @@ import type { ActionState } from "@/src/lib/global_types";
 import { finalizeSponsorImageFromTmp } from "@/src/lib/s3-upload";
 import { SponsorVisibility, type SponsorTier } from "@prisma/client";
 import { deleteS3ObjectIfExists } from "@/src/actions/s3_actions";
-import {
-  assertOrgAdminOrOwnerWithId,
-  isAdminOrOwnerOfOrg,
-} from "@/src/actions/org_actions";
+import { assertOrgAdminOrOwnerWithId } from "@/src/actions/org_actions";
 
 function slugify(input: string) {
   return input
@@ -558,7 +555,7 @@ export const addExistingSponsorToOrg = async (
   }
 };
 
-export const fetchOrgSponsors = async (orgSlug: string) => {
+export const fetchOrgSponsors = async (orgId: string) => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user?.id) {
@@ -572,11 +569,14 @@ export const fetchOrgSponsors = async (orgSlug: string) => {
     const isRateLimited = await checkRateLimit("fetchOrgSponsors");
     if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
 
-    const hasPermissions = await isAdminOrOwnerOfOrg(orgSlug, session.user.id);
+    const hasPermissions = await assertOrgAdminOrOwnerWithId(
+      orgId,
+      session.user.id
+    );
     if (hasPermissions.status === "ERROR") return hasPermissions as ActionState;
 
     const sponsors = await prisma.organizationSponsor.findMany({
-      where: { org: { slug: orgSlug } },
+      where: { orgId },
       orderBy: [{ order: "asc" }, { createdAt: "desc" }],
       include: {
         sponsor: {

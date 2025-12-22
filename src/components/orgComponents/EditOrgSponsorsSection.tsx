@@ -10,7 +10,6 @@ import AddSponsorToOrgModal from "@/src/components/orgComponents/AddSponsorToOrg
 import SponsorLibraryCard, {
   type SponsorLibraryItem,
 } from "@/src/components/orgComponents/SponsorLibraryCard";
-
 import type { OrgSponsorWithSponsor } from "@/src/lib/global_types";
 
 const EditOrgSponsorsSection = ({
@@ -29,6 +28,9 @@ const EditOrgSponsorsSection = ({
   const [defaultSponsorId, setDefaultSponsorId] = React.useState<string | null>(
     null
   );
+  console.log("initailSponsors", initialSponsors);
+  console.log("sponsorLibrary", sponsorLibrary);
+  console.log("currentUserId", currentUserId);
 
   return (
     <section className="flex flex-col items-center justify-center w-full">

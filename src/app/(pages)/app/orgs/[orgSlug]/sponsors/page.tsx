@@ -58,6 +58,7 @@ const OrgSponsorsPage = async ({
   };
 
   const orgSponsors = await fetchOrgSponsors(orgId);
+  console.log("orgSponsors", orgSponsors);
   if (orgSponsors.status === "ERROR") return notFound();
   const sponsors = orgSponsors.data as OrgSponsorWithSponsor[];
 
