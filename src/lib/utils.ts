@@ -1,4 +1,5 @@
 import type { SponsorTier } from "@/src/lib/global_types";
+import crypto from "crypto";
 
 export const parseServerActionResponse = <T>(response: T): T => {
   return JSON.parse(JSON.stringify(response));
@@ -8,7 +9,7 @@ export const parseServerActionResponse = <T>(response: T): T => {
 export const updatePhoneNumber = (
   value: string,
   phoneNumber: string,
-  setPhoneNumber: (value: string) => void,
+  setPhoneNumber: (value: string) => void
 ) => {
   // If the user is backspacing and hit a dash, remove the digit before the dash
   const prevLength = phoneNumber.length;
@@ -38,7 +39,7 @@ export const updatePhoneNumber = (
   if (cleanedValue.length >= 6) {
     formattedValue = `${cleanedValue.slice(0, 3)}-${cleanedValue.slice(
       3,
-      6,
+      6
     )}-${cleanedValue.slice(6, 10)}`;
   } else if (cleanedValue.length >= 3) {
     formattedValue = `${cleanedValue.slice(0, 3)}-${cleanedValue.slice(3)}`;
@@ -89,7 +90,7 @@ const DEFAULT_ALLOWED_IMAGE_MIME_TYPES = new Set([
  */
 export function isAllowedImageFile(
   file: File | null | undefined,
-  allowedMimeTypes: Set<string> = DEFAULT_ALLOWED_IMAGE_MIME_TYPES,
+  allowedMimeTypes: Set<string> = DEFAULT_ALLOWED_IMAGE_MIME_TYPES
 ) {
   if (!file) return false;
   return allowedMimeTypes.has(file.type);
@@ -103,7 +104,7 @@ export function getFileExtension(filename: string) {
 
 export function isUnderFileSize(
   file: File | null | undefined,
-  maxBytes: number,
+  maxBytes: number
 ) {
   if (!file) return false;
   return file.size <= maxBytes;
@@ -141,4 +142,27 @@ export function tierBadgeClasses(tier: SponsorTier) {
     default:
       return "bg-white/5 text-white/70 border-white/10";
   }
+}
+
+export function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
+export function makeToken(bytes = 24) {
+  return crypto.randomBytes(bytes).toString("hex");
+}
+
+export function parseOptionalInt(value: string | null) {
+  if (!value) return null;
+  const n = Number(value);
+  if (!Number.isFinite(n)) return null;
+  return n;
+}
+
+export function parseOptionalDateFromMinutes(minutesStr: string | null) {
+  if (!minutesStr) return null;
+  const m = Number(minutesStr);
+  if (!Number.isFinite(m) || m <= 0) return null;
+  const d = new Date(Date.now() + m * 60_000);
+  return d;
 }

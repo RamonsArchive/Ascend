@@ -9,6 +9,7 @@ import { prisma } from "../lib/prisma";
 import { headers } from "next/headers";
 import crypto from "crypto";
 import { finalizeOrgImageFromTmp, OrgAssetKind } from "../lib/s3-upload";
+import { OrgJoinMode } from "@prisma/client";
 
 function slugify(input: string) {
   return input
@@ -22,7 +23,7 @@ function slugify(input: string) {
 
 export const createOrganization = async (
   _prevState: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -257,6 +258,8 @@ export const fetchOrgData = async (orgSlug: string) => {
         contactNote: true,
         logoKey: true,
         coverKey: true,
+        allowJoinRequests: true,
+        joinMode: true,
         memberships: { select: { userId: true, role: true } },
       },
     });
@@ -333,7 +336,7 @@ export async function assertOrgAdminOrOwner(orgSlug: string, userId: string) {
 
 export const assertOrgAdminOrOwnerWithId = async (
   orgId: string,
-  userId: string,
+  userId: string
 ) => {
   try {
     const membership = await prisma.orgMembership.findUnique({
@@ -364,6 +367,66 @@ export const assertOrgAdminOrOwnerWithId = async (
     return parseServerActionResponse({
       status: "ERROR",
       error: "Failed to check if user is a member of the organization",
+      data: null,
+    }) as ActionState;
+  }
+};
+
+export const updateOrgJoinSettings = async (
+  orgId: string,
+  userId: string,
+  opts: { joinMode?: OrgJoinMode; allowJoinRequests?: boolean }
+): Promise<ActionState> => {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user?.id) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "MUST BE LOGGED IN TO UPDATE ORGANIZATION JOIN SETTINGS",
+        data: null,
+      }) as ActionState;
+    }
+
+    const isRateLimited = await checkRateLimit("updateOrgJoinSettings");
+    if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
+
+    const hasPermissions = await assertOrgAdminOrOwnerWithId(orgId, userId);
+    if (hasPermissions.status === "ERROR") return hasPermissions as ActionState;
+
+    const current = await prisma.organization.findUnique({
+      where: { id: orgId },
+      select: { joinMode: true, allowJoinRequests: true },
+    });
+    if (!current) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "ORGANIZATION NOT FOUND",
+        data: null,
+      }) as ActionState;
+    }
+
+    const nextJoinMode = opts.joinMode ?? current.joinMode;
+    let nextAllow = opts.allowJoinRequests ?? current.allowJoinRequests;
+
+    // enforce invariant
+    if (nextJoinMode !== OrgJoinMode.REQUEST) nextAllow = false;
+
+    const updated = await prisma.organization.update({
+      where: { id: orgId },
+      data: { joinMode: nextJoinMode, allowJoinRequests: nextAllow },
+      select: { id: true, joinMode: true, allowJoinRequests: true },
+    });
+
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data: updated,
+    }) as ActionState;
+  } catch (error) {
+    console.error(error);
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to update organization join settings",
       data: null,
     }) as ActionState;
   }
