@@ -8,12 +8,7 @@ import { auth } from "@/src/lib/auth";
 import { prisma } from "@/src/lib/prisma";
 import { checkRateLimit } from "@/src/lib/rate-limiter";
 import { parseServerActionResponse } from "@/src/lib/utils";
-import {
-  isAdminOrOwnerOfOrg,
-  fetchOrgData,
-  assertOrgAdminOrOwner,
-  assertOrgAdminOrOwnerWithId,
-} from "@/src/actions/org_actions";
+import { assertOrgAdminOrOwnerWithId } from "./org_actions";
 
 export const fetchOrgMembers = async (orgId: string): Promise<ActionState> => {
   try {
@@ -63,7 +58,7 @@ export const fetchOrgMembers = async (orgId: string): Promise<ActionState> => {
 
 export const updateOrgMemberRole = async (
   _prevState: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -99,11 +94,13 @@ export const updateOrgMemberRole = async (
       }) as ActionState;
     }
 
-    const hasPermissions = await assertOrgAdminOrOwner(orgId, session.user.id);
+    const hasPermissions = await assertOrgAdminOrOwnerWithId(
+      orgId,
+      session.user.id
+    );
 
     if (hasPermissions.status === "ERROR") return hasPermissions as ActionState;
     const { userRole } = hasPermissions.data as {
-      orgId: string;
       userRole: OrgRole;
     };
     const target = await prisma.orgMembership.findUnique({
@@ -179,7 +176,7 @@ export const updateOrgMemberRole = async (
 
 export const removeOrgMember = async (
   _prevState: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -207,15 +204,15 @@ export const removeOrgMember = async (
 
     const hasPermissions = await assertOrgAdminOrOwnerWithId(
       orgId,
-      session.user.id,
+      session.user.id
     );
     if (hasPermissions.status === "ERROR") return hasPermissions as ActionState;
-    const { userRole } = hasPermissions.data as {
+    const { userId, userRole } = hasPermissions.data as {
+      userId: string;
       userRole: OrgRole;
     };
-    const membership = hasPermissions.data as OrgMembership;
 
-    if (membership.userId === session.user.id) {
+    if (userId === session.user.id) {
       return parseServerActionResponse({
         status: "ERROR",
         error: "You can't remove yourself",

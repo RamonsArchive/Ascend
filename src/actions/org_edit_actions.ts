@@ -10,10 +10,12 @@ import type { ActionState } from "@/src/lib/global_types";
 import { editOrgServerSchema } from "@/src/lib/validation";
 import { finalizeOrgImageFromTmp } from "@/src/lib/s3-upload";
 import { deleteS3ObjectIfExists } from "@/src/actions/s3_actions";
+import { assertOrgAdminOrOwnerWithId } from "./org_actions";
+import { OrgRole } from "@prisma/client";
 
 export const updateOrganization = async (
   _prevState: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -75,18 +77,19 @@ export const updateOrganization = async (
     }
 
     // ---- Permission check: must be OWNER or ADMIN
-    const membership = await prisma.orgMembership.findFirst({
-      where: { orgId, userId: session.user.id },
-      select: { role: true },
-    });
+    const hasPermissions = await assertOrgAdminOrOwnerWithId(
+      orgId,
+      session.user.id
+    );
+    if (hasPermissions.status === "ERROR") return hasPermissions as ActionState;
+    const { userRole } = hasPermissions.data as {
+      userRole: OrgRole;
+    };
 
-    if (
-      !membership ||
-      (membership.role !== "OWNER" && membership.role !== "ADMIN")
-    ) {
+    if (userRole !== "OWNER" && userRole !== "ADMIN") {
       return parseServerActionResponse({
         status: "ERROR",
-        error: "NOT_AUTHORIZED",
+        error: "You are not authorized to update this organization",
         data: null,
       }) as ActionState;
     }

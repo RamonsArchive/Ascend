@@ -11,6 +11,10 @@ import type { ActionState } from "@/src/lib/global_types";
 import { finalizeSponsorImageFromTmp } from "@/src/lib/s3-upload";
 import { SponsorVisibility, type SponsorTier } from "@prisma/client";
 import { deleteS3ObjectIfExists } from "@/src/actions/s3_actions";
+import {
+  assertOrgAdminOrOwnerWithId,
+  isAdminOrOwnerOfOrg,
+} from "@/src/actions/org_actions";
 
 function slugify(input: string) {
   return input
@@ -23,7 +27,7 @@ function slugify(input: string) {
 
 export const createSponsorProfile = async (
   _prevState: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -142,7 +146,7 @@ export const createSponsorProfile = async (
 
 export const updateSponsorProfile = async (
   _prevState: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -285,7 +289,7 @@ export const updateSponsorProfile = async (
 
 export const setSponsorVisibility = async (
   _prevState: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -368,7 +372,7 @@ export const setSponsorVisibility = async (
 };
 
 export const fetchSponsorLibrary = async (
-  query?: string,
+  query?: string
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -435,22 +439,9 @@ export const fetchSponsorLibrary = async (
   }
 };
 
-async function assertAdminOrOwner(orgId: string, userId: string) {
-  const membership = await prisma.orgMembership.findFirst({
-    where: { orgId, userId },
-    select: { role: true },
-  });
-  if (
-    !membership ||
-    (membership.role !== "OWNER" && membership.role !== "ADMIN")
-  ) {
-    throw new Error("NOT_AUTHORIZED");
-  }
-}
-
 export const addExistingSponsorToOrg = async (
   _prevState: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -502,7 +493,11 @@ export const addExistingSponsorToOrg = async (
       }) as ActionState;
     }
 
-    await assertAdminOrOwner(orgId, session.user.id);
+    const hasPermissions = await assertOrgAdminOrOwnerWithId(
+      orgId,
+      session.user.id
+    );
+    if (hasPermissions.status === "ERROR") return hasPermissions as ActionState;
 
     let finalLogoKey: string | null = null;
     if (logoTmpKey) {
@@ -563,7 +558,7 @@ export const addExistingSponsorToOrg = async (
   }
 };
 
-export const fetchOrgSponsors = async (orgId: string): Promise<ActionState> => {
+export const fetchOrgSponsors = async (orgSlug: string) => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user?.id) {
@@ -577,10 +572,11 @@ export const fetchOrgSponsors = async (orgId: string): Promise<ActionState> => {
     const isRateLimited = await checkRateLimit("fetchOrgSponsors");
     if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
 
-    await assertAdminOrOwner(orgId, session.user.id);
+    const hasPermissions = await isAdminOrOwnerOfOrg(orgSlug, session.user.id);
+    if (hasPermissions.status === "ERROR") return hasPermissions as ActionState;
 
     const sponsors = await prisma.organizationSponsor.findMany({
-      where: { orgId },
+      where: { org: { slug: orgSlug } },
       orderBy: [{ order: "asc" }, { createdAt: "desc" }],
       include: {
         sponsor: {

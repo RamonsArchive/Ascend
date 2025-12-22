@@ -11,23 +11,7 @@ import SponsorLibraryCard, {
   type SponsorLibraryItem,
 } from "@/src/components/orgComponents/SponsorLibraryCard";
 
-export type OrgSponsorWithSponsor = Prisma.OrganizationSponsorGetPayload<{
-  include: {
-    sponsor: {
-      select: {
-        id: true;
-        name: true;
-        slug: true;
-        websiteKey: true;
-        description: true;
-        logoKey: true;
-        coverKey: true;
-        visibility: true;
-        createdById: true;
-      };
-    };
-  };
-}>;
+import type { OrgSponsorWithSponsor } from "@/src/lib/global_types";
 
 const EditOrgSponsorsSection = ({
   orgId,
@@ -43,7 +27,7 @@ const EditOrgSponsorsSection = ({
   const { librarySection, orgSection } = org_sponsors_data;
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [defaultSponsorId, setDefaultSponsorId] = React.useState<string | null>(
-    null,
+    null
   );
 
   return (

@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 export type ActionState = {
   status: "INITIAL" | "PENDING" | "SUCCESS" | "ERROR";
   error: string | null;
@@ -33,3 +34,21 @@ export type SponsorTier =
   | "SILVER"
   | "BRONZE"
   | "COMMUNITY";
+
+export type OrgSponsorWithSponsor = Prisma.OrganizationSponsorGetPayload<{
+  include: {
+    sponsor: {
+      select: {
+        id: true;
+        name: true;
+        slug: true;
+        websiteKey: true;
+        description: true;
+        logoKey: true;
+        coverKey: true;
+        visibility: true;
+        createdById: true;
+      };
+    };
+  };
+}>;

@@ -11,6 +11,7 @@ import type { SponsorTier } from "@prisma/client";
 import { finalizeSponsorImageFromTmp } from "@/src/lib/s3-upload";
 import { deleteS3ObjectIfExists } from "@/src/actions/s3_actions";
 import { updateTag } from "next/cache";
+import { assertOrgAdminOrOwnerWithId } from "./org_actions";
 
 const allowedTiers = new Set<SponsorTier>([
   "TITLE",
@@ -21,23 +22,9 @@ const allowedTiers = new Set<SponsorTier>([
   "COMMUNITY",
 ]);
 
-async function assertAdminOrOwner(orgId: string, userId: string) {
-  const membership = await prisma.orgMembership.findFirst({
-    where: { orgId, userId },
-    select: { role: true },
-  });
-
-  if (
-    !membership ||
-    (membership.role !== "OWNER" && membership.role !== "ADMIN")
-  ) {
-    throw new Error("NOT_AUTHORIZED");
-  }
-}
-
 export const updateOrgSponsor = async (
   _prevState: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -77,7 +64,11 @@ export const updateOrgSponsor = async (
     }
 
     // permission
-    await assertAdminOrOwner(orgId, session.user.id);
+    const hasPermissions = await assertOrgAdminOrOwnerWithId(
+      orgId,
+      session.user.id
+    );
+    if (hasPermissions.status === "ERROR") return hasPermissions as ActionState;
 
     // normalize fields
     const tier = tierRaw ? (tierRaw as SponsorTier) : undefined;
@@ -305,7 +296,7 @@ export const updateOrgSponsor = async (
 
 export const removeSponsorFromOrg = async (
   _prevState: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -331,7 +322,11 @@ export const removeSponsorFromOrg = async (
       }) as ActionState;
     }
 
-    await assertAdminOrOwner(orgId, session.user.id);
+    const hasPermissions = await assertOrgAdminOrOwnerWithId(
+      orgId,
+      session.user.id
+    );
+    if (hasPermissions.status === "ERROR") return hasPermissions as ActionState;
 
     const existing = await prisma.organizationSponsor.findUnique({
       where: { orgId_sponsorId: { orgId, sponsorId } },
