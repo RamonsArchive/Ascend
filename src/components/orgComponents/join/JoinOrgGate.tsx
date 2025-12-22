@@ -1,12 +1,20 @@
 "use client";
 
-import React, { useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { signInWithGoogle } from "@/src/lib/auth-client";
 import { JoinOrgGateProps } from "@/src/lib/global_types";
 
 const JoinOrgGate = (props: JoinOrgGateProps) => {
+  const searchParams = useSearchParams();
+
   const router = useRouter();
   const [statusMessage, setStatusMessage] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -19,7 +27,7 @@ const JoinOrgGate = (props: JoinOrgGateProps) => {
         ? `/app/orgs/${props.org.slug}/join/${props.token}`
         : `/app/orgs/${props.org.slug}/join-link/${props.token}`;
 
-    return `${props.baseUrl}${path}`;
+    return `${props.baseUrl}${path}?autojoin=1`;
   }, [props.baseUrl, props.kind, props.org.slug, props.token]);
 
   const goToOrg = () => {
@@ -29,7 +37,10 @@ const JoinOrgGate = (props: JoinOrgGateProps) => {
   const onLogin = async () => {
     setStatusMessage("Redirecting to sign in…");
     try {
+      console.log("signing in with google");
       await signInWithGoogle(callbackURL);
+      console.log("refreshing page");
+      router.refresh(); // refetch the page to check if we're logged in
     } catch (e) {
       console.error(e);
       toast.error("ERROR", { description: "Failed to start sign-in." });
@@ -65,6 +76,19 @@ const JoinOrgGate = (props: JoinOrgGateProps) => {
     });
   };
 
+  useEffect(() => {
+    const autojoin = searchParams.get("autojoin") === "1";
+    console.log("autojoin", autojoin);
+    console.log("isLoggedIn", isLoggedIn);
+    console.log("disabledReason", props.disabledReason);
+    console.log("isMember", props.isMember);
+
+    // only do it once, only if logged in, and only if link/invite is valid
+    if (autojoin && isLoggedIn && !props.disabledReason && !props.isMember) {
+      onAccept();
+    }
+  }, [isLoggedIn, searchParams, props.disabledReason, props.isMember]); // ok
+
   const errorCopy = useMemo(() => {
     switch (props.disabledReason) {
       case "INVITE_INVALID":
@@ -88,7 +112,7 @@ const JoinOrgGate = (props: JoinOrgGateProps) => {
   // ✅ already-member UX (button, no auto redirect)
   if (props.isMember && isLoggedIn) {
     return (
-      <div className="marketing-card w-full max-w-xl rounded-3xl px-6 py-6 md:px-8 md:py-8 bg-white/4 border border-white/10">
+      <div className="marketing-card w-full max-w-xl rounded-3xl px-6 py-6 md:px-8 md:py-8 bg-white/4 border border-white/10 z-10">
         <div className="flex flex-col gap-4">
           <div className="text-white text-xl md:text-2xl font-semibold">
             You’re already a member
@@ -121,7 +145,7 @@ const JoinOrgGate = (props: JoinOrgGateProps) => {
   }
 
   return (
-    <div className="marketing-card w-full max-w-xl rounded-3xl px-6 py-6 md:px-8 md:py-8 bg-white/4 border border-white/10">
+    <div className="marketing-card relative w-full max-w-xl rounded-3xl px-6 py-6 md:px-8 md:py-8 bg-white/4 border border-white/10 z-10">
       <div className="flex flex-col gap-5">
         <div className="flex flex-col gap-2">
           <div className="text-white text-xl md:text-2xl font-semibold">

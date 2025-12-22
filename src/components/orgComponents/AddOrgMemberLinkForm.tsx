@@ -11,40 +11,37 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import type { ActionState } from "@/src/lib/global_types";
 import { parseServerActionResponse } from "@/src/lib/utils";
 import { createOrgInviteLinkClientSchema } from "@/src/lib/validation";
-
-// TODO: change this import to your real action
 import { createOrgInviteLink } from "@/src/actions/org_invites_actions";
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
 const initialState: ActionState = { status: "INITIAL", error: "", data: null };
 
+// Optional nice defaults
+const DEFAULT_EXPIRE_MINUTES = 60 * 24 * 7; // 1 week
+const MAX_EXPIRE_MINUTES = 60 * 24 * 7 * 4; // 4 weeks
+const MIN_EXPIRE_MINUTES = 60; // 1 hour
+
 const AddOrgMemberLinkForm = ({ orgId }: { orgId: string }) => {
   const submitButtonRef = useRef<HTMLButtonElement>(null);
 
-  const roleLabelRef = useRef<HTMLLabelElement>(null);
   const noteLabelRef = useRef<HTMLLabelElement>(null);
   const maxUsesLabelRef = useRef<HTMLLabelElement>(null);
+  const minutesToExpireLabelRef = useRef<HTMLLabelElement>(null);
 
   const [statusMessage, setStatusMessage] = useState("");
   const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
 
-  const baseUrl = useMemo(() => {
-    // Works in prod + local
-    if (typeof window === "undefined") return "";
-    return window.location.origin;
-  }, []);
-
   const [formData, setFormData] = useState(() => ({
-    role: "MEMBER",
     note: "",
     maxUses: "", // string input
+    minutesToExpire: String(DEFAULT_EXPIRE_MINUTES), // default 1 week
   }));
 
   const [errors, setErrors] = useState<{
-    role?: string;
     note?: string;
     maxUses?: string;
+    minutesToExpire?: string;
   }>({});
 
   useGSAP(() => {
@@ -52,9 +49,9 @@ const AddOrgMemberLinkForm = ({ orgId }: { orgId: string }) => {
 
     const init = () => {
       if (
-        !roleLabelRef.current ||
         !noteLabelRef.current ||
         !maxUsesLabelRef.current ||
+        !minutesToExpireLabelRef.current ||
         !submitButtonRef.current
       ) {
         requestAnimationFrame(init);
@@ -68,16 +65,16 @@ const AddOrgMemberLinkForm = ({ orgId }: { orgId: string }) => {
       }
 
       const splits = [
-        new SplitText(roleLabelRef.current, { type: "words" }),
         new SplitText(noteLabelRef.current, { type: "words" }),
         new SplitText(maxUsesLabelRef.current, { type: "words" }),
+        new SplitText(minutesToExpireLabelRef.current, { type: "words" }),
       ];
 
       const allLabels = splits.flatMap((s) => s.words);
       const allInputs = [
         submitButtonRef.current,
         ...Array.from(
-          triggerEl.querySelectorAll("input, textarea, select, button"),
+          triggerEl.querySelectorAll("input, textarea, select, button")
         ),
       ] as HTMLElement[];
 
@@ -97,7 +94,7 @@ const AddOrgMemberLinkForm = ({ orgId }: { orgId: string }) => {
       tl.to(allLabels, { opacity: 1, y: 0, stagger: 0.02 }, 0).to(
         allInputs,
         { opacity: 1, y: 0, stagger: 0.04 },
-        0.05,
+        0.05
       );
 
       requestAnimationFrame(() => ScrollTrigger.refresh());
@@ -125,7 +122,7 @@ const AddOrgMemberLinkForm = ({ orgId }: { orgId: string }) => {
 
   const submit = async (
     _state: ActionState,
-    _fd: FormData,
+    _fd: FormData
   ): Promise<ActionState> => {
     try {
       void _state;
@@ -138,21 +135,30 @@ const AddOrgMemberLinkForm = ({ orgId }: { orgId: string }) => {
       const maxUsesNum =
         formData.maxUses.trim() === "" ? undefined : Number(formData.maxUses);
 
+      const minutesToExpireNum =
+        formData.minutesToExpire.trim() === ""
+          ? undefined
+          : Number(formData.minutesToExpire);
+
       const parsed = await createOrgInviteLinkClientSchema.parseAsync({
         orgId,
-        role: formData.role,
         note: formData.note || undefined,
         maxUses: maxUsesNum,
+        minutesToExpire: minutesToExpireNum,
       });
 
       setStatusMessage("Generating link…");
 
       const fd = new FormData();
       fd.set("orgId", parsed.orgId);
-      fd.set("role", parsed.role);
       if (parsed.note) fd.set("note", parsed.note);
       if (typeof parsed.maxUses === "number")
         fd.set("maxUses", String(parsed.maxUses));
+
+      // ✅ IMPORTANT: send minutes to backend
+      if (typeof parsed.minutesToExpire === "number") {
+        fd.set("expiresInMinutes", String(parsed.minutesToExpire));
+      }
 
       const result = await createOrgInviteLink(initialState, fd);
       if (result.status === "ERROR") {
@@ -163,20 +169,18 @@ const AddOrgMemberLinkForm = ({ orgId }: { orgId: string }) => {
         return result;
       }
 
-      // Expect server returns { token: string }
-      const token = (result.data as { token?: string } | null)?.token;
-      if (!token) {
-        toast.error("ERROR", { description: "Missing token from server." });
+      // ✅ use server return (your action returns { linkId, shareUrl })
+      const shareUrl = (result.data as { shareUrl?: string } | null)?.shareUrl;
+      if (!shareUrl) {
+        toast.error("ERROR", { description: "Missing shareUrl from server." });
         return parseServerActionResponse({
           status: "ERROR",
-          error: "Missing token from server",
+          error: "Missing shareUrl from server",
           data: null,
         }) as ActionState;
       }
 
-      const url = `${baseUrl}/orgs/invite/${token}`;
-      setGeneratedUrl(url);
-
+      setGeneratedUrl(shareUrl);
       setStatusMessage("Invite link created.");
       toast.success("SUCCESS", { description: "Invite link created." });
 
@@ -228,28 +232,6 @@ const AddOrgMemberLinkForm = ({ orgId }: { orgId: string }) => {
         action={formAction}
         className="flex flex-col gap-6 md:gap-8"
       >
-        <div className="flex flex-col gap-2">
-          <label
-            ref={roleLabelRef}
-            className="text-xs md:text-sm text-white/75"
-          >
-            Shareable invite link role
-          </label>
-          <select
-            value={formData.role}
-            onChange={(e) =>
-              setFormData((p) => ({ ...p, role: e.target.value }))
-            }
-            className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
-          >
-            <option value="MEMBER">Member</option>
-            <option value="ADMIN">Admin</option>
-          </select>
-          {errors.role ? (
-            <p className="text-red-500 text-xs md:text-sm">{errors.role}</p>
-          ) : null}
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <div className="flex flex-col gap-2">
             <label
@@ -293,6 +275,42 @@ const AddOrgMemberLinkForm = ({ orgId }: { orgId: string }) => {
               <p className="text-red-500 text-xs md:text-sm">{errors.note}</p>
             ) : null}
           </div>
+        </div>
+
+        {/* ✅ Minutes to expire input */}
+        <div className="flex flex-col gap-2">
+          <label
+            ref={minutesToExpireLabelRef}
+            className="text-xs md:text-sm text-white/75"
+          >
+            Minutes to expire (optional)
+          </label>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            <input
+              value={formData.minutesToExpire}
+              onChange={(e) =>
+                setFormData((p) => ({ ...p, minutesToExpire: e.target.value }))
+              }
+              placeholder={`Default ${DEFAULT_EXPIRE_MINUTES} (1 week)`}
+              inputMode="numeric"
+              className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+            />
+
+            <div className="rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-xs text-white/65 leading-relaxed">
+              Min: {MIN_EXPIRE_MINUTES} (1 hour) • Max: {MAX_EXPIRE_MINUTES} (4
+              weeks)
+              <div className="mt-1 text-white/50">
+                Tip: 1440 = 1 day • 10080 = 1 week • 43200 = 30 days
+              </div>
+            </div>
+          </div>
+
+          {errors.minutesToExpire ? (
+            <p className="text-red-500 text-xs md:text-sm">
+              {errors.minutesToExpire}
+            </p>
+          ) : null}
         </div>
 
         <div className="flex w-full justify-center">

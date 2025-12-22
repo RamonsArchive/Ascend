@@ -282,16 +282,30 @@ export const fetchOrgData = async (orgSlug: string) => {
 
 export async function assertOrgAdminOrOwner(orgSlug: string, userId: string) {
   const org = await fetchOrgData(orgSlug);
-  if (org.status === "ERROR" || !org.data) throw new Error("ORG_NOT_FOUND");
+  if (org.status === "ERROR" || !org.data)
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Organization not found",
+      data: null,
+    }) as ActionState;
   const orgId = (org.data as { id: string }).id;
 
   const membership = await prisma.orgMembership.findUnique({
     where: { orgId_userId: { orgId, userId } },
     select: { role: true },
   });
-  if (!membership) throw new Error("NOT_AUTHORIZED");
+  if (!membership)
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "User is not a member of the organization",
+      data: null,
+    }) as ActionState;
   if (membership.role !== "OWNER" && membership.role !== "ADMIN") {
-    throw new Error("NOT_AUTHORIZED");
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Must be an admin or owner to perform this action",
+      data: null,
+    }) as ActionState;
   }
   return parseServerActionResponse({
     status: "SUCCESS",

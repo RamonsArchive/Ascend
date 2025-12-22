@@ -47,16 +47,16 @@ const OrgMembersPage = async ({
           <section className="flex flex-col items-center justify-center w-full">
             <div className="flex flex-col w-full max-w-3xl px-5 sm:px-10 md:px-18 pt-10 md:pt-14 gap-4">
               <div className="text-white text-xl font-semibold">
-                Organization not found
+                Not authorized
               </div>
               <div className="text-white/70 text-sm leading-relaxed">
-                The organization you are looking for does not exist.
+                You need OWNER or ADMIN access to view this page.
               </div>
               <Link
-                href={`/`}
+                href={`/app/orgs/${orgSlug}`}
                 className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-white text-primary-950 font-semibold text-sm md:text-base transition-opacity hover:opacity-90 text-center"
               >
-                Back to home
+                Back to org dashboard
               </Link>
             </div>
           </section>

@@ -9,6 +9,7 @@ import { prisma } from "@/src/lib/prisma";
 import { checkRateLimit } from "@/src/lib/rate-limiter";
 import { parseServerActionResponse } from "@/src/lib/utils";
 import { assertOrgAdminOrOwnerWithId } from "./org_actions";
+import { updateTag } from "next/cache";
 
 export const fetchOrgMembers = async (orgId: string): Promise<ActionState> => {
   try {
@@ -58,7 +59,7 @@ export const fetchOrgMembers = async (orgId: string): Promise<ActionState> => {
 
 export const updateOrgMemberRole = async (
   _prevState: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -96,8 +97,9 @@ export const updateOrgMemberRole = async (
 
     const hasPermissions = await assertOrgAdminOrOwnerWithId(
       orgId,
-      session.user.id,
+      session.user.id
     );
+    console.log("hasPermissions", hasPermissions);
 
     if (hasPermissions.status === "ERROR") return hasPermissions as ActionState;
     const { userRole } = hasPermissions.data as {
@@ -153,6 +155,7 @@ export const updateOrgMemberRole = async (
       data: { role: nextRoleRaw as OrgRole },
     });
 
+    updateTag(`org-members-role-${orgId}`);
     return parseServerActionResponse({
       status: "SUCCESS",
       error: "",
@@ -176,7 +179,7 @@ export const updateOrgMemberRole = async (
 
 export const removeOrgMember = async (
   _prevState: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -197,22 +200,31 @@ export const removeOrgMember = async (
     if (!orgId || !memberId) {
       return parseServerActionResponse({
         status: "ERROR",
-        error: "Missing orgSlug or memberId",
+        error: "Missing orgId or memberId",
         data: null,
       }) as ActionState;
     }
 
-    const hasPermissions = await assertOrgAdminOrOwnerWithId(
-      orgId,
-      session.user.id,
-    );
-    if (hasPermissions.status === "ERROR") return hasPermissions as ActionState;
-    const { userId, userRole } = hasPermissions.data as {
-      userId: string;
-      userRole: OrgRole;
-    };
+    const perms = await assertOrgAdminOrOwnerWithId(orgId, session.user.id);
+    if (perms.status === "ERROR") return perms as ActionState;
 
-    if (userId === session.user.id) {
+    const { userRole } = perms.data as { userRole: OrgRole };
+
+    const target = await prisma.orgMembership.findUnique({
+      where: { id: memberId },
+      select: { id: true, orgId: true, userId: true, role: true },
+    });
+
+    if (!target || target.orgId !== orgId) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "Member not found",
+        data: null,
+      }) as ActionState;
+    }
+
+    // can't remove yourself
+    if (target.userId === session.user.id) {
       return parseServerActionResponse({
         status: "ERROR",
         error: "You can't remove yourself",
@@ -220,7 +232,8 @@ export const removeOrgMember = async (
       }) as ActionState;
     }
 
-    if (userRole === "OWNER") {
+    // never remove OWNER here (do ownership transfer flow)
+    if (target.role === "OWNER") {
       return parseServerActionResponse({
         status: "ERROR",
         error: "You can't remove the OWNER",
@@ -228,8 +241,8 @@ export const removeOrgMember = async (
       }) as ActionState;
     }
 
-    // Admin can't remove Admin by default; OWNER can.
-    if (userRole === "ADMIN") {
+    // ADMIN can only remove MEMBERS
+    if (userRole === "ADMIN" && target.role !== "MEMBER") {
       return parseServerActionResponse({
         status: "ERROR",
         error: "Only OWNER can remove an ADMIN",
@@ -239,6 +252,8 @@ export const removeOrgMember = async (
 
     await prisma.orgMembership.delete({ where: { id: memberId } });
 
+    updateTag(`org-members-remove-${orgId}`);
+
     return parseServerActionResponse({
       status: "SUCCESS",
       error: "",
@@ -246,15 +261,9 @@ export const removeOrgMember = async (
     }) as ActionState;
   } catch (error) {
     console.error(error);
-    const msg =
-      error instanceof Error && error.message === "NOT_AUTHORIZED"
-        ? "NOT_AUTHORIZED"
-        : error instanceof Error && error.message === "ORG_NOT_FOUND"
-          ? "Organization not found"
-          : "Failed to remove member";
     return parseServerActionResponse({
       status: "ERROR",
-      error: msg,
+      error: "Failed to remove member",
       data: null,
     }) as ActionState;
   }

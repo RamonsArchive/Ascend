@@ -23,19 +23,16 @@ const AddOrgMemberEmailForm = ({ orgId }: { orgId: string }) => {
   const submitButtonRef = useRef<HTMLButtonElement>(null);
 
   const emailLabelRef = useRef<HTMLLabelElement>(null);
-  const roleLabelRef = useRef<HTMLLabelElement>(null);
   const messageLabelRef = useRef<HTMLLabelElement>(null);
 
   const [statusMessage, setStatusMessage] = useState("");
   const [formData, setFormData] = useState(() => ({
     email: "",
-    role: "MEMBER",
     message: "",
   }));
 
   const [errors, setErrors] = useState<{
     email?: string;
-    role?: string;
     message?: string;
   }>({});
 
@@ -45,7 +42,6 @@ const AddOrgMemberEmailForm = ({ orgId }: { orgId: string }) => {
     const init = () => {
       if (
         !emailLabelRef.current ||
-        !roleLabelRef.current ||
         !messageLabelRef.current ||
         !submitButtonRef.current
       ) {
@@ -61,7 +57,6 @@ const AddOrgMemberEmailForm = ({ orgId }: { orgId: string }) => {
 
       const splits = [
         new SplitText(emailLabelRef.current, { type: "words" }),
-        new SplitText(roleLabelRef.current, { type: "words" }),
         new SplitText(messageLabelRef.current, { type: "words" }),
       ];
 
@@ -87,7 +82,7 @@ const AddOrgMemberEmailForm = ({ orgId }: { orgId: string }) => {
       tl.to(allLabels, { opacity: 1, y: 0, stagger: 0.02 }, 0).to(
         allInputs,
         { opacity: 1, y: 0, stagger: 0.04 },
-        0.05,
+        0.05
       );
 
       requestAnimationFrame(() => ScrollTrigger.refresh());
@@ -104,14 +99,14 @@ const AddOrgMemberEmailForm = ({ orgId }: { orgId: string }) => {
   }, []);
 
   const clearForm = () => {
-    setFormData({ email: "", role: "MEMBER", message: "" });
+    setFormData({ email: "", message: "" });
     setErrors({});
     setStatusMessage("");
   };
 
   const submit = async (
     _state: ActionState,
-    _fd: FormData,
+    _fd: FormData
   ): Promise<ActionState> => {
     try {
       void _state;
@@ -123,7 +118,6 @@ const AddOrgMemberEmailForm = ({ orgId }: { orgId: string }) => {
       const parsed = await createOrgInviteEmailClientSchema.parseAsync({
         orgId,
         email: formData.email,
-        role: formData.role,
         message: formData.message || undefined,
       });
 
@@ -132,7 +126,6 @@ const AddOrgMemberEmailForm = ({ orgId }: { orgId: string }) => {
       const fd = new FormData();
       fd.set("orgId", parsed.orgId);
       fd.set("email", parsed.email);
-      fd.set("role", parsed.role);
       if (parsed.message) fd.set("message", parsed.message);
 
       const result = await createOrgEmailInvite(initialState, fd);
@@ -218,50 +211,24 @@ const AddOrgMemberEmailForm = ({ orgId }: { orgId: string }) => {
           ) : null}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-          <div className="flex flex-col gap-2">
-            <label
-              ref={roleLabelRef}
-              className="text-xs md:text-sm text-white/75"
-            >
-              Role
-            </label>
-            <select
-              value={formData.role}
-              onChange={(e) =>
-                setFormData((p) => ({ ...p, role: e.target.value }))
-              }
-              className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
-            >
-              <option value="MEMBER">Member</option>
-              <option value="ADMIN">Admin</option>
-            </select>
-            {errors.role ? (
-              <p className="text-red-500 text-xs md:text-sm">{errors.role}</p>
-            ) : null}
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label
-              ref={messageLabelRef}
-              className="text-xs md:text-sm text-white/75"
-            >
-              Message (optional)
-            </label>
-            <textarea
-              value={formData.message}
-              onChange={(e) =>
-                setFormData((p) => ({ ...p, message: e.target.value }))
-              }
-              placeholder="Add a short note…"
-              className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors min-h-[110px] resize-none shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
-            />
-            {errors.message ? (
-              <p className="text-red-500 text-xs md:text-sm">
-                {errors.message}
-              </p>
-            ) : null}
-          </div>
+        <div className="flex flex-col gap-2">
+          <label
+            ref={messageLabelRef}
+            className="text-xs md:text-sm text-white/75"
+          >
+            Message (optional)
+          </label>
+          <textarea
+            value={formData.message}
+            onChange={(e) =>
+              setFormData((p) => ({ ...p, message: e.target.value }))
+            }
+            placeholder="Add a short note…"
+            className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors min-h-[110px] resize-none shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+          />
+          {errors.message ? (
+            <p className="text-red-500 text-xs md:text-sm">{errors.message}</p>
+          ) : null}
         </div>
 
         <div className="flex w-full justify-center">

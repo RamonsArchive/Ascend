@@ -38,18 +38,22 @@ const JoinOrgPage = async ({
         : null;
 
   return (
-    <div className="min-h-[60vh] flex items-center justify-center px-5 py-10">
-      <JoinOrgGate
-        baseUrl={baseUrl}
-        kind="EMAIL_INVITE"
-        org={data.org}
-        inviteEmail={data.invite.email}
-        session={data.session}
-        isMember={data.isMember}
-        token={token}
-        disabledReason={disabledReason}
-        acceptAction={acceptOrgInvite}
-      />
+    <div className="relative w-full min-h-[calc(100vh-48px)]">
+      <div className="absolute inset-0 pointer-events-none marketing-bg" />
+
+      <div className="relative flex items-center justify-center px-5 py-10">
+        <JoinOrgGate
+          baseUrl={baseUrl}
+          kind="EMAIL_INVITE"
+          org={data.org}
+          inviteEmail={data.invite.email}
+          session={data.session}
+          isMember={data.isMember}
+          token={token}
+          disabledReason={disabledReason}
+          acceptAction={acceptOrgInvite}
+        />
+      </div>
     </div>
   );
 };

@@ -190,8 +190,10 @@ export const createOrgInviteLink = async (
     const maxUses = parseOptionalInt(
       formData.get("maxUses")?.toString() ?? null
     );
+    const oneWeekFromNow = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
     const expiresAt = parseOptionalDateFromMinutes(
-      formData.get("expiresInMinutes")?.toString() ?? null
+      formData.get("expiresInMinutes")?.toString() ??
+        oneWeekFromNow.toISOString()
     );
     const note = (formData.get("note")?.toString() ?? "").trim() || null;
 
@@ -227,7 +229,7 @@ export const createOrgInviteLink = async (
         role: OrgRole.MEMBER,
         status: InviteStatus.PENDING,
         maxUses: maxUses ?? undefined,
-        expiresAt: expiresAt ?? new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), // 1 week from now by default
+        expiresAt: expiresAt ?? oneWeekFromNow, // 1 week from now by default
         note,
         createdByUserId: session.user.id,
       },
