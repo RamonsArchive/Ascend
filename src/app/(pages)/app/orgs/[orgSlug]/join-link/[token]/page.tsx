@@ -10,6 +10,11 @@ const JoinOrgLinkPage = async ({
 }) => {
   const { orgSlug, token } = await params;
 
+  const baseUrl =
+    process.env.SITE_URL ??
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
+
   const pageData = await fetchOrgJoinLinkPageData(orgSlug, token);
   if (pageData.status === "ERROR") {
     return (
@@ -39,9 +44,11 @@ const JoinOrgLinkPage = async ({
   return (
     <div className="min-h-[60vh] flex items-center justify-center px-5 py-10">
       <JoinOrgGate
+        baseUrl={baseUrl}
         kind="INVITE_LINK"
         org={data.org}
         session={data.session}
+        isMember={data.isMember}
         token={token}
         disabledReason={disabledReason}
         acceptAction={acceptOrgInviteLink}

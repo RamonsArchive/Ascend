@@ -70,6 +70,8 @@ export type JoinSettingsErrors = Partial<
 >;
 
 export type JoinOrgGateProps = {
+  baseUrl: string; // ✅ new
+
   kind: "EMAIL_INVITE" | "INVITE_LINK";
   org: {
     name: string;
@@ -86,6 +88,7 @@ export type JoinOrgGateProps = {
   };
 
   token: string;
+  isMember: boolean;
 
   // status flags computed on server
   disabledReason:
@@ -96,7 +99,8 @@ export type JoinOrgGateProps = {
     | "LINK_INVALID"
     | "LINK_EXPIRED"
     | "LINK_NOT_PENDING"
-    | "LINK_MAX_USES_REACHED";
+    | "LINK_MAX_USES_REACHED"
+    | "EMAIL_MISMATCH";
 
   acceptAction: (token: string) => Promise<ActionState>;
 };

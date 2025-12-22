@@ -1,5 +1,5 @@
 import React from "react";
-import JoinOrgGate from "@/src/components/orgComponents/join/OrgJoinGate";
+import JoinOrgGate from "@/src/components/orgComponents/join/JoinOrgGate";
 import { acceptOrgInvite } from "@/src/actions/org_invites_actions"; // <-- wherever you put it
 import { fetchOrgJoinInvitePageData } from "@/src/actions/org_invites_actions";
 
@@ -9,6 +9,11 @@ const JoinOrgPage = async ({
   params: Promise<{ orgSlug: string; token: string }>;
 }) => {
   const { orgSlug, token } = await params;
+
+  const baseUrl =
+    process.env.SITE_URL ??
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
 
   const pageData = await fetchOrgJoinInvitePageData(orgSlug, token);
   if (pageData.status === "ERROR") {
@@ -35,10 +40,12 @@ const JoinOrgPage = async ({
   return (
     <div className="min-h-[60vh] flex items-center justify-center px-5 py-10">
       <JoinOrgGate
+        baseUrl={baseUrl}
         kind="EMAIL_INVITE"
         org={data.org}
         inviteEmail={data.invite.email}
         session={data.session}
+        isMember={data.isMember}
         token={token}
         disabledReason={disabledReason}
         acceptAction={acceptOrgInvite}
