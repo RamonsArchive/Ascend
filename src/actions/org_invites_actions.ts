@@ -32,7 +32,7 @@ import { updateTag } from "next/cache";
  */
 export const createOrgEmailInvite = async (
   _prev: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -51,7 +51,7 @@ export const createOrgEmailInvite = async (
     const emailRaw = (formData.get("email")?.toString() ?? "").trim();
     const message = (formData.get("message")?.toString() ?? "").trim() || null;
     const expiresAt = parseOptionalDateFromMinutes(
-      formData.get("expiresInMinutes")?.toString() ?? null,
+      formData.get("expiresInMinutes")?.toString() ?? null
     );
 
     if (!orgId || !emailRaw) {
@@ -171,7 +171,7 @@ export const createOrgEmailInvite = async (
  */
 export const createOrgInviteLink = async (
   _prev: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -188,10 +188,10 @@ export const createOrgInviteLink = async (
 
     const orgId = (formData.get("orgId")?.toString() ?? "").trim();
     const maxUses = parseOptionalInt(
-      formData.get("maxUses")?.toString() ?? null,
+      formData.get("maxUses")?.toString() ?? null
     );
     const expiresAt = parseOptionalDateFromMinutes(
-      formData.get("expiresInMinutes")?.toString() ?? null,
+      formData.get("expiresInMinutes")?.toString() ?? null
     );
     const note = (formData.get("note")?.toString() ?? "").trim() || null;
 
@@ -373,7 +373,7 @@ export const acceptOrgInvite = async (token: string): Promise<ActionState> => {
  * - join as MEMBER
  */
 export const acceptOrgInviteLink = async (
-  token: string,
+  token: string
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -476,7 +476,7 @@ export const acceptOrgInviteLink = async (
  */
 export const createOrgJoinRequest = async (
   _prev: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -580,7 +580,7 @@ export const createOrgJoinRequest = async (
  */
 export const reviewOrgJoinRequest = async (
   _prev: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -688,7 +688,7 @@ export const reviewOrgJoinRequest = async (
 
 export const fetchOrgJoinRequests = async (
   orgId: string,
-  userId: string,
+  userId: string
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -723,8 +723,6 @@ export const fetchOrgJoinRequests = async (
       },
     });
 
-    updateTag(`org-fetch-join-requests-${orgId}`);
-
     return parseServerActionResponse({
       status: "SUCCESS",
       error: "",
@@ -735,6 +733,179 @@ export const fetchOrgJoinRequests = async (
     return parseServerActionResponse({
       status: "ERROR",
       error: "Failed to fetch join requests",
+      data: null,
+    }) as ActionState;
+  }
+};
+
+/**
+ * ***********************
+ * FETCH ORG PAGE DATA
+ * ***********************
+ */
+
+export const fetchOrgJoinInvitePageData = async (
+  orgSlug: string,
+  token: string
+): Promise<ActionState> => {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    const org = await prisma.organization.findUnique({
+      where: { slug: orgSlug },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        logoKey: true,
+        coverKey: true,
+      },
+    });
+
+    if (!org) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "ORG_NOT_FOUND",
+        data: null,
+      }) as ActionState;
+    }
+
+    const invite = await prisma.orgInvite.findUnique({
+      where: { token },
+      select: {
+        id: true,
+        orgId: true,
+        email: true,
+        status: true,
+        expiresAt: true,
+      },
+    });
+
+    if (!invite || invite.orgId !== org.id) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "INVITE_INVALID",
+        data: null,
+      }) as ActionState;
+    }
+
+    const isExpired = !!(
+      invite.expiresAt && invite.expiresAt.getTime() < Date.now()
+    );
+    const isPending = invite.status === InviteStatus.PENDING;
+
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data: {
+        org,
+        invite: {
+          email: invite.email,
+          status: invite.status,
+          expiresAt: invite.expiresAt,
+          isExpired,
+          isPending,
+        },
+        session: {
+          userId: session?.user?.id ?? null,
+          email: session?.user?.email ?? null,
+          name: session?.user?.name ?? null,
+        },
+      },
+    }) as ActionState;
+  } catch (e) {
+    console.error(e);
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to load invite page",
+      data: null,
+    }) as ActionState;
+  }
+};
+
+export const fetchOrgJoinLinkPageData = async (
+  orgSlug: string,
+  token: string
+): Promise<ActionState> => {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    const org = await prisma.organization.findUnique({
+      where: { slug: orgSlug },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        logoKey: true,
+        coverKey: true,
+      },
+    });
+
+    if (!org) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "ORG_NOT_FOUND",
+        data: null,
+      }) as ActionState;
+    }
+
+    const link = await prisma.orgInviteLink.findUnique({
+      where: { token },
+      select: {
+        id: true,
+        orgId: true,
+        status: true,
+        expiresAt: true,
+        maxUses: true,
+        uses: true,
+      },
+    });
+
+    if (!link || link.orgId !== org.id) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "LINK_INVALID",
+        data: null,
+      }) as ActionState;
+    }
+
+    const isExpired = !!(
+      link.expiresAt && link.expiresAt.getTime() < Date.now()
+    );
+    const isPending = link.status === InviteStatus.PENDING;
+    const maxUsesReached =
+      link.maxUses !== null && link.maxUses !== undefined
+        ? link.uses >= link.maxUses
+        : false;
+
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data: {
+        org,
+        link: {
+          status: link.status,
+          expiresAt: link.expiresAt,
+          maxUses: link.maxUses,
+          uses: link.uses,
+          isExpired,
+          isPending,
+          maxUsesReached,
+        },
+        session: {
+          userId: session?.user?.id ?? null,
+          email: session?.user?.email ?? null,
+          name: session?.user?.name ?? null,
+        },
+      },
+    }) as ActionState;
+  } catch (e) {
+    console.error(e);
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to load link page",
       data: null,
     }) as ActionState;
   }

@@ -68,3 +68,35 @@ export type OrgJoinRequestWithUser = Prisma.OrgJoinRequestGetPayload<{
 export type JoinSettingsErrors = Partial<
   Record<"joinMode" | "allowJoinRequests", string>
 >;
+
+export type JoinOrgGateProps = {
+  kind: "EMAIL_INVITE" | "INVITE_LINK";
+  org: {
+    name: string;
+    slug: string;
+    description: string | null;
+  };
+  // email invites only
+  inviteEmail?: string | null;
+
+  session: {
+    userId: string | null;
+    email: string | null;
+    name: string | null;
+  };
+
+  token: string;
+
+  // status flags computed on server
+  disabledReason:
+    | null
+    | "INVITE_INVALID"
+    | "INVITE_EXPIRED"
+    | "INVITE_NOT_PENDING"
+    | "LINK_INVALID"
+    | "LINK_EXPIRED"
+    | "LINK_NOT_PENDING"
+    | "LINK_MAX_USES_REACHED";
+
+  acceptAction: (token: string) => Promise<ActionState>;
+};

@@ -198,3 +198,24 @@ export function statusLabel(
       return "Cancelled";
   }
 }
+
+export const humanizeJoinError = (code: string) => {
+  switch (code) {
+    case "INVITE_INVALID":
+    case "LINK_INVALID":
+      return "This invite link is invalid.";
+    case "INVITE_EXPIRED":
+    case "LINK_EXPIRED":
+      return "This invite link has expired.";
+    case "LINK_MAX_USES_REACHED":
+      return "This invite link has reached its max uses.";
+    case "EMAIL_MISMATCH":
+      return "You’re logged in with a different email than the invite was sent to.";
+    case "ALREADY_MEMBER":
+      return "You’re already a member of this organization.";
+    case "MUST BE LOGGED IN":
+      return "Please log in to continue.";
+    default:
+      return "Something went wrong. Please try again.";
+  }
+};
