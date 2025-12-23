@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TEN_MB, validateImageFile } from "./utils";
+import { TEN_MB, validateImageFile, slugRegex } from "./utils";
 import { OrgJoinMode } from "@prisma/client";
 
 const emptyToUndefined = (v: unknown) => {
@@ -475,3 +475,125 @@ export const editOrgJoinSettingsClientSchema = z
       });
     }
   });
+
+export const createOrgEventClientSchema = z
+  .object({
+    orgSlug: z.string().min(1),
+    name: z.string().min(2, "Event name is required."),
+    slug: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .regex(slugRegex, "Slug must be lowercase and use hyphens only.")
+      .optional(),
+    type: z.enum(["HACKATHON", "IDEATHON"]),
+    heroTitle: z.string().min(2, "Hero title is required."),
+    heroSubtitle: z.string().max(600, "Subtitle is too long.").optional(),
+
+    visibility: z.enum(["PUBLIC_LISTED", "PUBLIC_UNLISTED", "PRIVATE"]),
+    joinMode: z.enum(["OPEN", "REQUEST", "INVITE_ONLY"]),
+
+    registrationOpensAt: z.string().optional(),
+    registrationClosesAt: z.string().optional(),
+    startAt: z.string().optional(),
+    endAt: z.string().optional(),
+    submitDueAt: z.string().optional(),
+
+    maxTeamSize: z.number().int().min(1).max(50),
+
+    allowSelfJoinRequests: z.boolean(),
+    lockTeamChangesAtStart: z.boolean(),
+    requireImages: z.boolean(),
+    requireVideoDemo: z.boolean(),
+
+    coverFile: z.instanceof(File).optional(),
+  })
+  .superRefine((val, ctx) => {
+    const parse = (s?: string) => (s ? new Date(s) : null);
+    const regOpen = parse(val.registrationOpensAt);
+    const regClose = parse(val.registrationClosesAt);
+    const start = parse(val.startAt);
+    const end = parse(val.endAt);
+    const submitDue = parse(val.submitDueAt);
+
+    const isValid = (d: Date | null) => (d ? !Number.isNaN(d.getTime()) : true);
+
+    if (!isValid(regOpen))
+      ctx.addIssue({
+        code: "custom",
+        path: ["registrationOpensAt"],
+        message: "Invalid date/time.",
+      });
+
+    if (!isValid(regClose))
+      ctx.addIssue({
+        code: "custom",
+        path: ["registrationClosesAt"],
+        message: "Invalid date/time.",
+      });
+
+    if (!isValid(start))
+      ctx.addIssue({
+        code: "custom",
+        path: ["startAt"],
+        message: "Invalid date/time.",
+      });
+
+    if (!isValid(end))
+      ctx.addIssue({
+        code: "custom",
+        path: ["endAt"],
+        message: "Invalid date/time.",
+      });
+
+    if (!isValid(submitDue))
+      ctx.addIssue({
+        code: "custom",
+        path: ["submitDueAt"],
+        message: "Invalid date/time.",
+      });
+
+    if (regOpen && regClose && regOpen > regClose)
+      ctx.addIssue({
+        code: "custom",
+        path: ["registrationClosesAt"],
+        message: "Registration close must be after open.",
+      });
+
+    if (start && end && start > end)
+      ctx.addIssue({
+        code: "custom",
+        path: ["endAt"],
+        message: "End time must be after start time.",
+      });
+
+    if (start && submitDue && submitDue > start)
+      ctx.addIssue({
+        code: "custom",
+        path: ["submitDueAt"],
+        message:
+          "Submission due should be before event start (or leave blank).",
+      });
+  });
+
+export const createOrgEventServerSchema = z.object({
+  orgSlug: z.string().min(1),
+  name: z.string().min(2),
+  slug: z.string().trim().toLowerCase().regex(slugRegex).optional(),
+  type: z.enum(["HACKATHON", "IDEATHON"]),
+  heroTitle: z.string().min(2),
+  heroSubtitle: z.string().max(600).optional(),
+  visibility: z.enum(["PUBLIC_LISTED", "PUBLIC_UNLISTED", "PRIVATE"]),
+  joinMode: z.enum(["OPEN", "REQUEST", "INVITE_ONLY"]),
+  registrationOpensAt: z.string().optional(),
+  registrationClosesAt: z.string().optional(),
+  startAt: z.string().optional(),
+  endAt: z.string().optional(),
+  submitDueAt: z.string().optional(),
+  maxTeamSize: z.coerce.number().int().min(1).max(50),
+  allowSelfJoinRequests: z.enum(["0", "1"]),
+  lockTeamChangesAtStart: z.enum(["0", "1"]),
+  requireImages: z.enum(["0", "1"]),
+  requireVideoDemo: z.enum(["0", "1"]),
+  coverKey: z.string().optional(),
+});

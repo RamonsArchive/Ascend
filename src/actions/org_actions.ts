@@ -11,17 +11,8 @@ import crypto from "crypto";
 import { finalizeOrgImageFromTmp, OrgAssetKind } from "../lib/s3-upload";
 import { OrgJoinMode } from "@prisma/client";
 import { updateTag } from "next/cache";
-import { deleteS3ObjectIfExists } from "@/src/actions/s3_actions";
-
-function slugify(input: string) {
-  return input
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-}
+import { slugify, parseDate, safeDate, slugRegex } from "../lib/utils";
+import { createOrgEventServerSchema } from "../lib/validation";
 
 export const createOrganization = async (
   _prevState: ActionState,
@@ -435,3 +426,190 @@ export async function isOrgOwner(orgId: string, userId: string) {
     }) as ActionState;
   }
 }
+
+export const createOrgEvent = async (
+  _state: ActionState,
+  fd: FormData
+): Promise<ActionState> => {
+  try {
+    void _state;
+
+    const isRateLimited = await checkRateLimit("createOrgEvent");
+    if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
+
+    const session = await auth.api.getSession({ headers: await headers() });
+    const userId = session?.user?.id ?? "";
+    if (!userId) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "Not authenticated",
+        data: null,
+      }) as ActionState;
+    }
+
+    const raw = {
+      orgSlug: String(fd.get("orgSlug") ?? ""),
+      name: String(fd.get("name") ?? ""),
+      slug: fd.get("slug") ? String(fd.get("slug")) : undefined,
+      type: String(fd.get("type") ?? ""),
+      heroTitle: String(fd.get("heroTitle") ?? ""),
+      heroSubtitle: fd.get("heroSubtitle")
+        ? String(fd.get("heroSubtitle"))
+        : undefined,
+      visibility: String(fd.get("visibility") ?? ""),
+      joinMode: String(fd.get("joinMode") ?? ""),
+      registrationOpensAt: fd.get("registrationOpensAt")
+        ? String(fd.get("registrationOpensAt"))
+        : undefined,
+      registrationClosesAt: fd.get("registrationClosesAt")
+        ? String(fd.get("registrationClosesAt"))
+        : undefined,
+      startAt: fd.get("startAt") ? String(fd.get("startAt")) : undefined,
+      endAt: fd.get("endAt") ? String(fd.get("endAt")) : undefined,
+      submitDueAt: fd.get("submitDueAt")
+        ? String(fd.get("submitDueAt"))
+        : undefined,
+      maxTeamSize: fd.get("maxTeamSize") ?? "5",
+      allowSelfJoinRequests: String(fd.get("allowSelfJoinRequests") ?? "1"),
+      lockTeamChangesAtStart: String(fd.get("lockTeamChangesAtStart") ?? "1"),
+      requireImages: String(fd.get("requireImages") ?? "0"),
+      requireVideoDemo: String(fd.get("requireVideoDemo") ?? "0"),
+      coverKey: fd.get("coverKey") ? String(fd.get("coverKey")) : undefined,
+    };
+
+    const parsed = createOrgEventServerSchema.parse(raw);
+
+    const org = await prisma.organization.findUnique({
+      where: { slug: parsed.orgSlug },
+      select: { id: true },
+    });
+
+    if (!org) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "Organization not found",
+        data: null,
+      }) as ActionState;
+    }
+
+    // ✅ Only org ADMIN/OWNER can create events
+    const membership = await prisma.orgMembership.findUnique({
+      where: { orgId_userId: { orgId: org.id, userId } },
+      select: { role: true },
+    });
+
+    if (
+      !membership ||
+      (membership.role !== "OWNER" && membership.role !== "ADMIN")
+    ) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "Must be an org admin or owner to create an event",
+        data: null,
+      }) as ActionState;
+    }
+
+    const slug =
+      parsed.slug && parsed.slug.length > 0
+        ? parsed.slug
+        : slugify(parsed.name);
+
+    if (!slug || !slugRegex.test(slug)) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "Invalid slug",
+        data: null,
+      }) as ActionState;
+    }
+
+    // ensure unique within org
+    const existing = await prisma.event.findUnique({
+      where: { orgId_slug: { orgId: org.id, slug } },
+      select: { id: true },
+    });
+
+    if (existing) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "An event with that slug already exists in this organization.",
+        data: null,
+      }) as ActionState;
+    }
+
+    const regOpen = safeDate(parseDate(parsed.registrationOpensAt));
+    const regClose = safeDate(parseDate(parsed.registrationClosesAt));
+    const startAt = safeDate(parseDate(parsed.startAt));
+    const endAt = safeDate(parseDate(parsed.endAt));
+    const submitDueAt = safeDate(parseDate(parsed.submitDueAt));
+
+    if (regOpen && regClose && regOpen > regClose) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "Registration close must be after open.",
+        data: null,
+      }) as ActionState;
+    }
+
+    if (startAt && endAt && startAt > endAt) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "Event end must be after start.",
+        data: null,
+      }) as ActionState;
+    }
+
+    const created = await prisma.event.create({
+      data: {
+        orgId: org.id,
+        name: parsed.name,
+        slug,
+        type: parsed.type,
+        status: "DRAFT",
+        heroTitle: parsed.heroTitle,
+        heroSubtitle: parsed.heroSubtitle ?? null,
+        visibility: parsed.visibility,
+        joinMode: parsed.joinMode,
+        registrationOpensAt: regOpen,
+        registrationClosesAt: regClose,
+        startAt,
+        endAt,
+        submitDueAt,
+        maxTeamSize: parsed.maxTeamSize,
+        allowSelfJoinRequests: parsed.allowSelfJoinRequests === "1",
+        lockTeamChangesAtStart: parsed.lockTeamChangesAtStart === "1",
+        requireImages: parsed.requireImages === "1",
+        requireVideoDemo: parsed.requireVideoDemo === "1",
+        coverKey: parsed.coverKey ?? null,
+        // keep staffJoinMode default from schema unless you want to expose it in this form
+      },
+      select: { id: true, slug: true, name: true },
+    });
+
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data: created,
+    }) as ActionState;
+  } catch (error) {
+    console.error(error);
+
+    if (error instanceof z.ZodError) {
+      const msg = Object.values(z.flattenError(error).fieldErrors)
+        .flat()
+        .filter(Boolean)
+        .join(", ");
+
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: msg || "Invalid form fields",
+        data: null,
+      }) as ActionState;
+    }
+
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to create event",
+      data: null,
+    }) as ActionState;
+  }
+};

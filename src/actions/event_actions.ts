@@ -6,7 +6,7 @@ import { isOrgOwner } from "./org_actions";
 
 export const fetchEventData = async (
   orgSlug: string,
-  eventSlug: string
+  eventSlug: string,
 ): Promise<ActionState> => {
   try {
     const isRateLimited = await checkRateLimit("fetchEventData");
@@ -64,7 +64,7 @@ export const fetchEventData = async (
 export const assertEventAdminOrOwner = async (
   orgSlug: string,
   eventSlug: string,
-  userId: string
+  userId: string,
 ): Promise<ActionState> => {
   try {
     const isRateLimited = await checkRateLimit("assertEventAdminOrOwner");
@@ -130,7 +130,7 @@ export const assertEventAdminOrOwner = async (
 export const assertEventAdminOrOwnerWithId = async (
   orgId: string,
   eventId: string,
-  userId: string
+  userId: string,
 ): Promise<ActionState> => {
   try {
     const isRateLimited = await checkRateLimit("assertEventAdminOrOwnerWithId");

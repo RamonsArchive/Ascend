@@ -59,7 +59,7 @@ export const fetchOrgMembers = async (orgId: string): Promise<ActionState> => {
 
 export const updateOrgMemberRole = async (
   _prevState: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -97,7 +97,7 @@ export const updateOrgMemberRole = async (
 
     const hasPermissions = await assertOrgAdminOrOwnerWithId(
       orgId,
-      session.user.id
+      session.user.id,
     );
     console.log("hasPermissions", hasPermissions);
 
@@ -179,7 +179,7 @@ export const updateOrgMemberRole = async (
 
 export const removeOrgMember = async (
   _prevState: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });

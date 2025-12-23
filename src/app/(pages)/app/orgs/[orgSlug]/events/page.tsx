@@ -1,18 +1,32 @@
+import { auth } from "@/src/lib/auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import React from "react";
+import OrgEventsHero from "@/src/components/orgComponents/OrgEventsHero";
+import OrgCreateEventSection from "@/src/components/orgComponents/OrgCreateEventSection";
+import OrgEventsList from "@/src/components/orgComponents/OrgEventsList";
 
-const OrgEventsPage = () => {
+const OrgEventsPage = async ({
+  params,
+}: {
+  params: Promise<{ orgSlug: string }>;
+}) => {
+  const { orgSlug } = await params;
+
+  const session = await auth.api.getSession({ headers: await headers() });
+  const userId = session?.user?.id ?? "";
+  const isLoggedIn = !!userId;
+  if (!isLoggedIn) {
+    redirect(`/login?next=/app/orgs/${orgSlug}/events`);
+  }
+
   return (
     <div className="relative w-full">
       <div className="absolute inset-0 pointer-events-none marketing-bg" />
       <div className="relative flex flex-col items-center justify-center w-full gap-12 md:gap-16 lg:gap-20">
-        <section className="flex flex-col items-center justify-center w-full">
-          <div className="flex flex-col w-full max-w-5xl px-5 sm:px-10 md:px-18 pt-10 md:pt-14 gap-4">
-            <div className="text-white text-2xl font-semibold">Events</div>
-            <div className="text-white/70 text-sm leading-relaxed">
-              Coming soon: event list and management.
-            </div>
-          </div>
-        </section>
+        <OrgEventsHero />
+        <OrgCreateEventSection />
+        <OrgEventsList />
       </div>
     </div>
   );

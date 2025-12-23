@@ -57,7 +57,7 @@ const EditOrgJoinSettingsForm = ({
 
   const submitForm = async (
     _state: ActionState,
-    _fd: FormData
+    _fd: FormData,
   ): Promise<ActionState> => {
     try {
       void _state;
@@ -97,7 +97,7 @@ const EditOrgJoinSettingsForm = ({
         joinMode: updated.joinMode,
         allowJoinRequests: normalizeAllow(
           updated.joinMode,
-          updated.allowJoinRequests
+          updated.allowJoinRequests,
         ),
       });
 

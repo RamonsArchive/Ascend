@@ -219,3 +219,18 @@ export const humanizeJoinError = (code: string) => {
       return "Something went wrong. Please try again.";
   }
 };
+
+export const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+export const slugify = (input: string) =>
+  input
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 64);
+
+export const parseDate = (s?: string) => (s ? new Date(s) : null);
+export const safeDate = (d: Date | null) =>
+  d && !Number.isNaN(d.getTime()) ? d : null;

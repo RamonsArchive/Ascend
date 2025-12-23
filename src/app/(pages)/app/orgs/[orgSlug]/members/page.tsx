@@ -11,19 +11,11 @@ import type { OrgJoinRequest, OrgRole, Prisma } from "@prisma/client";
 import AddOrgMemberSection from "@/src/components/orgComponents/AddOrgMemberSection";
 import Link from "next/link";
 import { fetchOrgJoinRequests } from "@/src/actions/org_invites_actions";
-import type { OrgJoinRequestWithUser } from "@/src/lib/global_types";
+import type {
+  OrgJoinRequestWithUser,
+  OrgMemberResponse,
+} from "@/src/lib/global_types";
 
-type OrgMember = Prisma.OrgMembershipGetPayload<{
-  select: {
-    id: true;
-    userId: true;
-    role: true;
-    createdAt: true;
-    user: { select: { id: true; name: true; email: true; image: true } };
-  };
-}>;
-
-type OrgMemberResponse = Omit<OrgMember, "createdAt"> & { createdAt: string };
 const OrgMembersPage = async ({
   params,
 }: {

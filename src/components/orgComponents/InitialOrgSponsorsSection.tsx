@@ -18,7 +18,7 @@ const InitialOrgSponsorsSection = ({
   const { orgSection } = org_sponsors_data;
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [defaultSponsorId, setDefaultSponsorId] = React.useState<string | null>(
-    null
+    null,
   );
   return (
     <section className="flex flex-col items-center justify-center w-full">

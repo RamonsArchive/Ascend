@@ -112,3 +112,17 @@ export type EventNavData = {
   slug: string;
   status: string;
 };
+
+export type OrgMember = Prisma.OrgMembershipGetPayload<{
+  select: {
+    id: true;
+    userId: true;
+    role: true;
+    createdAt: true;
+    user: { select: { id: true; name: true; email: true; image: true } };
+  };
+}>;
+
+export type OrgMemberResponse = Omit<OrgMember, "createdAt"> & {
+  createdAt: string;
+};
