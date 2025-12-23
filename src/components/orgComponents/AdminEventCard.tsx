@@ -3,8 +3,8 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Event } from "@prisma/client";
 import { formatDateRange } from "@/src/lib/utils";
+import { s3KeyToPublicUrl } from "@/src/lib/s3-client";
 
-// add comment
 const AdminEventCard = ({
   event,
   orgSlug,
@@ -45,7 +45,7 @@ const AdminEventCard = ({
       <div className="relative w-full h-[150px] bg-black/40">
         {event.coverKey ? (
           <Image
-            src={event.coverKey}
+            src={s3KeyToPublicUrl(event.coverKey) as string}
             alt={`${event.name} cover`}
             fill
             sizes="(max-width: 768px) 100vw, 50vw"
