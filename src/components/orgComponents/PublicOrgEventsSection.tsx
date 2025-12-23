@@ -77,7 +77,7 @@ const PublicOrgEventsSection = ({ events }: { events: Event[] }) => {
   );
 
   return (
-    <div className="flex flex-col items-center justify-center w-full">
+    <section className="flex flex-col items-center justify-center w-full">
       <div className="flex flex-col w-full max-w-6xl px-5 sm:px-10 md:px-18 py-10 md:py-14 gap-8 md:gap-10">
         <div className="flex flex-col gap-3">
           <h2 className="text-2xl md:text-3xl font-semibold text-white">
@@ -145,7 +145,7 @@ const PublicOrgEventsSection = ({ events }: { events: Event[] }) => {
           items={buckets.past}
         />
       </div>
-    </div>
+    </section>
   );
 };
 

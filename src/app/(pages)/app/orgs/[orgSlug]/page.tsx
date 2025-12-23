@@ -1,8 +1,6 @@
 import React from "react";
-import { headers } from "next/headers";
-import { redirect, notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 
-import { auth } from "@/src/lib/auth";
 import { prisma } from "@/src/lib/prisma";
 import OrgDashboardHero from "@/src/components/orgComponents/OrgDashboardHero";
 import { getCachedSession } from "@/src/lib/cached-auth";
@@ -10,9 +8,8 @@ import Link from "next/link";
 import { fetchOrgSponsors } from "@/src/actions/org_sponsor_actions";
 import { fetchOrgMembers } from "@/src/actions/org_members_actions";
 import { fetchAllOrgEvents } from "@/src/actions/event_actions";
-import type { PublicOrgSponsor } from "@/src/lib/global_types";
-import type { Event, Organization } from "@prisma/client";
-import type { OrgMembership } from "@prisma/client";
+import type { PublicOrgSponsor, OrgMember } from "@/src/lib/global_types";
+import type { Event } from "@prisma/client";
 import { fetchPublicOrgCountsData } from "@/src/actions/org_actions";
 import PublicOrgSponsorsSection from "@/src/components/orgComponents/PublicOrgSponsorsSection";
 import PublicOrgEventsSection from "@/src/components/orgComponents/PublicOrgEventsSection";
@@ -80,7 +77,7 @@ const OrgOverviewPage = async ({
     eventsRes.status === "SUCCESS" ? (eventsRes.data as Event[]) : [];
 
   const members =
-    membersRes.status === "SUCCESS" ? (membersRes.data as OrgMembership[]) : [];
+    membersRes.status === "SUCCESS" ? (membersRes.data as OrgMember[]) : [];
   console.log(sponsors, events, members);
 
   return (

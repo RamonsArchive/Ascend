@@ -1,5 +1,5 @@
-import type { SponsorTier } from "@/src/lib/global_types";
-import { Event, EventType, OrgJoinMode } from "@prisma/client";
+import type { SponsorTier, OrgMember } from "@/src/lib/global_types";
+import { Event, EventType } from "@prisma/client";
 import crypto from "crypto";
 
 export const parseServerActionResponse = <T>(response: T): T => {
@@ -297,3 +297,15 @@ export function typeLabel(t: EventType | "ALL") {
   if (t === "IDEATHON") return "Ideathon";
   return "Unknown";
 }
+
+export const rolePillClasses = (role: OrgMember["role"]) => {
+  switch (role) {
+    case "OWNER":
+      return "bg-white text-primary-950 border-white";
+    case "ADMIN":
+      return "bg-white/10 text-white border-white/15";
+    case "MEMBER":
+    default:
+      return "bg-white/5 text-white/80 border-white/10";
+  }
+};

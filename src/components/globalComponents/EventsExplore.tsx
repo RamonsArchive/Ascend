@@ -1,6 +1,6 @@
 import React from "react";
 import { Event, Organization } from "@prisma/client";
-import EventCard from "@/src/components/EventCard";
+import PublicEventCard from "@/src/components/PublicEventCard";
 import { global_events_data } from "@/src/constants/globalConstants/global_index";
 
 const EventsExplore = ({
@@ -11,7 +11,6 @@ const EventsExplore = ({
   orgs: Organization[];
 }) => {
   const { events: eventsCopy, filters, empty_state } = global_events_data;
-  const orgById = new Map(orgs.map((o) => [o.id, o]));
 
   return (
     <section className="flex flex-col items-center justify-center w-full pb-12 md:pb-16 lg:pb-20">
@@ -58,11 +57,7 @@ const EventsExplore = ({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {events.map((evt) => (
-              <EventCard
-                key={evt.id}
-                event={evt}
-                org={orgById.get(evt.orgId) ?? null}
-              />
+              <PublicEventCard key={evt.id} event={evt} />
             ))}
           </div>
         )}
