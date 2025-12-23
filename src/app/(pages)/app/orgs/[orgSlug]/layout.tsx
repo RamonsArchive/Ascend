@@ -1,6 +1,3 @@
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-
 import { assertOrgAdminOrOwner } from "@/src/actions/org_actions";
 import OrgNav from "@/src/components/orgComponents/OrgNav";
 import React from "react";
