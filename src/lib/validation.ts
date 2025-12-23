@@ -499,7 +499,11 @@ export const createOrgEventClientSchema = z
     endAt: z.string().optional(),
     submitDueAt: z.string().optional(),
 
-    maxTeamSize: z.number().int().min(1).max(50),
+    maxTeamSize: z
+      .string()
+      .transform((v) => Number(v))
+      .refine((v) => Number.isInteger(v), "Must be an integer")
+      .refine((v) => v >= 1 && v <= 50, "Team size must be between 1 and 50"),
 
     allowSelfJoinRequests: z.boolean(),
     lockTeamChangesAtStart: z.boolean(),
@@ -567,12 +571,18 @@ export const createOrgEventClientSchema = z
         message: "End time must be after start time.",
       });
 
-    if (start && submitDue && submitDue > start)
+    if (end && submitDue && submitDue > end)
       ctx.addIssue({
         code: "custom",
         path: ["submitDueAt"],
-        message:
-          "Submission due should be before event start (or leave blank).",
+        message: "Submission due should be before event end (or leave blank).",
+      });
+
+    if (start && submitDue && submitDue < start)
+      ctx.addIssue({
+        code: "custom",
+        path: ["submitDueAt"],
+        message: "Submission due should be after event start (or leave blank).",
       });
   });
 

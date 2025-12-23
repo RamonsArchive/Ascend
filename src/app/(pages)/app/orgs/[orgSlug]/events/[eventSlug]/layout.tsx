@@ -3,6 +3,7 @@ import { auth } from "@/src/lib/auth";
 import { headers } from "next/headers";
 import EventNav from "@/src/components/eventComponents/EventNav";
 import { assertEventAdminOrOwner } from "@/src/actions/event_actions";
+import { getCachedSession } from "@/src/lib/cached-auth";
 
 const layout = async ({
   children,
@@ -12,7 +13,7 @@ const layout = async ({
   params: Promise<{ orgSlug: string; eventSlug: string }>;
 }) => {
   const { orgSlug, eventSlug } = await params;
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getCachedSession();
   const userId = session?.user?.id ?? "";
   const isLoggedIn = !!userId;
   let hasPermissions = false;

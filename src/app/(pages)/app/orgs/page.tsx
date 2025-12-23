@@ -1,14 +1,13 @@
 import React from "react";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { auth } from "@/src/lib/auth";
+import { getCachedSession } from "@/src/lib/cached-auth";
 import { getAllOrganizations } from "@/src/actions/org_actions";
 import AppOrganizationsSection from "@/src/components/appComponents/AppOrganizationsSection";
 import type { Organization, OrgMembership } from "@prisma/client";
 
 const MyOrganizationsPage = async () => {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getCachedSession();
   if (!session?.user?.id) {
     redirect(`/login?next=/app/orgs`);
   }

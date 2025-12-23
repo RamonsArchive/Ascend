@@ -8,7 +8,11 @@ import { newOrgServerFormSchema } from "../lib/validation";
 import { prisma } from "../lib/prisma";
 import { headers } from "next/headers";
 import crypto from "crypto";
-import { finalizeOrgImageFromTmp, OrgAssetKind } from "../lib/s3-upload";
+import {
+  finalizeOrgImageFromTmp,
+  OrgAssetKind,
+  finalizeEventImageFromTmp,
+} from "../lib/s3-upload";
 import { OrgJoinMode } from "@prisma/client";
 import { updateTag } from "next/cache";
 import { slugify, parseDate, safeDate, slugRegex } from "../lib/utils";
@@ -586,6 +590,22 @@ export const createOrgEvent = async (
       select: { id: true, slug: true, name: true },
     });
 
+    let finalCoverKey: string | null = null;
+
+    if (parsed.coverKey) {
+      finalCoverKey = await finalizeEventImageFromTmp({
+        eventId: created.id,
+        kind: "cover",
+        tmpKey: parsed.coverKey,
+      });
+
+      await prisma.event.update({
+        where: { id: created.id },
+        data: { coverKey: finalCoverKey },
+      });
+    }
+
+    updateTag(`event-${created.id}`);
     return parseServerActionResponse({
       status: "SUCCESS",
       error: "",

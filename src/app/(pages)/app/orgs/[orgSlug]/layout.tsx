@@ -1,8 +1,10 @@
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 import { assertOrgAdminOrOwner } from "@/src/actions/org_actions";
 import OrgNav from "@/src/components/orgComponents/OrgNav";
-import { auth } from "@/src/lib/auth";
-import { headers } from "next/headers";
 import React from "react";
+import { getCachedSession } from "@/src/lib/cached-auth";
 
 const layout = async ({
   children,
@@ -12,7 +14,7 @@ const layout = async ({
   params: Promise<{ orgSlug: string }>;
 }) => {
   const { orgSlug } = await params;
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getCachedSession();
   const userId = session?.user?.id ?? "";
   let hasPermissions = false;
   if (userId) {
