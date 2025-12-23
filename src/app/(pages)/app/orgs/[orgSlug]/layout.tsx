@@ -21,6 +21,7 @@ const layout = async ({
       hasPermissions = true;
     }
   }
+  console.log("hasPermissions", hasPermissions);
   return (
     <>
       <OrgNav orgSlug={orgSlug} hasPermissions={hasPermissions} />
