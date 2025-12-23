@@ -2,17 +2,19 @@
 
 import React, { useEffect } from "react";
 import Link from "next/link";
-import { org_nav_links } from "@/src/constants/orgConstants/org_index";
+import { event_nav_links } from "@/src/constants/eventConstants/event_index";
 
-const OrgMobileMenu = ({
+const EventMobileMenu = ({
   isOpen,
   onClose,
   orgSlug,
+  eventSlug,
   hasPermissions,
 }: {
   isOpen: boolean;
   onClose: () => void;
   orgSlug: string;
+  eventSlug: string;
   hasPermissions: boolean;
 }) => {
   useEffect(() => {
@@ -26,7 +28,7 @@ const OrgMobileMenu = ({
 
   if (!isOpen) return null;
 
-  const links = org_nav_links(orgSlug, hasPermissions);
+  const links = event_nav_links(orgSlug, eventSlug, hasPermissions);
 
   return (
     <div className="fixed inset-0 z-60 lg:hidden">
@@ -54,6 +56,14 @@ const OrgMobileMenu = ({
             <div className="w-full h-px bg-white/10" />
 
             <Link
+              href={`/app/orgs/${orgSlug}`}
+              onClick={onClose}
+              className="w-full px-4 py-3 rounded-xl border border-white/10 bg-white/5 text-white/80 hover:bg-white/10 transition-colors text-sm"
+            >
+              Back to Org
+            </Link>
+
+            <Link
               href="/app"
               onClick={onClose}
               className="w-full px-4 py-3 rounded-xl border border-white/10 bg-white/5 text-white/80 hover:bg-white/10 transition-colors text-sm"
@@ -67,4 +77,4 @@ const OrgMobileMenu = ({
   );
 };
 
-export default OrgMobileMenu;
+export default EventMobileMenu;

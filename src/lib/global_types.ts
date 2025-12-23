@@ -104,3 +104,11 @@ export type JoinOrgGateProps = {
 
   acceptAction: (token: string) => Promise<ActionState>;
 };
+
+export type EventNavData = {
+  id: string;
+  orgId: string;
+  name: string;
+  slug: string;
+  status: string;
+};

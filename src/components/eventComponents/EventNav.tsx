@@ -4,8 +4,8 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import ProfileAvatar from "../ProfileAvatar";
-import OrgMobileMenu from "./OrgMobileMenu";
-import { org_nav_links } from "@/src/constants/orgConstants/org_index";
+import EventMobileMenu from "./EventMobileMenu";
+import { event_nav_links } from "@/src/constants/eventConstants/event_index";
 
 const MenuIcon = ({ className }: { className?: string }) => (
   <svg
@@ -45,14 +45,16 @@ const NavbarContent = ({
   onMenuToggle,
   isMenuOpen,
   orgSlug,
+  eventSlug,
   hasPermissions,
 }: {
   onMenuToggle: () => void;
   isMenuOpen: boolean;
   orgSlug: string;
+  eventSlug: string;
   hasPermissions: boolean;
 }) => {
-  const links = org_nav_links(orgSlug, hasPermissions);
+  const links = event_nav_links(orgSlug, eventSlug, hasPermissions);
 
   return (
     <div className="relative w-full bg-primary-950">
@@ -60,7 +62,7 @@ const NavbarContent = ({
       <div className="relative flex justify-between items-center w-full h-[48px] px-5 md:px-10">
         <div className="flex items-center justify-between w-full h-full">
           <Link
-            href="/app"
+            href={`/app/orgs/${orgSlug}`}
             className="relative flex-center h-full w-[52px] md:w-[68px] cursor-pointer"
           >
             <Image
@@ -111,40 +113,29 @@ const NavbarContent = ({
   );
 };
 
-const StaticNavbar = ({
-  onMenuToggle,
-  isMenuOpen,
-  orgSlug,
-  hasPermissions,
-}: {
+const StaticNavbar = (props: {
   onMenuToggle: () => void;
   isMenuOpen: boolean;
   orgSlug: string;
+  eventSlug: string;
   hasPermissions: boolean;
 }) => {
   return (
     <div className="relative z-10 w-full shrink-0">
-      <NavbarContent
-        onMenuToggle={onMenuToggle}
-        isMenuOpen={isMenuOpen}
-        orgSlug={orgSlug}
-        hasPermissions={hasPermissions}
-      />
+      <NavbarContent {...props} />
     </div>
   );
 };
 
 const FloatingNavbar = ({
   isVisible,
-  onMenuToggle,
-  isMenuOpen,
-  orgSlug,
-  hasPermissions,
+  ...props
 }: {
   isVisible: boolean;
   onMenuToggle: () => void;
   isMenuOpen: boolean;
   orgSlug: string;
+  eventSlug: string;
   hasPermissions: boolean;
 }) => {
   return (
@@ -155,21 +146,18 @@ const FloatingNavbar = ({
           : "-translate-y-full opacity-0 pointer-events-none"
       }`}
     >
-      <NavbarContent
-        onMenuToggle={onMenuToggle}
-        isMenuOpen={isMenuOpen}
-        orgSlug={orgSlug}
-        hasPermissions={hasPermissions}
-      />
+      <NavbarContent {...props} />
     </div>
   );
 };
 
-const OrgNav = ({
+const EventNav = ({
   orgSlug,
+  eventSlug,
   hasPermissions,
 }: {
   orgSlug: string;
+  eventSlug: string;
   hasPermissions: boolean;
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -223,7 +211,8 @@ const OrgNav = ({
         onMenuToggle={toggleMenu}
         isMenuOpen={isMenuOpen}
         orgSlug={orgSlug}
-        hasPermissions={hasPermissions} // ✅ FIX
+        eventSlug={eventSlug}
+        hasPermissions={hasPermissions}
       />
 
       <FloatingNavbar
@@ -231,17 +220,19 @@ const OrgNav = ({
         onMenuToggle={toggleMenu}
         isMenuOpen={isMenuOpen}
         orgSlug={orgSlug}
+        eventSlug={eventSlug}
         hasPermissions={hasPermissions}
       />
 
-      <OrgMobileMenu
+      <EventMobileMenu
         isOpen={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
         orgSlug={orgSlug}
-        hasPermissions={hasPermissions} // ✅ FIX
+        eventSlug={eventSlug}
+        hasPermissions={hasPermissions}
       />
     </>
   );
 };
 
-export default OrgNav;
+export default EventNav;
