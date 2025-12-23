@@ -126,3 +126,4 @@ export type OrgMember = Prisma.OrgMembershipGetPayload<{
 export type OrgMemberResponse = Omit<OrgMember, "createdAt"> & {
   createdAt: string;
 };
+export type EventBucket = "UPCOMING" | "LIVE" | "PAST";

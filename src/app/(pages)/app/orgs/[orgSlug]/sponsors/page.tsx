@@ -1,8 +1,6 @@
 import React from "react";
 import EditOrgSponsorsSection from "@/src/components/orgComponents/EditOrgSponsorsSection";
 import { notFound, redirect } from "next/navigation";
-import { auth } from "@/src/lib/auth";
-import { headers } from "next/headers";
 import { Organization, OrgMembership } from "@prisma/client";
 import { assertOrgAdminOrOwner, fetchOrgData } from "@/src/actions/org_actions";
 import Link from "next/link";
@@ -14,6 +12,7 @@ import EditOrgSponsorsHero from "@/src/components/orgComponents/EditOrgSponsorsH
 import type { SponsorLibraryItem } from "@/src/components/orgComponents/SponsorLibraryCard";
 import type { OrgSponsorWithSponsor } from "@/src/lib/global_types";
 import InitialOrgSponsorsSection from "@/src/components/orgComponents/InitialOrgSponsorsSection";
+import { getCachedSession } from "@/src/lib/cached-auth";
 
 const OrgSponsorsPage = async ({
   params,
@@ -21,7 +20,7 @@ const OrgSponsorsPage = async ({
   params: Promise<{ orgSlug: string }>;
 }) => {
   const { orgSlug } = await params;
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getCachedSession();
   const userId = session?.user?.id ?? "";
   const isLoggedIn = !!userId;
 

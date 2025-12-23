@@ -1,5 +1,5 @@
 import type { SponsorTier } from "@/src/lib/global_types";
-import { OrgJoinMode } from "@prisma/client";
+import { Event, EventType, OrgJoinMode } from "@prisma/client";
 import crypto from "crypto";
 
 export const parseServerActionResponse = <T>(response: T): T => {
@@ -77,6 +77,19 @@ export function formatDate(date: string | Date | null | undefined): string {
     console.error("Date formatting error:", error);
     return "Invalid date";
   }
+}
+
+export function formatDateRange(startAt: Date | null, endAt: Date | null) {
+  if (!startAt && !endAt) return null;
+  const fmt = new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  });
+  const start = startAt ? fmt.format(startAt) : null;
+  const end = endAt ? fmt.format(endAt) : null;
+  if (start && end) return `${start} → ${end}`;
+  return start ?? end;
 }
 
 const DEFAULT_ALLOWED_IMAGE_MIME_TYPES = new Set([
@@ -234,3 +247,38 @@ export const slugify = (input: string) =>
 export const parseDate = (s?: string) => (s ? new Date(s) : null);
 export const safeDate = (d: Date | null) =>
   d && !Number.isNaN(d.getTime()) ? d : null;
+
+export function getEventBucket(e: Event, now: Date) {
+  const start = e.startAt ? new Date(e.startAt) : null;
+  const end = e.endAt ? new Date(e.endAt) : null;
+
+  // If no dates, treat as upcoming draft-ish
+  if (!start && !end) return "UPCOMING";
+
+  if (start && start > now) return "UPCOMING";
+  if (end && end < now) return "PAST";
+
+  // If started but no end OR end is in the future
+  if (start && start <= now && (!end || end >= now)) return "LIVE";
+
+  return "UPCOMING";
+}
+
+export function yearOf(d: Date | null) {
+  return d ? d.getFullYear() : null;
+}
+
+export function getRelevantYear(e: Event) {
+  // Prefer startAt for grouping; fallback to createdAt
+  return (
+    yearOf(e.startAt ? new Date(e.startAt) : null) ??
+    new Date(e.createdAt).getFullYear()
+  );
+}
+
+export function typeLabel(t: EventType | "ALL") {
+  if (t === "ALL") return "All";
+  if (t === "HACKATHON") return "Hackathon";
+  if (t === "IDEATHON") return "Ideathon";
+  return "Unknown";
+}

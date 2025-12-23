@@ -3,10 +3,12 @@ import { parseServerActionResponse } from "../lib/utils";
 import type { ActionState, EventNavData } from "../lib/global_types";
 import { checkRateLimit } from "../lib/rate-limiter";
 import { isOrgOwner } from "./org_actions";
+import { headers } from "next/headers";
+import { auth } from "@/src/lib/auth";
 
 export const fetchEventData = async (
   orgSlug: string,
-  eventSlug: string,
+  eventSlug: string
 ): Promise<ActionState> => {
   try {
     const isRateLimited = await checkRateLimit("fetchEventData");
@@ -64,7 +66,7 @@ export const fetchEventData = async (
 export const assertEventAdminOrOwner = async (
   orgSlug: string,
   eventSlug: string,
-  userId: string,
+  userId: string
 ): Promise<ActionState> => {
   try {
     const isRateLimited = await checkRateLimit("assertEventAdminOrOwner");
@@ -130,7 +132,7 @@ export const assertEventAdminOrOwner = async (
 export const assertEventAdminOrOwnerWithId = async (
   orgId: string,
   eventId: string,
-  userId: string,
+  userId: string
 ): Promise<ActionState> => {
   try {
     const isRateLimited = await checkRateLimit("assertEventAdminOrOwnerWithId");
@@ -168,6 +170,40 @@ export const assertEventAdminOrOwnerWithId = async (
     return parseServerActionResponse({
       status: "ERROR",
       error: "Failed to check permissions",
+      data: null,
+    }) as ActionState;
+  }
+};
+
+export const fetchAllOrgEvents = async (orgSlug: string) => {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user?.id) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "MUST BE LOGGED IN TO FETCH ALL ORG EVENTS",
+        data: null,
+      }) as ActionState;
+    }
+
+    const isRateLimited = await checkRateLimit("fetchAllOrgEvents");
+    if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
+
+    const events = await prisma.event.findMany({
+      where: { org: { slug: orgSlug } },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data: events,
+    }) as ActionState;
+  } catch (error) {
+    console.error(error);
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to fetch all org events",
       data: null,
     }) as ActionState;
   }

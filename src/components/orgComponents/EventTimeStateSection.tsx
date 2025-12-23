@@ -1,0 +1,44 @@
+import React from "react";
+import { Event } from "@prisma/client";
+import AdminEventCard from "./AdminEventCard";
+
+const EventTimeStateSection = ({
+  title,
+  subtitle,
+  items,
+  orgSlug,
+}: {
+  title: string;
+  subtitle?: string;
+  items: Event[];
+  orgSlug: string;
+}) => {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <div className="text-white text-lg md:text-xl font-semibold">
+          {title}
+        </div>
+        {subtitle ? (
+          <div className="text-white/65 text-sm leading-relaxed">
+            {subtitle}
+          </div>
+        ) : null}
+      </div>
+
+      {items.length === 0 ? (
+        <div className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white/70 text-sm">
+          No events in this section.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {items.map((e) => (
+            <AdminEventCard key={e.id} orgSlug={orgSlug} event={e} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default EventTimeStateSection;
