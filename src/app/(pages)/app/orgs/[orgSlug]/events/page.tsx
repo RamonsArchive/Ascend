@@ -78,7 +78,7 @@ const OrgEventsPage = async ({
   }
 
   const eventsData = events.data as Event[];
-  console.log(eventsData);
+  console.log("eventsData", eventsData);
   return (
     <div className="relative w-full">
       <div className="absolute inset-0 pointer-events-none marketing-bg" />

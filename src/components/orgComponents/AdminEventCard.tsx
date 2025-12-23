@@ -4,6 +4,7 @@ import Image from "next/image";
 import type { Event } from "@prisma/client";
 import { formatDateRange } from "@/src/lib/utils";
 
+// add comment
 const AdminEventCard = ({
   event,
   orgSlug,
@@ -89,7 +90,7 @@ const AdminEventCard = ({
               {new Intl.DateTimeFormat("en-US", {
                 month: "short",
                 day: "2-digit",
-              }).format(event.registrationClosesAt)}
+              }).format(new Date(event.registrationClosesAt))}
             </span>
           ) : null}
         </div>

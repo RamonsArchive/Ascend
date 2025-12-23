@@ -21,7 +21,7 @@ import { z } from "zod";
 
 export const createOrganization = async (
   _prevState: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -312,7 +312,7 @@ export async function assertOrgAdminOrOwner(orgSlug: string, userId: string) {
 
 export const assertOrgAdminOrOwnerWithId = async (
   orgId: string,
-  userId: string
+  userId: string,
 ) => {
   try {
     const membership = await prisma.orgMembership.findUnique({
@@ -351,7 +351,7 @@ export const assertOrgAdminOrOwnerWithId = async (
 export const updateOrgJoinSettings = async (
   orgId: string,
   userId: string,
-  opts: { joinMode?: OrgJoinMode; allowJoinRequests?: boolean }
+  opts: { joinMode?: OrgJoinMode; allowJoinRequests?: boolean },
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -434,7 +434,7 @@ export async function isOrgOwner(orgId: string, userId: string) {
 
 export const createOrgEvent = async (
   _state: ActionState,
-  fd: FormData
+  fd: FormData,
 ): Promise<ActionState> => {
   try {
     void _state;

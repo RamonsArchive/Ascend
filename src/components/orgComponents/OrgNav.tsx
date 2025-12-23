@@ -184,7 +184,7 @@ const OrgNav = ({
     const updateNavbar = () => {
       const currentScrollY = Math.max(
         0,
-        window.scrollY || window.pageYOffset || 0
+        window.scrollY || window.pageYOffset || 0,
       );
       const navbarHeight = 48;
 

@@ -79,15 +79,30 @@ export function formatDate(date: string | Date | null | undefined): string {
   }
 }
 
-export function formatDateRange(startAt: Date | null, endAt: Date | null) {
-  if (!startAt && !endAt) return null;
+export function formatDateRange(
+  startAt: Date | string | null | undefined,
+  endAt: Date | string | null | undefined
+) {
+  const toValidDate = (v: Date | string | null | undefined) => {
+    if (!v) return null;
+    const d = v instanceof Date ? v : new Date(v);
+    return Number.isFinite(d.getTime()) ? d : null;
+  };
+
+  const startD = toValidDate(startAt);
+  const endD = toValidDate(endAt);
+
+  if (!startD && !endD) return null;
+
   const fmt = new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "2-digit",
     year: "numeric",
   });
-  const start = startAt ? fmt.format(startAt) : null;
-  const end = endAt ? fmt.format(endAt) : null;
+
+  const start = startD ? fmt.format(startD) : null;
+  const end = endD ? fmt.format(endD) : null;
+
   if (start && end) return `${start} → ${end}`;
   return start ?? end;
 }

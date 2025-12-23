@@ -25,7 +25,7 @@ const initialState: ActionState = {
 const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
   const allowedImageMimeTypes = useMemo(
     () => new Set(["image/png", "image/jpeg", "image/webp"]),
-    []
+    [],
   );
 
   const coverRef = useRef<HTMLInputElement>(null);
@@ -125,7 +125,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
 
   const submitCreateEvent = async (
     _state: ActionState,
-    _fd: FormData
+    _fd: FormData,
   ): Promise<ActionState> => {
     try {
       void _state;
@@ -220,7 +220,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
       fd.set("allowSelfJoinRequests", parsed.allowSelfJoinRequests ? "1" : "0");
       fd.set(
         "lockTeamChangesAtStart",
-        parsed.lockTeamChangesAtStart ? "1" : "0"
+        parsed.lockTeamChangesAtStart ? "1" : "0",
       );
       fd.set("requireImages", parsed.requireImages ? "1" : "0");
       fd.set("requireVideoDemo", parsed.requireVideoDemo ? "1" : "0");
@@ -283,7 +283,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
 
   const [, formAction, isPending] = useActionState(
     submitCreateEvent,
-    initialState
+    initialState,
   );
 
   return (
