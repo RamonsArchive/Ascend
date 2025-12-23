@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import ProfileAvatar from "../ProfileAvatar";
-import EventMobileMenu from "./EventMobileMenu";
+import EventMobileMenu from "@/src/components/eventComponents/EventMobileMenu";
 import { event_nav_links } from "@/src/constants/eventConstants/event_index";
 
 const MenuIcon = ({ className }: { className?: string }) => (

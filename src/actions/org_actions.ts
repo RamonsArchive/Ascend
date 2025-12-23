@@ -413,3 +413,25 @@ export const updateOrgJoinSettings = async (
     }) as ActionState;
   }
 };
+
+export async function isOrgOwner(orgId: string, userId: string) {
+  try {
+    const membership = await prisma.orgMembership.findUnique({
+      where: { orgId_userId: { orgId, userId } },
+      select: { role: true },
+    });
+
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data: membership?.role === "OWNER",
+    }) as ActionState;
+  } catch (error) {
+    console.error(error);
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to check if user is the owner of the organization",
+      data: null,
+    }) as ActionState;
+  }
+}

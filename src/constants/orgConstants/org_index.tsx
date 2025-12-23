@@ -175,8 +175,11 @@ export const org_nav_links = (orgSlug: string, hasPermissions: boolean) => {
     { label: "Settings", href: `/app/orgs/${orgSlug}/settings` },
   ] as const;
 
-  return hasPermissions ? links : links.filter((l) => l.label !== "Settings");
+  return hasPermissions
+    ? links
+    : links.filter((l) => l.label !== "Settings" && l.label !== "Sponsors");
 };
+
 export const JOIN_MODE_OPTIONS: Array<{
   value: OrgJoinMode;
   label: string;

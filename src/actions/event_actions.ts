@@ -2,6 +2,7 @@ import { prisma } from "../lib/prisma";
 import { parseServerActionResponse } from "../lib/utils";
 import type { ActionState, EventNavData } from "../lib/global_types";
 import { checkRateLimit } from "../lib/rate-limiter";
+import { isOrgOwner } from "./org_actions";
 
 export const fetchEventData = async (
   orgSlug: string,
@@ -66,10 +67,23 @@ export const assertEventAdminOrOwner = async (
   userId: string
 ): Promise<ActionState> => {
   try {
+    const isRateLimited = await checkRateLimit("assertEventAdminOrOwner");
+    if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
+
     const eventRes = await fetchEventData(orgSlug, eventSlug);
     if (eventRes.status === "ERROR" || !eventRes.data) return eventRes;
 
     const event = eventRes.data as EventNavData;
+
+    // ✅ Org OWNER override
+    const orgOwnerResult = await isOrgOwner(event.orgId, userId);
+    if (orgOwnerResult.status === "SUCCESS" && orgOwnerResult.data) {
+      return parseServerActionResponse({
+        status: "SUCCESS",
+        error: "",
+        data: { orgId: event.orgId, eventId: event.id, source: "ORG_OWNER" },
+      }) as ActionState;
+    }
 
     const staffMembership = await prisma.eventStaffMembership.findUnique({
       where: { eventId_userId: { eventId: event.id, userId } },
@@ -119,6 +133,18 @@ export const assertEventAdminOrOwnerWithId = async (
   userId: string
 ): Promise<ActionState> => {
   try {
+    const isRateLimited = await checkRateLimit("assertEventAdminOrOwnerWithId");
+    if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
+
+    // ✅ Org OWNER override
+    const orgOwnerResult = await isOrgOwner(orgId, userId);
+    if (orgOwnerResult.status === "SUCCESS" && orgOwnerResult.data) {
+      return parseServerActionResponse({
+        status: "SUCCESS",
+        error: "",
+        data: { orgId, eventId, source: "ORG_OWNER" },
+      }) as ActionState;
+    }
     const staffMembership = await prisma.eventStaffMembership.findUnique({
       where: { eventId_userId: { eventId, userId } },
       select: { role: true },
