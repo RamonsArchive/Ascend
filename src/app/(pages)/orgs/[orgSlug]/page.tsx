@@ -1,17 +1,25 @@
 import React from "react";
-import { headers } from "next/headers";
-import { notFound } from "next/navigation";
-
+import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/src/lib/prisma";
-import { auth } from "@/src/lib/auth";
 import PublicOrgHero from "@/src/components/orgComponents/PublicOrgHero";
-
+import { getCachedSession } from "@/src/lib/cached-auth";
+import Link from "next/link";
+import { fetchOrgSponsors } from "@/src/actions/org_sponsor_actions";
+import { fetchAllOrgEvents } from "@/src/actions/event_actions";
+import { fetchOrgMembers } from "@/src/actions/org_members_actions";
+import type { Sponsor, Event, OrgMembership } from "@prisma/client";
+import PublicOrgSponsorsSection from "@/src/components/orgComponents/PublicOrgSponsorsSection";
+import PublicOrgEventsSection from "@/src/components/orgComponents/PublicOrgEventsSection";
+import PublicOrgMembersSection from "@/src/components/orgComponents/PublicOrgMembersSection";
+import type { PublicOrgSponsor } from "@/src/lib/global_types";
 const PublicOrgPage = async ({
   params,
 }: {
   params: Promise<{ orgSlug: string }>;
 }) => {
   const { orgSlug } = await params;
+  const session = await getCachedSession();
+  const userId = session?.user?.id ?? null;
 
   const org = await prisma.organization.findUnique({
     where: { slug: orgSlug },
@@ -25,10 +33,20 @@ const PublicOrgPage = async ({
     },
   });
 
-  if (!org) return notFound();
-
-  const session = await auth.api.getSession({ headers: await headers() });
-  const userId = session?.user?.id ?? null;
+  if (!org)
+    return (
+      <div className="relative w-full">
+        <div className="absolute inset-0 pointer-events-none marketing-bg" />
+        <div className="relative flex flex-col items-center justify-center w-full gap-12 md:gap-16 lg:gap-20">
+          <div className="text-white text-xl font-semibold">
+            Organization not found
+          </div>
+          <Link href="/" className="text-white/70 text-sm leading-relaxed">
+            Back to home
+          </Link>
+        </div>
+      </div>
+    );
 
   const membership = userId
     ? await prisma.orgMembership.findUnique({
@@ -37,6 +55,24 @@ const PublicOrgPage = async ({
     : null;
 
   const canEdit = membership?.role === "OWNER" || membership?.role === "ADMIN";
+
+  const [sponsorsRes, eventsRes, membersRes] = await Promise.all([
+    fetchOrgSponsors(org.id),
+    fetchAllOrgEvents(orgSlug),
+    fetchOrgMembers(org.id),
+  ]);
+
+  const sponsors =
+    sponsorsRes.status === "SUCCESS"
+      ? (sponsorsRes.data as PublicOrgSponsor[])
+      : [];
+
+  const events =
+    eventsRes.status === "SUCCESS" ? (eventsRes.data as Event[]) : [];
+
+  const members =
+    membersRes.status === "SUCCESS" ? (membersRes.data as OrgMembership[]) : [];
+  console.log(sponsors, events, members);
 
   return (
     <div className="relative w-full">
@@ -47,6 +83,9 @@ const PublicOrgPage = async ({
           canEdit={canEdit}
           role={membership?.role ?? null}
         />
+        <PublicOrgSponsorsSection sponsors={sponsors} />
+        <PublicOrgEventsSection events={events} />
+        <PublicOrgMembersSection members={members} />
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import type { OrganizationSponsor, Prisma, Sponsor } from "@prisma/client";
 
 export type ActionState = {
   status: "INITIAL" | "PENDING" | "SUCCESS" | "ERROR";
@@ -127,3 +127,16 @@ export type OrgMemberResponse = Omit<OrgMember, "createdAt"> & {
   createdAt: string;
 };
 export type EventBucket = "UPCOMING" | "LIVE" | "PAST";
+
+export type PublicOrgSponsor = OrganizationSponsor & {
+  sponsor: Pick<
+    Sponsor,
+    | "id"
+    | "name"
+    | "slug"
+    | "websiteKey"
+    | "description"
+    | "logoKey"
+    | "coverKey"
+  >;
+};
