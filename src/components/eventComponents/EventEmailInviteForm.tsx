@@ -86,7 +86,7 @@ const EventEmailInviteForm = ({ eventId }: { eventId: string }) => {
       tl.to(allLabels, { opacity: 1, y: 0, stagger: 0.02 }, 0).to(
         allInputs,
         { opacity: 1, y: 0, stagger: 0.04 },
-        0.05
+        0.05,
       );
 
       requestAnimationFrame(() => ScrollTrigger.refresh());
@@ -110,7 +110,7 @@ const EventEmailInviteForm = ({ eventId }: { eventId: string }) => {
 
   const submit = async (
     _state: ActionState,
-    _fd: FormData
+    _fd: FormData,
   ): Promise<ActionState> => {
     try {
       void _state;

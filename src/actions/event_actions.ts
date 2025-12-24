@@ -25,7 +25,7 @@ import {
   updateEventTeamSettingsClientSchema,
 } from "@/src/lib/validation";
 export const fetchAllEvents = async (
-  limit: number = 12
+  limit: number = 12,
 ): Promise<ActionState> => {
   try {
     const isRateLimited = await checkRateLimit("fetchAllEvents");
@@ -76,7 +76,7 @@ export const fetchAllEvents = async (
 
 export const fetchEventData = async (
   orgSlug: string,
-  eventSlug: string
+  eventSlug: string,
 ): Promise<ActionState> => {
   try {
     const isRateLimited = await checkRateLimit("fetchEventData");
@@ -119,7 +119,7 @@ export const fetchEventData = async (
     return parseServerActionResponse({
       status: "SUCCESS",
       error: "",
-      data: event satisfies EventNavData,
+      data: event as EventNavData,
     }) as ActionState;
   } catch (error) {
     console.error(error);
@@ -134,7 +134,7 @@ export const fetchEventData = async (
 export const assertEventAdminOrOwner = async (
   orgSlug: string,
   eventSlug: string,
-  userId: string
+  userId: string,
 ): Promise<ActionState> => {
   try {
     const isRateLimited = await checkRateLimit("assertEventAdminOrOwner");
@@ -200,7 +200,7 @@ export const assertEventAdminOrOwner = async (
 export const assertEventAdminOrOwnerWithId = async (
   orgId: string,
   eventId: string,
-  userId: string
+  userId: string,
 ): Promise<ActionState> => {
   try {
     const isRateLimited = await checkRateLimit("assertEventAdminOrOwnerWithId");
@@ -279,7 +279,7 @@ export const fetchAllOrgEvents = async (orgSlug: string) => {
 
 export const fetchEventCompleteData = async (
   orgSlug: string,
-  eventSlug: string
+  eventSlug: string,
 ): Promise<ActionState> => {
   try {
     const isRateLimited = await checkRateLimit("fetchEventCompleteData");
@@ -377,7 +377,7 @@ export const fetchEventCompleteData = async (
 
 export const updateEventDetails = async (
   _state: ActionState,
-  fd: FormData
+  fd: FormData,
 ): Promise<ActionState> => {
   try {
     void _state;
@@ -445,7 +445,7 @@ export const updateEventDetails = async (
     const perm = await assertEventAdminOrOwnerWithId(
       parsed.orgId,
       parsed.eventId,
-      userId
+      userId,
     );
     if (perm.status === "ERROR") return perm as ActionState;
 
@@ -557,7 +557,7 @@ export const updateEventDetails = async (
 
 export const updateEventTeamSettings = async (
   _prev: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -614,7 +614,7 @@ export const updateEventTeamSettings = async (
     const perms = await assertEventAdminOrOwnerWithId(
       event.orgId,
       event.id,
-      session.user.id
+      session.user.id,
     );
     if (perms.status === "ERROR") return perms as ActionState;
 

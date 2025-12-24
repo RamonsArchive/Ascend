@@ -74,7 +74,7 @@ const EventInviteLinkForm = ({ eventId }: { eventId: string }) => {
       const allInputs = [
         submitButtonRef.current,
         ...Array.from(
-          triggerEl.querySelectorAll("input, textarea, select, button")
+          triggerEl.querySelectorAll("input, textarea, select, button"),
         ),
       ] as HTMLElement[];
 
@@ -94,7 +94,7 @@ const EventInviteLinkForm = ({ eventId }: { eventId: string }) => {
       tl.to(allLabels, { opacity: 1, y: 0, stagger: 0.02 }, 0).to(
         allInputs,
         { opacity: 1, y: 0, stagger: 0.04 },
-        0.05
+        0.05,
       );
 
       requestAnimationFrame(() => ScrollTrigger.refresh());
@@ -122,7 +122,7 @@ const EventInviteLinkForm = ({ eventId }: { eventId: string }) => {
 
   const submit = async (
     _state: ActionState,
-    _fd: FormData
+    _fd: FormData,
   ): Promise<ActionState> => {
     try {
       void _state;

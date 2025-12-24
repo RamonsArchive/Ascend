@@ -759,11 +759,11 @@ enum TeamAuditAction {
   LEADER_TRANSFERRED
 }
 
-enum RegistrationRequestStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  CANCELLED
+enum RegistrationRequestStatus { 
+  PENDING 
+  APPROVED 
+  REJECTED 
+  CANCELLED 
 }
 
 enum EventVisibility {

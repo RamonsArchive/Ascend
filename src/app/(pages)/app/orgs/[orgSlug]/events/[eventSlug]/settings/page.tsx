@@ -3,7 +3,7 @@ import { getCachedSession } from "@/src/lib/cached-auth";
 import { redirect } from "next/navigation";
 import {
   assertEventAdminOrOwner,
-  fetchEventData,
+  fetchEventCompleteData,
 } from "@/src/actions/event_actions";
 import Link from "next/link";
 import EventSettingsHero from "@/src/components/eventComponents/EventSettingsHero";
@@ -15,9 +15,9 @@ import EventMembersAdminSection from "@/src/components/eventComponents/EventMemb
 const EventSettingsPage = async ({
   params,
 }: {
-  params: { orgSlug: string; eventSlug: string };
+  params: Promise<{ orgSlug: string; eventSlug: string }>;
 }) => {
-  const { orgSlug, eventSlug } = params;
+  const { orgSlug, eventSlug } = await params;
   const session = await getCachedSession();
   const userId = session?.user?.id ?? "";
   const isLoggedIn = !!userId;
@@ -27,7 +27,7 @@ const EventSettingsPage = async ({
   const hasPermissions = await assertEventAdminOrOwner(
     orgSlug,
     eventSlug,
-    userId
+    userId,
   );
   if (!hasPermissions) {
     return (
@@ -55,7 +55,8 @@ const EventSettingsPage = async ({
     );
   }
 
-  const eventData = await fetchEventData(orgSlug, eventSlug);
+  const eventData = await fetchEventCompleteData(orgSlug, eventSlug);
+  console.log(eventData);
   if (eventData.status === "ERROR" || !eventData.data) {
     return (
       <div className="relative w-full min-h-[calc(100vh-48px)]">
