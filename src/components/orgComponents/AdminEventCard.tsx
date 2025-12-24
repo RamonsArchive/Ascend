@@ -14,7 +14,7 @@ const AdminEventCard = ({
 }) => {
   const dateRange = useMemo(
     () => formatDateRange(event.startAt ?? null, event.endAt ?? null),
-    [event.startAt, event.endAt]
+    [event.startAt, event.endAt],
   );
 
   const badges = useMemo(() => {

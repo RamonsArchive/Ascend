@@ -140,7 +140,7 @@ const NewOrgForm = ({
   const { form } = new_org_data;
   const allowedImageMimeTypes = useMemo(
     () => new Set(["image/png", "image/jpeg", "image/webp"]),
-    []
+    [],
   );
 
   const submitButtonRef = useRef<HTMLButtonElement>(null);
@@ -333,7 +333,7 @@ const NewOrgForm = ({
       tl.to(allLabels, { opacity: 1, y: 0, stagger: 0.02 }, 0).to(
         allInputs,
         { opacity: 1, y: 0, stagger: 0.04 },
-        0.05
+        0.05,
       );
       if (allPreviewButtons.length > 0) {
         tl.to(allPreviewButtons, { opacity: 1, y: 0, stagger: 0.02 }, 0.05);
@@ -388,7 +388,7 @@ const NewOrgForm = ({
 
   const submitForm = async (
     _state: ActionState,
-    formData: FormData
+    formData: FormData,
   ): Promise<ActionState> => {
     try {
       setErrors({});
@@ -501,7 +501,7 @@ const NewOrgForm = ({
     } catch (error) {
       console.error(error);
       setStatusMessage(
-        "An error occurred while submitting the form. Please try again."
+        "An error occurred while submitting the form. Please try again.",
       );
       if (error instanceof z.ZodError) {
         const fieldErrors = z.flattenError(error).fieldErrors as Record<

@@ -22,7 +22,7 @@ const OrgEventsList = ({
   }, [events]);
 
   const [selectedYear, setSelectedYear] = useState<number>(
-    years[0] ?? new Date().getFullYear()
+    years[0] ?? new Date().getFullYear(),
   );
   const [typeFilter, setTypeFilter] = useState<EventType | "ALL">("ALL");
 
@@ -49,13 +49,13 @@ const OrgEventsList = ({
 
     // Ordering
     upcoming.sort(
-      (a, b) => (a.startAt?.getTime() ?? 0) - (b.startAt?.getTime() ?? 0)
+      (a, b) => (a.startAt?.getTime() ?? 0) - (b.startAt?.getTime() ?? 0),
     );
     live.sort(
-      (a, b) => (a.startAt?.getTime() ?? 0) - (b.startAt?.getTime() ?? 0)
+      (a, b) => (a.startAt?.getTime() ?? 0) - (b.startAt?.getTime() ?? 0),
     );
     past.sort(
-      (a, b) => (b.startAt?.getTime() ?? 0) - (a.startAt?.getTime() ?? 0)
+      (a, b) => (b.startAt?.getTime() ?? 0) - (a.startAt?.getTime() ?? 0),
     );
 
     return { upcoming, live, past };

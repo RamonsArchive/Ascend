@@ -62,3 +62,16 @@ src/app/
                 page.tsx
           sponsors/
             page.tsx
+
+
+New structure for events. 
+
+Put everything participants do here.
+	•	/app/events/[eventSlug] (canonical “participant home”)
+	•	/app/events/[eventSlug]/info
+	•	/app/events/[eventSlug]/teams
+	•	/app/events/[eventSlug]/teams/[teamSlug]
+	•	/app/events/[eventSlug]/teams/[teamSlug]/settings (team owner/admin only)
+	•	/app/events/[eventSlug]/submissions
+	•	/app/events/[eventSlug]/submissions/new (or /submit)
+	•	/app/events/[eventSlug]/winners

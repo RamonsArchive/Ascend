@@ -182,7 +182,7 @@ export const org_nav_links = (orgSlug: string, hasPermissions: boolean) => {
           l.label !== "Settings" &&
           l.label !== "Sponsors" &&
           l.label !== "Members" &&
-          l.label !== "Events"
+          l.label !== "Events",
       );
 };
 

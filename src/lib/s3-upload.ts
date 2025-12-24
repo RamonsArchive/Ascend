@@ -190,3 +190,33 @@ export async function finalizeEventImageFromTmp(opts: {
 
   return finalKey;
 }
+
+export async function createEventImageUpload(opts: {
+  kind: EventAssetKind;
+  fileName: string;
+  contentType: string;
+}) {
+  assertEnv();
+
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user?.id) throw new Error("UNAUTHORIZED");
+
+  const { kind, fileName, contentType } = opts;
+  const uuid = crypto.randomUUID();
+  const ext = extFrom(fileName, contentType);
+
+  const key = `tmp/uploads/${session.user.id}/${kind}/v1/${uuid}.${ext}`;
+
+  const presigned = await createPresignedPost(s3, {
+    Bucket: BUCKET,
+    Key: key,
+    Conditions: [
+      ["content-length-range", 1, MAX_BYTES],
+      ["starts-with", "$Content-Type", "image/"],
+    ],
+    Fields: { "Content-Type": contentType },
+    Expires: 60,
+  });
+
+  return { key, url: presigned.url, fields: presigned.fields };
+}

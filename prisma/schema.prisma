@@ -26,6 +26,8 @@ model User {
   orgInviteLinks         OrgInviteLink[]
   orgJoinRequests        OrgJoinRequest[]
   memberships            OrgMembership[]
+  eventInviteLinks       EventInviteLink[]          @relation("EventInviteLinkCreator")
+  eventEmailInvites      EventEmailInvite[]         @relation("EventEmailInviteCreator")
   scoresGiven            Score[]                    @relation("ScoreJudge")
   sponsorsCreated        Sponsor[]                  @relation("SponsorCreatedBy")
   submissions            Submission[]               @relation("SubmissionAuthor")
@@ -218,6 +220,8 @@ model Event {
   staffInviteLinks       EventStaffInviteLink[]
   staffJoinRequests      EventStaffJoinRequest[]
   staffMemberships       EventStaffMembership[]
+  inviteLinks            EventInviteLink[]
+  emailInvites           EventEmailInvite[]
   judgeAssignments       JudgeAssignment[]
   submissions            Submission[]
   submissionSchema       SubmissionSchema?
@@ -339,6 +343,44 @@ model EventStaffJoinRequest {
   @@index([eventId])
   @@index([userId])
   @@index([status])
+}
+
+  // model EventInviteLink { id, eventId, token, note, maxUses, uses, expiresAt, createdById, createdAt }
+
+model EventInviteLink {
+    id              String         @id @default(cuid())
+    eventId         String
+    token           String         @unique
+    status          InviteStatus   @default(PENDING)
+    maxUses         Int?
+    uses            Int            @default(0)
+    expiresAt       DateTime?
+    note            String?
+    createdByUserId String
+    createdAt       DateTime       @default(now())
+    creator         User           @relation("EventInviteLinkCreator", fields: [createdByUserId], references: [id], onDelete: Cascade)
+    event           Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+    @@index([eventId])
+    @@index([createdByUserId])
+  }
+
+model EventEmailInvite {
+  id              String         @id @default(cuid())
+  eventId         String
+  email           String
+  token           String         @unique
+  status          InviteStatus   @default(PENDING)
+  message         String?
+  createdByUserId String
+  createdAt       DateTime       @default(now())
+  expiresAt       DateTime?
+  creator         User           @relation("EventEmailInviteCreator", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  event           Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+  @@index([email])
+  @@index([createdByUserId])
 }
 
 model EventAward {

@@ -57,6 +57,18 @@
   --color-accent-900: #11b99b;
   --color-accent-950: #0a9a80;
 
+  --color-event-50: #ffe6f0;
+  --color-event-100: #ffc0d9;
+  --color-event-200: #ff96c2;
+  --color-event-300: #ff6bab;
+  --color-event-400: #ff4b9a;
+  --color-event-500: #ff3d8a; /* primary event accent */
+  --color-event-600: #f7337f;
+  --color-event-700: #ee2b76;
+  --color-event-800: #e4246e;
+  --color-event-900: #d51a61;
+  --color-event-950: #b81452;
+
   /* Warning Color Variations (Amber Glow #F59E0B) */
   --color-warning-50: #fff8e1;
   --color-warning-100: #ffecb3;

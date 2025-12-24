@@ -312,3 +312,10 @@ export const rolePillClasses = (role: OrgMember["role"]) => {
       return "bg-white/5 text-white/80 border-white/10";
   }
 };
+
+export const getBaseUrl = () => {
+  return (
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "")
+  );
+};

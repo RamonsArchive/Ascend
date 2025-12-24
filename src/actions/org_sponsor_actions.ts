@@ -24,7 +24,7 @@ function slugify(input: string) {
 
 export const createSponsorProfile = async (
   _prevState: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -143,7 +143,7 @@ export const createSponsorProfile = async (
 
 export const updateSponsorProfile = async (
   _prevState: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -286,7 +286,7 @@ export const updateSponsorProfile = async (
 
 export const setSponsorVisibility = async (
   _prevState: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -369,7 +369,7 @@ export const setSponsorVisibility = async (
 };
 
 export const fetchSponsorLibrary = async (
-  query?: string
+  query?: string,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -438,7 +438,7 @@ export const fetchSponsorLibrary = async (
 
 export const addExistingSponsorToOrg = async (
   _prevState: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -492,7 +492,7 @@ export const addExistingSponsorToOrg = async (
 
     const hasPermissions = await assertOrgAdminOrOwnerWithId(
       orgId,
-      session.user.id
+      session.user.id,
     );
     if (hasPermissions.status === "ERROR") return hasPermissions as ActionState;
 
@@ -571,7 +571,7 @@ export const fetchOrgSponsors = async (orgId: string) => {
 
     const hasPermissions = await assertOrgAdminOrOwnerWithId(
       orgId,
-      session.user.id
+      session.user.id,
     );
     if (hasPermissions.status === "ERROR") return hasPermissions as ActionState;
 
@@ -633,7 +633,7 @@ export const fetchAllPublicSponsors = async (): Promise<ActionState> => {
 
 export const deleteSponsor = async (
   _prevState: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });

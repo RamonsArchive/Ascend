@@ -63,7 +63,7 @@ const EventsExplore = ({
         { key: "HACKATHON" as const, label: "Hackathons" },
         { key: "IDEATHON" as const, label: "Ideathons" },
       ] satisfies Array<{ key: ChipKey; label: string }>,
-    []
+    [],
   );
 
   const Pill = ({

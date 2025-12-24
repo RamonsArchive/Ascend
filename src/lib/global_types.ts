@@ -184,3 +184,41 @@ export type EventLikeForTime = {
   endAt: Date | string | null;
   createdAt?: Date | string; // optional for public list items
 };
+
+export type EventCompleteData = {
+  id: string;
+  orgId: string;
+  name: string;
+  slug: string;
+  status: string;
+
+  type: string;
+  visibility: string;
+  joinMode: string;
+
+  heroTitle: string | null;
+  heroSubtitle: string | null;
+
+  registrationOpensAt: Date | null;
+  registrationClosesAt: Date | null;
+  startAt: Date | null;
+  endAt: Date | null;
+  submitDueAt: Date | null;
+
+  maxTeamSize: number;
+  allowSelfJoinRequests: boolean;
+  lockTeamChangesAtStart: boolean;
+  requireImages: boolean;
+  requireVideoDemo: boolean;
+
+  coverKey: string | null;
+
+  org: { id: string; name: string; slug: string; logoKey: string | null };
+
+  _count: {
+    teams: number;
+    submissions: number;
+    staff: number;
+    members: number;
+  };
+};

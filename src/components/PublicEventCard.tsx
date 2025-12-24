@@ -10,7 +10,7 @@ import type { PublicEventListItem } from "@/src/lib/global_types";
 const PublicEventCard = ({ event }: { event: PublicEventListItem }) => {
   const dateRange = useMemo(
     () => formatDateRange(event.startAt ?? null, event.endAt ?? null),
-    [event.startAt, event.endAt]
+    [event.startAt, event.endAt],
   );
 
   const badge = useMemo(() => {

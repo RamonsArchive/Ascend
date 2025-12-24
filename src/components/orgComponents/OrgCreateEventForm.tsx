@@ -15,7 +15,7 @@ import { createOrgImageUpload } from "@/src/actions/s3_actions";
 import { uploadToS3PresignedPost } from "@/src/lib/s3-client";
 import { createOrgEvent } from "@/src/actions/org_actions";
 import { createOrgEventClientSchema } from "@/src/lib/validation";
-
+import { useRouter } from "next/navigation";
 const initialState: ActionState = {
   status: "INITIAL",
   error: "",
@@ -23,6 +23,7 @@ const initialState: ActionState = {
 };
 
 const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
+  const router = useRouter();
   const allowedImageMimeTypes = useMemo(
     () => new Set(["image/png", "image/jpeg", "image/webp"]),
     [],
@@ -238,6 +239,9 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
       toast.success("SUCCESS", { description: "Event created." });
       setStatusMessage("Event created.");
       clearForm();
+      // push to new event page settings
+      const slug = (result.data as { slug: string }).slug;
+      router.push(`app/orgs/${orgSlug}/events/${slug}/settings`);
       return result;
     } catch (error) {
       console.error(error);
