@@ -2,13 +2,15 @@ import React from "react";
 import { Event, Organization } from "@prisma/client";
 import PublicEventCard from "@/src/components/PublicEventCard";
 import { global_events_data } from "@/src/constants/globalConstants/global_index";
+import type { PublicEventListItem } from "@/src/lib/global_types";
+import type { OrgListItem } from "@/src/lib/global_types";
 
 const EventsExplore = ({
   events,
   orgs,
 }: {
-  events: Event[];
-  orgs: Organization[];
+  events: PublicEventListItem[];
+  orgs: OrgListItem[];
 }) => {
   const { events: eventsCopy, filters, empty_state } = global_events_data;
 

@@ -8,8 +8,11 @@ import Link from "next/link";
 import { fetchOrgSponsors } from "@/src/actions/org_sponsor_actions";
 import { fetchOrgMembers } from "@/src/actions/org_members_actions";
 import { fetchAllOrgEvents } from "@/src/actions/event_actions";
-import type { PublicOrgSponsor, OrgMember } from "@/src/lib/global_types";
-import type { Event } from "@prisma/client";
+import type {
+  PublicEventListItem,
+  PublicOrgSponsor,
+  OrgMember,
+} from "@/src/lib/global_types";
 import { fetchPublicOrgCountsData } from "@/src/actions/org_actions";
 import PublicOrgSponsorsSection from "@/src/components/orgComponents/PublicOrgSponsorsSection";
 import PublicOrgEventsSection from "@/src/components/orgComponents/PublicOrgEventsSection";
@@ -74,7 +77,9 @@ const OrgOverviewPage = async ({
       : [];
 
   const events =
-    eventsRes.status === "SUCCESS" ? (eventsRes.data as Event[]) : [];
+    eventsRes.status === "SUCCESS"
+      ? (eventsRes.data as PublicEventListItem[])
+      : [];
 
   const members =
     membersRes.status === "SUCCESS" ? (membersRes.data as OrgMember[]) : [];

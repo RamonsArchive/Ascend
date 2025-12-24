@@ -1,5 +1,5 @@
 import React from "react";
-import { Event } from "@prisma/client";
+import type { PublicEventListItem } from "@/src/lib/global_types";
 import AdminEventCard from "./AdminEventCard";
 
 const EventTimeStateSection = ({
@@ -10,7 +10,7 @@ const EventTimeStateSection = ({
 }: {
   title: string;
   subtitle?: string;
-  items: Event[];
+  items: PublicEventListItem[];
   orgSlug: string;
 }) => {
   return (

@@ -3,14 +3,23 @@ import EventsHero from "@/src/components/globalComponents/EventsHero";
 import EventsExplore from "@/src/components/globalComponents/EventsExplore";
 import EventsHowItWorks from "@/src/components/globalComponents/EventsHowItWorks";
 import ExploreOrgs from "@/src/components/globalComponents/ExploreOrgs";
-import { mockEvents } from "@/src/data/mock-events";
-import { mockOrganizations } from "@/src/data/mock-organizations";
+import { fetchAllEvents } from "@/src/actions/event_actions";
+import { fetchAllOrganizations } from "@/src/actions/org_actions";
+import { OrgListItem, PublicEventListItem } from "@/src/lib/global_types";
 
-const EventsPage = () => {
+const EventsPage = async () => {
   // fetch all events on the server here and pass them to the components
   // right now just use the mock events
-  const events = mockEvents;
-  const orgs = mockOrganizations; // mock orgs
+  const eventsRes = await fetchAllEvents(12);
+  const orgsRes = await fetchAllOrganizations();
+
+  const events =
+    eventsRes.status === "SUCCESS"
+      ? (eventsRes.data as PublicEventListItem[])
+      : [];
+
+  const orgs =
+    orgsRes.status === "SUCCESS" ? (orgsRes.data as OrgListItem[]) : [];
   return (
     <div className="relative w-full">
       <div className="marketing-bg" />

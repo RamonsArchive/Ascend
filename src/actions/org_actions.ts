@@ -18,6 +18,7 @@ import { updateTag } from "next/cache";
 import { slugify, parseDate, safeDate, slugRegex } from "../lib/utils";
 import { createOrgEventServerSchema } from "../lib/validation";
 import { z } from "zod";
+import { TruckElectric } from "lucide-react";
 
 export const createOrganization = async (
   _prevState: ActionState,
@@ -196,21 +197,19 @@ export async function updateOrgImage(opts: {
   });
 }
 
-export const getAllOrganizations = async () => {
+export const fetchAllOrganizations = async () => {
   try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user?.id) {
-      return parseServerActionResponse({
-        status: "ERROR",
-        error: "MUST BE LOGGED IN TO CREATE AN ORGANIZATION",
-        data: null,
-      }) as ActionState;
-    }
-    const isRateLimited = await checkRateLimit("getAllOrganizations");
+    const isRateLimited = await checkRateLimit("fetchAllOrganizations");
     if (isRateLimited.status === "ERROR") return isRateLimited;
     const organizations = await prisma.organization.findMany({
-      include: {
-        memberships: true,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        logoKey: true,
+        coverKey: true,
+        _count: { select: { memberships: true } },
       },
       orderBy: {
         createdAt: "desc",
@@ -227,6 +226,49 @@ export const getAllOrganizations = async () => {
     return parseServerActionResponse({
       status: "ERROR",
       error: "Failed to get all organizations",
+      data: null,
+    }) as ActionState;
+  }
+};
+
+export const fetchAllUserOrganizations = async () => {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user?.id) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "MUST BE LOGGED IN TO FETCH ALL USER ORGANIZATIONS",
+        data: null,
+      }) as ActionState;
+    }
+    const isRateLimited = await checkRateLimit("fetchAllUserOrganizations");
+    if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
+
+    const organizations = await prisma.organization.findMany({
+      where: { memberships: { some: { userId: session.user.id } } },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        logoKey: true,
+        coverKey: true,
+        _count: { select: { memberships: true } },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data: organizations,
+    }) as ActionState;
+  } catch (error) {
+    console.error(error);
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to fetch all user organizations",
       data: null,
     }) as ActionState;
   }

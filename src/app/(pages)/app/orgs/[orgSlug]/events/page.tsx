@@ -1,6 +1,4 @@
 import React from "react";
-import { auth } from "@/src/lib/auth";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import OrgEventsHero from "@/src/components/orgComponents/OrgEventsHero";
 import OrgCreateEventSection from "@/src/components/orgComponents/OrgCreateEventSection";
@@ -9,7 +7,7 @@ import { assertOrgAdminOrOwner } from "@/src/actions/org_actions";
 import Link from "next/link";
 import { getCachedSession } from "@/src/lib/cached-auth";
 import { fetchAllOrgEvents } from "@/src/actions/event_actions";
-import type { Event } from "@prisma/client";
+import type { PublicEventListItem } from "@/src/lib/global_types";
 
 const OrgEventsPage = async ({
   params,
@@ -77,7 +75,7 @@ const OrgEventsPage = async ({
     );
   }
 
-  const eventsData = events.data as Event[];
+  const eventsData = events.data as PublicEventListItem[];
   console.log("eventsData", eventsData);
   return (
     <div className="relative w-full">

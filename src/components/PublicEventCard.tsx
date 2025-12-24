@@ -3,11 +3,11 @@
 import React, { useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import type { Event } from "@prisma/client";
 import { formatDateRange } from "@/src/lib/utils";
 import { s3KeyToPublicUrl } from "@/src/lib/s3-client";
+import type { PublicEventListItem } from "@/src/lib/global_types";
 
-const PublicEventCard = ({ event }: { event: Event }) => {
+const PublicEventCard = ({ event }: { event: PublicEventListItem }) => {
   const dateRange = useMemo(
     () => formatDateRange(event.startAt ?? null, event.endAt ?? null),
     [event.startAt, event.endAt]

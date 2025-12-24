@@ -1,5 +1,9 @@
 import type { SponsorTier, OrgMember } from "@/src/lib/global_types";
-import { Event, EventType } from "@prisma/client";
+import { EventType } from "@prisma/client";
+import type {
+  EventLikeForTime,
+  PublicEventListItem,
+} from "@/src/lib/global_types";
 import crypto from "crypto";
 
 export const parseServerActionResponse = <T>(response: T): T => {
@@ -263,17 +267,13 @@ export const parseDate = (s?: string) => (s ? new Date(s) : null);
 export const safeDate = (d: Date | null) =>
   d && !Number.isNaN(d.getTime()) ? d : null;
 
-export function getEventBucket(e: Event, now: Date) {
+export function getEventBucket(e: EventLikeForTime, now: Date) {
   const start = e.startAt ? new Date(e.startAt) : null;
   const end = e.endAt ? new Date(e.endAt) : null;
 
-  // If no dates, treat as upcoming draft-ish
   if (!start && !end) return "UPCOMING";
-
   if (start && start > now) return "UPCOMING";
   if (end && end < now) return "PAST";
-
-  // If started but no end OR end is in the future
   if (start && start <= now && (!end || end >= now)) return "LIVE";
 
   return "UPCOMING";
@@ -283,12 +283,15 @@ export function yearOf(d: Date | null) {
   return d ? d.getFullYear() : null;
 }
 
-export function getRelevantYear(e: Event) {
-  // Prefer startAt for grouping; fallback to createdAt
-  return (
-    yearOf(e.startAt ? new Date(e.startAt) : null) ??
-    new Date(e.createdAt).getFullYear()
-  );
+export function getRelevantYear(e: EventLikeForTime) {
+  const startYear = yearOf(e.startAt ? new Date(e.startAt) : null);
+  if (startYear) return startYear;
+
+  // fallback to createdAt if available
+  if (e.createdAt) return new Date(e.createdAt).getFullYear();
+
+  // final fallback (should be rare)
+  return new Date().getFullYear();
 }
 
 export function typeLabel(t: EventType | "ALL") {

@@ -1,10 +1,10 @@
 import React from "react";
-import { Organization } from "@prisma/client";
 import Link from "next/link";
-import OrgCard from "@/src/components/OrgCard";
+import PublicOrgCard from "@/src/components/PublicOrgCard";
 import { global_events_data } from "@/src/constants/globalConstants/global_index";
+import type { OrgListItem } from "@/src/lib/global_types";
 
-const ExploreOrgs = ({ orgs }: { orgs: Organization[] }) => {
+const ExploreOrgs = ({ orgs }: { orgs: OrgListItem[] }) => {
   const { orgs: orgCopy } = global_events_data;
 
   return (
@@ -30,7 +30,7 @@ const ExploreOrgs = ({ orgs }: { orgs: Organization[] }) => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {orgs.map((org) => (
-            <OrgCard key={org.id} org={org} />
+            <PublicOrgCard key={org.id} org={org} />
           ))}
         </div>
       </div>

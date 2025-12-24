@@ -1,4 +1,10 @@
-import type { OrganizationSponsor, Prisma, Sponsor } from "@prisma/client";
+import type {
+  EventType,
+  OrgJoinMode,
+  OrganizationSponsor,
+  Prisma,
+  Sponsor,
+} from "@prisma/client";
 
 export type ActionState = {
   status: "INITIAL" | "PENDING" | "SUCCESS" | "ERROR";
@@ -139,4 +145,42 @@ export type PublicOrgSponsor = OrganizationSponsor & {
     | "logoKey"
     | "coverKey"
   >;
+};
+
+export type OrgListItem = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  logoKey: string | null;
+  coverKey: string | null;
+  _count: { memberships: number };
+};
+
+export type PublicEventListItem = {
+  id: string;
+  slug: string;
+  name: string;
+  heroTitle: string | null;
+  heroSubtitle: string | null;
+  type: EventType;
+  joinMode: OrgJoinMode;
+  startAt: Date | null;
+  endAt: Date | null;
+  createdAt: Date; // ✅ add this
+  registrationClosesAt: Date | null;
+  coverKey: string | null;
+  orgId: string;
+  org: {
+    id: string;
+    name: string;
+    slug: string;
+    logoKey: string | null;
+  };
+};
+
+export type EventLikeForTime = {
+  startAt: Date | string | null;
+  endAt: Date | string | null;
+  createdAt?: Date | string; // optional for public list items
 };

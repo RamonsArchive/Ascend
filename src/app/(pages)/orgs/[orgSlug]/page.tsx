@@ -7,11 +7,16 @@ import Link from "next/link";
 import { fetchOrgSponsors } from "@/src/actions/org_sponsor_actions";
 import { fetchAllOrgEvents } from "@/src/actions/event_actions";
 import { fetchOrgMembers } from "@/src/actions/org_members_actions";
-import type { Sponsor, Event, OrgMembership } from "@prisma/client";
+import type { OrgMembership } from "@prisma/client";
 import PublicOrgSponsorsSection from "@/src/components/orgComponents/PublicOrgSponsorsSection";
 import PublicOrgEventsSection from "@/src/components/orgComponents/PublicOrgEventsSection";
 import PublicOrgMembersSection from "@/src/components/orgComponents/PublicOrgMembersSection";
-import type { PublicOrgSponsor } from "@/src/lib/global_types";
+import type {
+  PublicEventListItem,
+  PublicOrgSponsor,
+  OrgMember,
+} from "@/src/lib/global_types";
+
 const PublicOrgPage = async ({
   params,
 }: {
@@ -68,10 +73,12 @@ const PublicOrgPage = async ({
       : [];
 
   const events =
-    eventsRes.status === "SUCCESS" ? (eventsRes.data as Event[]) : [];
+    eventsRes.status === "SUCCESS"
+      ? (eventsRes.data as PublicEventListItem[])
+      : [];
 
   const members =
-    membersRes.status === "SUCCESS" ? (membersRes.data as OrgMembership[]) : [];
+    membersRes.status === "SUCCESS" ? (membersRes.data as OrgMember[]) : [];
   console.log(sponsors, events, members);
 
   return (

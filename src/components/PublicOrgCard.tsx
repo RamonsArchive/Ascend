@@ -1,9 +1,11 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import type { Organization } from "@prisma/client";
+import type { OrgListItem } from "@/src/lib/global_types";
+import { s3KeyToPublicUrl } from "@/src/lib/s3-client";
 
-const OrgCard = ({ org }: { org: Organization }) => {
+const PublicOrgCard = ({ org }: { org: OrgListItem }) => {
+  console.log(org);
   return (
     <Link
       href={`/orgs/${org.slug}`}
@@ -12,7 +14,7 @@ const OrgCard = ({ org }: { org: Organization }) => {
       <div className="relative w-full h-[140px] bg-black/40">
         {org.coverKey ? (
           <Image
-            src={org.coverKey}
+            src={s3KeyToPublicUrl(org.coverKey) ?? ""}
             alt={`${org.name} cover`}
             fill
             sizes="(max-width: 768px) 100vw, 33vw"
@@ -29,7 +31,7 @@ const OrgCard = ({ org }: { org: Organization }) => {
           <div className="relative w-9 h-9 rounded-md overflow-hidden border border-white/10 bg-white/5 shrink-0">
             {org.logoKey ? (
               <Image
-                src={org.logoKey}
+                src={s3KeyToPublicUrl(org.logoKey) ?? ""}
                 alt={`${org.name} logo`}
                 fill
                 sizes="36px"
@@ -64,4 +66,4 @@ const OrgCard = ({ org }: { org: Organization }) => {
   );
 };
 
-export default OrgCard;
+export default PublicOrgCard;

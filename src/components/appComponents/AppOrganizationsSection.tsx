@@ -1,9 +1,7 @@
 import React from "react";
 import Link from "next/link";
-import type { Organization, OrgMembership } from "@prisma/client";
 import AppOrgCard from "./AppOrgCard";
-
-type OrgWithMemberships = Organization & { memberships?: OrgMembership[] };
+import type { OrgListItem } from "@/src/lib/global_types";
 
 const AppOrganizationsSection = ({
   title,
@@ -14,7 +12,7 @@ const AppOrganizationsSection = ({
 }: {
   title: string;
   description: string;
-  orgs: OrgWithMemberships[];
+  orgs: OrgListItem[];
   ctaHref: string;
   ctaLabel: string;
 }) => {

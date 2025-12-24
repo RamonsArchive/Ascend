@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import type { Event } from "@prisma/client";
+import type { PublicEventListItem } from "@/src/lib/global_types";
 import { formatDateRange } from "@/src/lib/utils";
 import { s3KeyToPublicUrl } from "@/src/lib/s3-client";
 
@@ -9,7 +9,7 @@ const AdminEventCard = ({
   event,
   orgSlug,
 }: {
-  event: Event;
+  event: PublicEventListItem;
   orgSlug: string;
 }) => {
   const dateRange = useMemo(

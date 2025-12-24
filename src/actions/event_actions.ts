@@ -1,14 +1,68 @@
 import { prisma } from "../lib/prisma";
 import { parseServerActionResponse } from "../lib/utils";
-import type { ActionState, EventNavData } from "../lib/global_types";
+import type {
+  ActionState,
+  EventNavData,
+  PublicEventListItem,
+} from "../lib/global_types";
 import { checkRateLimit } from "../lib/rate-limiter";
 import { isOrgOwner } from "./org_actions";
 import { headers } from "next/headers";
 import { auth } from "@/src/lib/auth";
 
+export const fetchAllEvents = async (
+  limit: number = 12
+): Promise<ActionState> => {
+  try {
+    const isRateLimited = await checkRateLimit("fetchAllEvents");
+    if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
+
+    const events = await prisma.event.findMany({
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        heroTitle: true,
+        heroSubtitle: true,
+        type: true,
+        joinMode: true,
+        startAt: true,
+        endAt: true,
+        createdAt: true, // ✅ add this
+        registrationClosesAt: true,
+        coverKey: true,
+        orgId: true,
+        org: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            logoKey: true,
+          },
+        },
+      },
+    });
+
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data: events satisfies PublicEventListItem[],
+    }) as ActionState;
+  } catch (error) {
+    console.error(error);
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to fetch all events",
+      data: null,
+    }) as ActionState;
+  }
+};
+
 export const fetchEventData = async (
   orgSlug: string,
-  eventSlug: string,
+  eventSlug: string
 ): Promise<ActionState> => {
   try {
     const isRateLimited = await checkRateLimit("fetchEventData");
@@ -66,7 +120,7 @@ export const fetchEventData = async (
 export const assertEventAdminOrOwner = async (
   orgSlug: string,
   eventSlug: string,
-  userId: string,
+  userId: string
 ): Promise<ActionState> => {
   try {
     const isRateLimited = await checkRateLimit("assertEventAdminOrOwner");
@@ -132,7 +186,7 @@ export const assertEventAdminOrOwner = async (
 export const assertEventAdminOrOwnerWithId = async (
   orgId: string,
   eventId: string,
-  userId: string,
+  userId: string
 ): Promise<ActionState> => {
   try {
     const isRateLimited = await checkRateLimit("assertEventAdminOrOwnerWithId");

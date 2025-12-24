@@ -1,20 +1,16 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import type { Event, EventType } from "@prisma/client";
+import type { EventType } from "@prisma/client";
 import EventTimeStateSection from "./EventTimeStateSection";
-import {
-  getEventBucket,
-  getRelevantYear,
-  typeLabel,
-  yearOf,
-} from "@/src/lib/utils";
+import { getEventBucket, getRelevantYear, typeLabel } from "@/src/lib/utils";
+import type { PublicEventListItem } from "@/src/lib/global_types";
 
 const OrgEventsList = ({
   events,
   orgSlug,
 }: {
-  events: Event[];
+  events: PublicEventListItem[];
   orgSlug: string;
 }) => {
   const now = useMemo(() => new Date(), []);
@@ -40,9 +36,9 @@ const OrgEventsList = ({
   }, [events, selectedYear, typeFilter]);
 
   const buckets = useMemo(() => {
-    const upcoming: Event[] = [];
-    const live: Event[] = [];
-    const past: Event[] = [];
+    const upcoming: PublicEventListItem[] = [];
+    const live: PublicEventListItem[] = [];
+    const past: PublicEventListItem[] = [];
 
     for (const e of filtered) {
       const b = getEventBucket(e, now);

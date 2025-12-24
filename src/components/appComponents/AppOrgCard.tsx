@@ -1,13 +1,14 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import type { Organization, OrgMembership } from "@prisma/client";
 import { s3KeyToPublicUrl } from "@/src/lib/s3-client";
+import type { OrgListItem } from "@/src/lib/global_types";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeSanitize from "rehype-sanitize";
 
-type OrgWithMemberships = Organization & { memberships?: OrgMembership[] };
-
-const AppOrgCard = ({ org }: { org: OrgWithMemberships }) => {
-  const memberCount = org.memberships?.length ?? 0;
+const AppOrgCard = ({ org }: { org: OrgListItem }) => {
+  const memberCount = org._count.memberships;
 
   return (
     <Link
@@ -56,9 +57,18 @@ const AppOrgCard = ({ org }: { org: OrgWithMemberships }) => {
         </div>
 
         <div className="flex flex-col gap-2">
-          {org.description ? (
-            <div className="text-white/70 text-sm leading-relaxed line-clamp-2">
-              {org.description}
+          {org.description?.trim() ? (
+            // IMPORTANT: markdown needs normal flow, not "leading-relaxed" only
+            // Also: line-clamp on markdown is tricky, so we clamp via a wrapper.
+            <div className="text-sm text-white/70 leading-relaxed line-clamp-2">
+              <div className="prose prose-invert max-w-none prose-p:my-0 prose-p:text-white/70 prose-strong:text-white prose-a:text-accent-400">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeSanitize]}
+                >
+                  {org.description}
+                </ReactMarkdown>
+              </div>
             </div>
           ) : (
             <div className="text-white/50 text-sm leading-relaxed">
