@@ -47,7 +47,7 @@ const EventEditDetailsForm = ({ event }: { event: EventCompleteData }) => {
 
   const allowedImageMimeTypes = useMemo(
     () => new Set(["image/png", "image/jpeg", "image/webp"]),
-    [],
+    []
   );
 
   const coverRef = useRef<HTMLInputElement>(null);
@@ -115,7 +115,7 @@ const EventEditDetailsForm = ({ event }: { event: EventCompleteData }) => {
 
   const submit = async (
     _state: ActionState,
-    _fd: FormData,
+    _fd: FormData
   ): Promise<ActionState> => {
     try {
       void _state;
@@ -226,11 +226,11 @@ const EventEditDetailsForm = ({ event }: { event: EventCompleteData }) => {
 
       fd.set(
         "allowSelfJoinRequests",
-        formData.allowSelfJoinRequests ? "1" : "0",
+        formData.allowSelfJoinRequests ? "1" : "0"
       );
       fd.set(
         "lockTeamChangesAtStart",
-        formData.lockTeamChangesAtStart ? "1" : "0",
+        formData.lockTeamChangesAtStart ? "1" : "0"
       );
       fd.set("requireImages", formData.requireImages ? "1" : "0");
       fd.set("requireVideoDemo", formData.requireVideoDemo ? "1" : "0");
@@ -260,7 +260,7 @@ const EventEditDetailsForm = ({ event }: { event: EventCompleteData }) => {
         >;
         const formatted: Record<string, string> = {};
         Object.keys(fieldErrors).forEach(
-          (k) => (formatted[k] = fieldErrors[k]?.[0] || ""),
+          (k) => (formatted[k] = fieldErrors[k]?.[0] || "")
         );
         setErrors(formatted as Errors);
 

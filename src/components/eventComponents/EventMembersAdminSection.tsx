@@ -8,10 +8,10 @@ const EventMembersAdminSection = ({ eventId }: { eventId: string }) => {
       <div className="flex flex-col w-full max-w-6xl px-5 sm:px-10 md:px-18 py-10 md:py-14 gap-10 md:gap-12">
         <div className="flex flex-col gap-3">
           <h2 className="text-2xl md:text-3xl font-semibold text-white">
-            Members
+            Invite Members
           </h2>
           <div className="text-sm md:text-base text-white/70 leading-relaxed max-w-4xl">
-            Manage the members of your event.
+            Invite members to your event by email or link.
           </div>
         </div>
 

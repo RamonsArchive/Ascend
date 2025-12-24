@@ -27,7 +27,7 @@ const EventSettingsPage = async ({
   const hasPermissions = await assertEventAdminOrOwner(
     orgSlug,
     eventSlug,
-    userId,
+    userId
   );
   if (!hasPermissions) {
     return (
@@ -99,7 +99,6 @@ const EventSettingsPage = async ({
           }}
         />
         <EventMembersAdminSection eventId={event.id} />
-        {/* Add EventMembersAdminSection here later */}
       </div>
     </div>
   );

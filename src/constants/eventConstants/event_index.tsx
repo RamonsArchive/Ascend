@@ -1,10 +1,10 @@
 export const event_nav_links = (
   orgSlug: string,
   eventSlug: string,
-  hasPermissions: boolean,
+  hasPermissions: boolean
 ) => {
   const links = [
-    { label: "Event Home", href: `/app/orgs/${orgSlug}/events/${eventSlug}` },
+    { label: "Overview", href: `/app/orgs/${orgSlug}/events/${eventSlug}` },
     { label: "Info", href: `/app/orgs/${orgSlug}/events/${eventSlug}/info` },
     { label: "Teams", href: `/app/orgs/${orgSlug}/events/${eventSlug}/teams` },
     {

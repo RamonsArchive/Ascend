@@ -3,27 +3,15 @@
 import React, { useRef, useState, useActionState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { useGSAP } from "@gsap/react";
-import gsap from "gsap";
-import SplitText from "gsap/SplitText";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 import type { ActionState } from "@/src/lib/global_types";
 import { parseServerActionResponse } from "@/src/lib/utils";
 import { createEventInviteEmailClientSchema } from "@/src/lib/validation";
 import { createEventEmailInvite } from "@/src/actions/event_invites_actions";
 
-gsap.registerPlugin(ScrollTrigger, SplitText);
-
 const initialState: ActionState = { status: "INITIAL", error: "", data: null };
 
 const EventEmailInviteForm = ({ eventId }: { eventId: string }) => {
-  const submitButtonRef = useRef<HTMLButtonElement>(null);
-
-  const emailLabelRef = useRef<HTMLLabelElement>(null);
-  const messageLabelRef = useRef<HTMLLabelElement>(null);
-  const expiresInMinutesLabelRef = useRef<HTMLLabelElement>(null);
-
   const [statusMessage, setStatusMessage] = useState("");
 
   const [formData, setFormData] = useState(() => ({
@@ -38,70 +26,6 @@ const EventEmailInviteForm = ({ eventId }: { eventId: string }) => {
     minutesToExpire?: string;
   }>({});
 
-  useGSAP(() => {
-    let cleanup: undefined | (() => void);
-
-    const init = () => {
-      if (
-        !emailLabelRef.current ||
-        !messageLabelRef.current ||
-        !expiresInMinutesLabelRef.current ||
-        !submitButtonRef.current
-      ) {
-        requestAnimationFrame(init);
-        return;
-      }
-
-      const triggerEl = document.getElementById("event-email-invite-form");
-      if (!triggerEl) {
-        requestAnimationFrame(init);
-        return;
-      }
-
-      const splits = [
-        new SplitText(emailLabelRef.current, { type: "words" }),
-        new SplitText(messageLabelRef.current, { type: "words" }),
-        new SplitText(expiresInMinutesLabelRef.current, { type: "words" }),
-      ];
-
-      const allLabels = splits.flatMap((s) => s.words);
-      const allInputs = [
-        submitButtonRef.current,
-        ...Array.from(triggerEl.querySelectorAll("input, textarea, select")),
-      ] as HTMLElement[];
-
-      gsap.set(allLabels, { opacity: 0, y: 48 });
-      gsap.set(allInputs, { opacity: 0, y: 48 });
-
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: triggerEl,
-          start: "top 85%",
-          end: "top 40%",
-          scrub: 1,
-        },
-        defaults: { ease: "power3.out", duration: 0.6 },
-      });
-
-      tl.to(allLabels, { opacity: 1, y: 0, stagger: 0.02 }, 0).to(
-        allInputs,
-        { opacity: 1, y: 0, stagger: 0.04 },
-        0.05,
-      );
-
-      requestAnimationFrame(() => ScrollTrigger.refresh());
-
-      cleanup = () => {
-        tl.scrollTrigger?.kill();
-        tl.kill();
-        splits.forEach((s) => s.revert());
-      };
-    };
-
-    init();
-    return () => cleanup?.();
-  }, []);
-
   const clearForm = () => {
     setFormData({ email: "", message: "", minutesToExpire: "10080" });
     setErrors({});
@@ -110,7 +34,7 @@ const EventEmailInviteForm = ({ eventId }: { eventId: string }) => {
 
   const submit = async (
     _state: ActionState,
-    _fd: FormData,
+    _fd: FormData
   ): Promise<ActionState> => {
     try {
       void _state;
@@ -200,10 +124,7 @@ const EventEmailInviteForm = ({ eventId }: { eventId: string }) => {
         className="flex flex-col gap-6 md:gap-8"
       >
         <div className="flex flex-col gap-2">
-          <label
-            ref={emailLabelRef}
-            className="text-xs md:text-sm text-white/75 flex items-center gap-1"
-          >
+          <label className="text-xs md:text-sm text-white/75 flex items-center gap-1">
             Invite by email
             <span className="text-xs text-red-500">*</span>
           </label>
@@ -221,10 +142,7 @@ const EventEmailInviteForm = ({ eventId }: { eventId: string }) => {
         </div>
 
         <div className="flex flex-col gap-2">
-          <label
-            ref={expiresInMinutesLabelRef}
-            className="text-xs md:text-sm text-white/75"
-          >
+          <label className="text-xs md:text-sm text-white/75">
             Minutes to expire (optional)
           </label>
 
@@ -252,10 +170,7 @@ const EventEmailInviteForm = ({ eventId }: { eventId: string }) => {
         </div>
 
         <div className="flex flex-col gap-2">
-          <label
-            ref={messageLabelRef}
-            className="text-xs md:text-sm text-white/75"
-          >
+          <label className="text-xs md:text-sm text-white/75">
             Message (optional)
           </label>
           <textarea
@@ -275,7 +190,6 @@ const EventEmailInviteForm = ({ eventId }: { eventId: string }) => {
           <button
             type="submit"
             disabled={isPending}
-            ref={submitButtonRef}
             className="w-full max-w-sm px-5 py-3 rounded-2xl cursor-pointer bg-white text-primary-950 font-semibold text-sm md:text-base transition-opacity hover:opacity-90 disabled:opacity-60"
           >
             {isPending ? "Sending..." : "Send invite"}
