@@ -2,7 +2,6 @@ import React from "react";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/src/lib/prisma";
 import PublicOrgHero from "@/src/components/orgComponents/PublicOrgHero";
-import { getCachedSession } from "@/src/lib/cached-auth";
 import Link from "next/link";
 import { fetchOrgSponsors } from "@/src/actions/org_sponsor_actions";
 import { fetchAllOrgEvents } from "@/src/actions/event_actions";
@@ -16,6 +15,8 @@ import type {
   PublicOrgSponsor,
   OrgMember,
 } from "@/src/lib/global_types";
+import { auth } from "@/src/lib/auth";
+import { headers } from "next/headers";
 
 const PublicOrgPage = async ({
   params,
@@ -23,7 +24,7 @@ const PublicOrgPage = async ({
   params: Promise<{ orgSlug: string }>;
 }) => {
   const { orgSlug } = await params;
-  const session = await getCachedSession();
+  const session = await auth.api.getSession({ headers: await headers() });
   const userId = session?.user?.id ?? null;
 
   const org = await prisma.organization.findUnique({

@@ -6,7 +6,10 @@ const EventsHero = () => {
   const { header } = global_events_data;
   return (
     <section className="flex flex-col items-center justify-center w-full">
-      <div className="flex flex-col w-full max-w-6xl px-5 sm:px-10 md:px-18 pt-10 md:pt-14 gap-6 md:gap-7">
+      <div className="flex flex-col w-full max-w-6xl px-5 sm:px-10 md:px-18 py-12 md:py-16 gap-6 md:gap-8">
+        <div className="text-xs md:text-sm text-white/60 font-medium">
+          Events
+        </div>
         <div className="flex flex-col gap-3">
           <h1 className="text-3xl md:text-5xl font-semibold text-white leading-tight">
             {header.title}

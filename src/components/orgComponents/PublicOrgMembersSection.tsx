@@ -21,7 +21,8 @@ const PublicOrgMembersSection = ({ members }: { members: OrgMember[] }) => {
       // Public version: you likely only have userId + role on OrgMembership.
       // Search supports userId (safe + available) until you add user include/name.
       const matchesQuery = q
-        ? (m.userId ?? "").toLowerCase().includes(q)
+        ? (m.user.name ?? "").toLowerCase().includes(q) ||
+          (m.user.email ?? "").toLowerCase().includes(q)
         : true;
 
       return matchesRole && matchesQuery;
@@ -54,7 +55,7 @@ const PublicOrgMembersSection = ({ members }: { members: OrgMember[] }) => {
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search by user id…"
+                  placeholder="Search by name or email..."
                   className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
                 />
               </div>

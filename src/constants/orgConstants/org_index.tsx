@@ -177,7 +177,13 @@ export const org_nav_links = (orgSlug: string, hasPermissions: boolean) => {
 
   return hasPermissions
     ? links
-    : links.filter((l) => l.label !== "Settings" && l.label !== "Sponsors");
+    : links.filter(
+        (l) =>
+          l.label !== "Settings" &&
+          l.label !== "Sponsors" &&
+          l.label !== "Members" &&
+          l.label !== "Events"
+      );
 };
 
 export const JOIN_MODE_OPTIONS: Array<{

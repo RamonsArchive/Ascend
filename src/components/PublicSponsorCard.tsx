@@ -80,10 +80,10 @@ const PublicSponsorCard = ({
             className="object-cover opacity-85 group-hover:opacity-95 transition-opacity duration-200"
           />
         ) : (
-          <div className="absolute inset-0 bg-linear-to-br from-secondary-500/20 via-primary-950 to-primary-950" />
+          <div className="absolute inset-0 bg-linear-to-b from-black/10 via-transparent to-primary-950/40" />
         )}
 
-        <div className="absolute inset-0 bg-linear-to-t from-primary-950 via-primary-950/35 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-t from-primary-950 via-primary-950/30 to-transparent" />
 
         {/* Tier badge */}
         <div className="absolute top-3 left-3">

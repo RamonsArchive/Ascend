@@ -3,6 +3,9 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Organization, OrgRole } from "@prisma/client";
 import { s3KeyToPublicUrl } from "@/src/lib/s3-client";
+import ReactMarkdown from "react-markdown";
+import rehypeSanitize from "rehype-sanitize";
+import remarkGfm from "remark-gfm";
 
 const PublicOrgHero = ({
   org,
@@ -60,7 +63,22 @@ const PublicOrgHero = ({
                     {org.name}
                   </h1>
                   <div className="text-white/70 text-sm md:text-base leading-relaxed max-w-3xl">
-                    {org.description || "Organization on Ascend."}
+                    {org.description ? (
+                      <div className="max-w-3xl">
+                        <div className="prose prose-invert max-w-none prose-p:text-white/70 prose-a:text-accent-400 prose-strong:text-white prose-li:text-white/70 prose-headings:text-white">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            rehypePlugins={[rehypeSanitize]}
+                          >
+                            {org.description}
+                          </ReactMarkdown>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-white/60 text-sm md:text-base leading-relaxed max-w-3xl">
+                        Organization on Ascend.
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

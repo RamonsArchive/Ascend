@@ -35,15 +35,15 @@ const PublicEventCard = ({ event }: { event: PublicEventListItem }) => {
 
   const coverUrl = useMemo(() => {
     if (!event.coverKey) return null;
-    // If coverKey is already a URL in your DB, you can just return event.coverKey.
     return s3KeyToPublicUrl(event.coverKey) as string;
   }, [event.coverKey]);
 
   return (
     <Link
       href={`/events/${event.slug}`}
-      className="group w-full rounded-3xl border border-white/10 bg-white/4 hover:bg-white/6 transition-colors duration-200 overflow-hidden hover:border-accent-100"
+      className="group w-full rounded-3xl overflow-hidden border border-white/10 bg-primary-950/70 hover:bg-primary-950 transition-colors duration-200 hover:border-accent-100"
     >
+      {/* EXACT HERO-STYLE COVER BLEND */}
       <div className="relative w-full h-[160px] bg-black/40">
         {coverUrl ? (
           <Image
@@ -57,7 +57,8 @@ const PublicEventCard = ({ event }: { event: PublicEventListItem }) => {
           <div className="absolute inset-0 bg-linear-to-br from-secondary-500/20 via-primary-950 to-primary-950" />
         )}
 
-        <div className="absolute inset-0 bg-linear-to-t from-primary-950 via-primary-950/35 to-transparent" />
+        {/* this is the SAME overlay you use in PublicOrgHero */}
+        <div className="absolute inset-0 bg-linear-to-t from-primary-950 via-primary-950/30 to-transparent" />
 
         <div className="absolute top-3 left-3 flex items-center gap-2">
           <div className="px-2.5 py-1 rounded-full text-xs font-medium bg-black/40 backdrop-blur-sm text-white/90 border border-white/10">
