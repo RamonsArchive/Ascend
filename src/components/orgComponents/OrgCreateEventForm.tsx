@@ -26,7 +26,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
   const router = useRouter();
   const allowedImageMimeTypes = useMemo(
     () => new Set(["image/png", "image/jpeg", "image/webp"]),
-    [],
+    []
   );
 
   const coverRef = useRef<HTMLInputElement>(null);
@@ -126,7 +126,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
 
   const submitCreateEvent = async (
     _state: ActionState,
-    _fd: FormData,
+    _fd: FormData
   ): Promise<ActionState> => {
     try {
       void _state;
@@ -221,7 +221,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
       fd.set("allowSelfJoinRequests", parsed.allowSelfJoinRequests ? "1" : "0");
       fd.set(
         "lockTeamChangesAtStart",
-        parsed.lockTeamChangesAtStart ? "1" : "0",
+        parsed.lockTeamChangesAtStart ? "1" : "0"
       );
       fd.set("requireImages", parsed.requireImages ? "1" : "0");
       fd.set("requireVideoDemo", parsed.requireVideoDemo ? "1" : "0");
@@ -241,7 +241,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
       clearForm();
       // push to new event page settings
       const slug = (result.data as { slug: string }).slug;
-      router.push(`app/orgs/${orgSlug}/events/${slug}/settings`);
+      router.push(`${slug}/settings`);
       return result;
     } catch (error) {
       console.error(error);
@@ -287,7 +287,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
 
   const [, formAction, isPending] = useActionState(
     submitCreateEvent,
-    initialState,
+    initialState
   );
 
   return (

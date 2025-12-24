@@ -8,8 +8,6 @@ import { fetchAllOrganizations } from "@/src/actions/org_actions";
 import { OrgListItem, PublicEventListItem } from "@/src/lib/global_types";
 
 const EventsPage = async () => {
-  // fetch all events on the server here and pass them to the components
-  // right now just use the mock events
   const eventsRes = await fetchAllEvents(12);
   const orgsRes = await fetchAllOrganizations();
 
