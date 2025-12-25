@@ -4,13 +4,15 @@ import { redirect } from "next/navigation";
 import {
   assertEventAdminOrOwner,
   fetchEventCompleteData,
+  fetchEventMembersAdminData,
 } from "@/src/actions/event_actions";
 import Link from "next/link";
 import EventSettingsHero from "@/src/components/eventComponents/EventSettingsHero";
-import EventEditDetails from "@/src/components/eventComponents/EventEditDetails";
-import EventEditTeam from "@/src/components/eventComponents/EventEditTeam";
-import { EventCompleteData } from "@/src/lib/global_types";
-import EventMembersAdminSection from "@/src/components/eventComponents/EventMembersAdminSection";
+import {
+  EventCompleteData,
+  EventMembersAdminData,
+} from "@/src/lib/global_types";
+import EventSettingsClient from "@/src/components/eventComponents/EventSettingsClient";
 
 const EventSettingsPage = async ({
   params,
@@ -82,23 +84,28 @@ const EventSettingsPage = async ({
   }
 
   const event = eventData.data as EventCompleteData;
+  const membersRes = await fetchEventMembersAdminData(
+    orgSlug,
+    eventSlug,
+    event.id
+  );
+  console.log(membersRes);
+  const membersAdminData =
+    membersRes.status === "SUCCESS"
+      ? (membersRes.data as EventMembersAdminData)
+      : null;
+  console.log(membersAdminData);
 
   return (
     <div className="relative w-full min-h-[calc(100vh-48px)]">
       <div className="absolute inset-0 pointer-events-none marketing-bg" />
       <div className="relative flex flex-col items-center justify-center w-full gap-12 md:gap-16 lg:gap-20">
         <EventSettingsHero event={event} />
-        <EventEditDetails event={event} />
-        <EventEditTeam
-          eventId={event.id}
-          orgId={event.orgId ?? ""}
-          defaults={{
-            maxTeamSize: event.maxTeamSize ?? 5,
-            lockTeamChangesAtStart: event.lockTeamChangesAtStart ?? false,
-            allowSelfJoinRequests: event.allowSelfJoinRequests ?? false,
-          }}
+        <EventSettingsClient
+          orgSlug={orgSlug}
+          event={event}
+          membersAdminData={membersAdminData}
         />
-        <EventMembersAdminSection eventId={event.id} />
       </div>
     </div>
   );

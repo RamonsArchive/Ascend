@@ -222,3 +222,56 @@ export type EventCompleteData = {
     members: number;
   };
 };
+
+export type EventMembersAdminData = {
+  eventId: string;
+  teams: Array<{
+    id: string;
+    name: string;
+    track: string | null;
+    lookingForMembers: boolean;
+    createdAt: string;
+    members: Array<{
+      id: string; // TeamMember.id
+      userId: string;
+      role: "LEADER" | "MEMBER";
+      user: {
+        id: string;
+        name: string | null;
+        email: string;
+        image: string | null;
+      };
+    }>;
+  }>;
+  unassigned: Array<{
+    id: string; // EventParticipant.id
+    userId: string;
+    status: string; // ParticipantStatus
+    lookingForTeam: boolean;
+    user: {
+      id: string;
+      name: string | null;
+      email: string;
+      image: string | null;
+    };
+  }>;
+};
+
+export type UnassignedMember = {
+  id: string; // EventParticipant.id
+  userId: string;
+  status: string;
+  lookingForTeam: boolean;
+  user: {
+    id: string;
+    name: string | null;
+    email: string;
+    image: string | null;
+  };
+};
+
+export type EventSettingsView =
+  | "DETAILS"
+  | "TEAM_RULES"
+  | "INVITES"
+  | "MEMBERS";

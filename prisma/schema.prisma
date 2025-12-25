@@ -35,7 +35,7 @@ model User {
   teamAuditTarget        TeamAuditLog[]             @relation("TeamAuditTarget")
   teamInvitesCreated     TeamInvite[]               @relation("TeamInviteCreator")
   teamJoinRequests       TeamJoinRequest[]
-  teams                  TeamMember[]
+  teamMembers            TeamMember[]
   accounts               Account[]
   sessions               Session[]
 

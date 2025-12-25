@@ -83,8 +83,6 @@ const EventEditDetailsForm = ({ event }: { event: EventCompleteData }) => {
 
     maxTeamSize: event.maxTeamSize ?? 5,
 
-    allowSelfJoinRequests: !!event.allowSelfJoinRequests,
-    lockTeamChangesAtStart: !!event.lockTeamChangesAtStart,
     requireImages: !!event.requireImages,
     requireVideoDemo: !!event.requireVideoDemo,
   }));
@@ -151,8 +149,6 @@ const EventEditDetailsForm = ({ event }: { event: EventCompleteData }) => {
 
         maxTeamSize: Number(formData.maxTeamSize),
 
-        allowSelfJoinRequests: formData.allowSelfJoinRequests,
-        lockTeamChangesAtStart: formData.lockTeamChangesAtStart,
         requireImages: formData.requireImages,
         requireVideoDemo: formData.requireVideoDemo,
 
@@ -224,14 +220,6 @@ const EventEditDetailsForm = ({ event }: { event: EventCompleteData }) => {
 
       fd.set("maxTeamSize", String(Number(formData.maxTeamSize) || 5));
 
-      fd.set(
-        "allowSelfJoinRequests",
-        formData.allowSelfJoinRequests ? "1" : "0"
-      );
-      fd.set(
-        "lockTeamChangesAtStart",
-        formData.lockTeamChangesAtStart ? "1" : "0"
-      );
       fd.set("requireImages", formData.requireImages ? "1" : "0");
       fd.set("requireVideoDemo", formData.requireVideoDemo ? "1" : "0");
 
@@ -473,26 +461,39 @@ const EventEditDetailsForm = ({ event }: { event: EventCompleteData }) => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-          {[
-            ["allowSelfJoinRequests", "Allow join requests"],
-            ["lockTeamChangesAtStart", "Lock team changes at start"],
-            ["requireImages", "Require images"],
-            ["requireVideoDemo", "Require video demo"],
-          ].map(([k, label]) => (
-            <button
-              key={k}
-              type="button"
-              onClick={() =>
-                setFormData((p) => ({ ...p, [k]: !(p as any)[k] }))
-              }
-              className="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition-colors text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] text-left"
-            >
-              <span className="font-semibold text-white">{label}</span>
-              <span className="ml-2 text-white/60 text-xs">
-                {(formData as any)[k] ? "On" : "Off"}
-              </span>
-            </button>
-          ))}
+          {(
+            [
+              ["requireImages", "Require images"],
+              ["requireVideoDemo", "Require video demo"],
+            ] as const
+          ).map(([k, label]) => {
+            const checked = Boolean((formData as any)[k]);
+
+            return (
+              <label
+                key={k}
+                className="flex items-center justify-between gap-4 rounded-2xl bg-white/5 border border-white/10 px-4 py-3 cursor-pointer hover:bg-white/10 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+              >
+                <div className="flex flex-col gap-1">
+                  <div className="font-semibold text-white text-sm md:text-base">
+                    {label}
+                  </div>
+                  <div className="text-white/60 text-xs md:text-sm">
+                    {checked ? "On" : "Off"}
+                  </div>
+                </div>
+
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={(e) =>
+                    setFormData((p) => ({ ...p, [k]: e.target.checked }))
+                  }
+                  className="h-4 w-4"
+                />
+              </label>
+            );
+          })}
         </div>
 
         <div className="flex w-full justify-center">

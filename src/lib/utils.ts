@@ -14,7 +14,7 @@ export const parseServerActionResponse = <T>(response: T): T => {
 export const updatePhoneNumber = (
   value: string,
   phoneNumber: string,
-  setPhoneNumber: (value: string) => void,
+  setPhoneNumber: (value: string) => void
 ) => {
   // If the user is backspacing and hit a dash, remove the digit before the dash
   const prevLength = phoneNumber.length;
@@ -44,7 +44,7 @@ export const updatePhoneNumber = (
   if (cleanedValue.length >= 6) {
     formattedValue = `${cleanedValue.slice(0, 3)}-${cleanedValue.slice(
       3,
-      6,
+      6
     )}-${cleanedValue.slice(6, 10)}`;
   } else if (cleanedValue.length >= 3) {
     formattedValue = `${cleanedValue.slice(0, 3)}-${cleanedValue.slice(3)}`;
@@ -85,7 +85,7 @@ export function formatDate(date: string | Date | null | undefined): string {
 
 export function formatDateRange(
   startAt: Date | string | null | undefined,
-  endAt: Date | string | null | undefined,
+  endAt: Date | string | null | undefined
 ) {
   const toValidDate = (v: Date | string | null | undefined) => {
     if (!v) return null;
@@ -123,7 +123,7 @@ const DEFAULT_ALLOWED_IMAGE_MIME_TYPES = new Set([
  */
 export function isAllowedImageFile(
   file: File | null | undefined,
-  allowedMimeTypes: Set<string> = DEFAULT_ALLOWED_IMAGE_MIME_TYPES,
+  allowedMimeTypes: Set<string> = DEFAULT_ALLOWED_IMAGE_MIME_TYPES
 ) {
   if (!file) return false;
   return allowedMimeTypes.has(file.type);
@@ -137,7 +137,7 @@ export function getFileExtension(filename: string) {
 
 export function isUnderFileSize(
   file: File | null | undefined,
-  maxBytes: number,
+  maxBytes: number
 ) {
   if (!file) return false;
   return file.size <= maxBytes;
@@ -201,7 +201,7 @@ export function parseOptionalDateFromMinutes(minutesStr: string | null) {
 }
 
 export function statusPill(
-  status: "PENDING" | "ACCEPTED" | "DECLINED" | "CANCELLED",
+  status: "PENDING" | "ACCEPTED" | "DECLINED" | "CANCELLED"
 ) {
   // same palette vibes as your app: whites, subtle borders
   switch (status) {
@@ -217,7 +217,7 @@ export function statusPill(
 }
 
 export function statusLabel(
-  status: "PENDING" | "ACCEPTED" | "DECLINED" | "CANCELLED",
+  status: "PENDING" | "ACCEPTED" | "DECLINED" | "CANCELLED"
 ) {
   switch (status) {
     case "PENDING":
@@ -319,3 +319,13 @@ export const getBaseUrl = () => {
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "")
   );
 };
+
+export function statusBadgeClasses(status: string) {
+  const s = (status || "").toUpperCase();
+  if (s === "REGISTERED")
+    return "bg-emerald-400/15 text-emerald-200 border-emerald-400/20";
+  if (s === "WAITLISTED")
+    return "bg-amber-400/15 text-amber-200 border-amber-400/20";
+  if (s === "CANCELLED") return "bg-red-400/15 text-red-200 border-red-400/20";
+  return "bg-white/5 text-white/70 border-white/10";
+}

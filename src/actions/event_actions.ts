@@ -24,8 +24,14 @@ import {
   updateEventDetailsServerSchema,
   updateEventTeamSettingsClientSchema,
 } from "@/src/lib/validation";
+import {
+  removeEventTeamClientSchema,
+  removeEventTeamMemberClientSchema,
+  removeEventParticipantClientSchema,
+} from "@/src/lib/validation";
+
 export const fetchAllEvents = async (
-  limit: number = 12,
+  limit: number = 12
 ): Promise<ActionState> => {
   try {
     const isRateLimited = await checkRateLimit("fetchAllEvents");
@@ -76,7 +82,7 @@ export const fetchAllEvents = async (
 
 export const fetchEventData = async (
   orgSlug: string,
-  eventSlug: string,
+  eventSlug: string
 ): Promise<ActionState> => {
   try {
     const isRateLimited = await checkRateLimit("fetchEventData");
@@ -134,7 +140,7 @@ export const fetchEventData = async (
 export const assertEventAdminOrOwner = async (
   orgSlug: string,
   eventSlug: string,
-  userId: string,
+  userId: string
 ): Promise<ActionState> => {
   try {
     const isRateLimited = await checkRateLimit("assertEventAdminOrOwner");
@@ -200,7 +206,7 @@ export const assertEventAdminOrOwner = async (
 export const assertEventAdminOrOwnerWithId = async (
   orgId: string,
   eventId: string,
-  userId: string,
+  userId: string
 ): Promise<ActionState> => {
   try {
     const isRateLimited = await checkRateLimit("assertEventAdminOrOwnerWithId");
@@ -279,7 +285,7 @@ export const fetchAllOrgEvents = async (orgSlug: string) => {
 
 export const fetchEventCompleteData = async (
   orgSlug: string,
-  eventSlug: string,
+  eventSlug: string
 ): Promise<ActionState> => {
   try {
     const isRateLimited = await checkRateLimit("fetchEventCompleteData");
@@ -377,7 +383,7 @@ export const fetchEventCompleteData = async (
 
 export const updateEventDetails = async (
   _state: ActionState,
-  fd: FormData,
+  fd: FormData
 ): Promise<ActionState> => {
   try {
     void _state;
@@ -424,10 +430,6 @@ export const updateEventDetails = async (
 
       maxTeamSize: Number(fd.get("maxTeamSize") ?? 5),
 
-      allowSelfJoinRequests:
-        String(fd.get("allowSelfJoinRequests") ?? "0") === "1",
-      lockTeamChangesAtStart:
-        String(fd.get("lockTeamChangesAtStart") ?? "0") === "1",
       requireImages: String(fd.get("requireImages") ?? "0") === "1",
       requireVideoDemo: String(fd.get("requireVideoDemo") ?? "0") === "1",
 
@@ -445,7 +447,7 @@ export const updateEventDetails = async (
     const perm = await assertEventAdminOrOwnerWithId(
       parsed.orgId,
       parsed.eventId,
-      userId,
+      userId
     );
     if (perm.status === "ERROR") return perm as ActionState;
 
@@ -516,8 +518,6 @@ export const updateEventDetails = async (
         endAt,
         submitDueAt,
         maxTeamSize: parsed.maxTeamSize,
-        allowSelfJoinRequests: parsed.allowSelfJoinRequests,
-        lockTeamChangesAtStart: parsed.lockTeamChangesAtStart,
         requireImages: parsed.requireImages,
         requireVideoDemo: parsed.requireVideoDemo,
         ...(nextCoverKey !== undefined ? { coverKey: nextCoverKey } : {}),
@@ -557,7 +557,7 @@ export const updateEventDetails = async (
 
 export const updateEventTeamSettings = async (
   _prev: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -614,7 +614,7 @@ export const updateEventTeamSettings = async (
     const perms = await assertEventAdminOrOwnerWithId(
       event.orgId,
       event.id,
-      session.user.id,
+      session.user.id
     );
     if (perms.status === "ERROR") return perms as ActionState;
 
@@ -646,6 +646,268 @@ export const updateEventTeamSettings = async (
     return parseServerActionResponse({
       status: "ERROR",
       error: "Failed to update team settings",
+      data: null,
+    }) as ActionState;
+  }
+};
+
+export const fetchEventMembersAdminData = async (
+  orgSlug: string,
+  eventSlug: string,
+  eventId: string
+): Promise<ActionState> => {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user?.id) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "MUST BE LOGGED IN",
+        data: null,
+      }) as ActionState;
+    }
+
+    const isRateLimited = await checkRateLimit("fetchEventMembersAdminData");
+    if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
+
+    const perms = await assertEventAdminOrOwner(
+      orgSlug,
+      eventSlug,
+      session.user.id
+    );
+    if (perms.status === "ERROR") return perms as ActionState;
+
+    const teams = await prisma.team.findMany({
+      where: { eventId },
+      orderBy: { createdAt: "asc" },
+      select: {
+        id: true,
+        name: true,
+        track: true,
+        lookingForMembers: true,
+        createdAt: true,
+        members: {
+          orderBy: { role: "asc" }, // LEADER first if enum orders that way; else sort client-side
+          select: {
+            id: true,
+            userId: true,
+            role: true,
+            user: {
+              select: { id: true, name: true, email: true, image: true },
+            },
+          },
+        },
+      },
+    });
+
+    // participants not on any team
+    const unassigned = await prisma.eventParticipant.findMany({
+      where: {
+        eventId,
+        user: {
+          eventParticipants: { none: { eventId } }, // relies on User.eventParticipants relation existing
+        },
+      },
+      orderBy: { createdAt: "asc" },
+      select: {
+        id: true,
+        userId: true,
+        status: true,
+        lookingForTeam: true,
+        user: { select: { id: true, name: true, email: true, image: true } },
+      },
+    });
+
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data: {
+        eventId,
+        teams: teams.map((t) => ({
+          ...t,
+          createdAt: t.createdAt.toISOString(),
+        })),
+        unassigned,
+      },
+    }) as ActionState;
+  } catch (e) {
+    console.error(e);
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to load members",
+      data: null,
+    }) as ActionState;
+  }
+};
+
+export const removeEventTeam = async (
+  orgSlug: string,
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> => {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user?.id)
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "MUST BE LOGGED IN",
+        data: null,
+      }) as ActionState;
+
+    const isRateLimited = await checkRateLimit("removeEventTeam");
+    if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
+
+    const parsed = await removeEventTeamClientSchema.parseAsync({
+      eventId: formData.get("eventId")?.toString() ?? "",
+      teamId: formData.get("teamId")?.toString() ?? "",
+    });
+
+    const perms = await assertEventAdminOrOwnerWithId(
+      orgSlug,
+      parsed.eventId,
+      session.user.id
+    );
+    if (perms.status === "ERROR") return perms as ActionState;
+
+    // deleting team cascades TeamMember via onDelete: Cascade on TeamMember.team relation
+    await prisma.team.delete({ where: { id: parsed.teamId } });
+
+    updateTag(`event-members-${parsed.eventId}`);
+
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data: { teamId: parsed.teamId },
+    }) as ActionState;
+  } catch (e) {
+    console.error(e);
+    if (e instanceof z.ZodError) {
+      const msg = Object.values(z.flattenError(e).fieldErrors)
+        .flat()
+        .filter(Boolean)
+        .join(", ");
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: msg || "Invalid input",
+        data: null,
+      }) as ActionState;
+    }
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to delete team",
+      data: null,
+    }) as ActionState;
+  }
+};
+
+export const removeEventTeamMember = async (
+  orgSlug: string,
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> => {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user?.id)
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "MUST BE LOGGED IN",
+        data: null,
+      }) as ActionState;
+
+    const isRateLimited = await checkRateLimit("removeEventTeamMember");
+    if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
+
+    const parsed = await removeEventTeamMemberClientSchema.parseAsync({
+      eventId: formData.get("eventId")?.toString() ?? "",
+      teamMemberId: formData.get("teamMemberId")?.toString() ?? "",
+    });
+
+    const perms = await assertEventAdminOrOwnerWithId(
+      orgSlug,
+      parsed.eventId,
+      session.user.id
+    );
+    if (perms.status === "ERROR") return perms as ActionState;
+
+    await prisma.teamMember.delete({ where: { id: parsed.teamMemberId } });
+
+    updateTag(`event-members-${parsed.eventId}`);
+
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data: { teamMemberId: parsed.teamMemberId },
+    }) as ActionState;
+  } catch (e) {
+    console.error(e);
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to remove member from team",
+      data: null,
+    }) as ActionState;
+  }
+};
+
+export const removeEventParticipant = async (
+  orgSlug: string,
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> => {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user?.id)
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "MUST BE LOGGED IN",
+        data: null,
+      }) as ActionState;
+
+    const isRateLimited = await checkRateLimit("removeEventParticipant");
+    if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
+
+    const parsed = await removeEventParticipantClientSchema.parseAsync({
+      eventId: formData.get("eventId")?.toString() ?? "",
+      participantId: formData.get("participantId")?.toString() ?? "",
+    });
+
+    const perms = await assertEventAdminOrOwner(
+      orgSlug,
+      parsed.eventId,
+      session.user.id
+    );
+    if (perms.status === "ERROR") return perms as ActionState;
+
+    // also remove any TeamMember rows for that user in this event
+    const participant = await prisma.eventParticipant.findUnique({
+      where: { id: parsed.participantId },
+      select: { userId: true, eventId: true },
+    });
+    if (!participant || participant.eventId !== parsed.eventId) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "PARTICIPANT_NOT_FOUND",
+        data: null,
+      }) as ActionState;
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.teamMember.deleteMany({
+        where: { eventId: parsed.eventId, userId: participant.userId },
+      });
+      await tx.eventParticipant.delete({ where: { id: parsed.participantId } });
+    });
+
+    updateTag(`event-members-${parsed.eventId}`);
+
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data: { participantId: parsed.participantId },
+    }) as ActionState;
+  } catch (e) {
+    console.error(e);
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to remove participant",
       data: null,
     }) as ActionState;
   }
