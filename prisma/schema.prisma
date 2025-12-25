@@ -191,6 +191,12 @@ model Event {
   status                 EventStatus                @default(DRAFT)
   heroTitle              String
   heroSubtitle           String?
+  locationName           String?                    @default("")   // "UCSD Jacobs Hall"
+  locationAddress        String?                    @default("")   // "9500 Gilman Dr, La Jolla, CA 92093"
+  locationNotes          String?                    @default("")   // parking, room number, check-in info
+  locationMapUrl         String?                    @default("")   // "https://maps.app.goo.gl/1234567890"
+  locationLat            Float?                     @default(0)
+  locationLng            Float?                     @default(0)
   rulesRich              Json?
   rubricRich             Json?
   startAt                DateTime?

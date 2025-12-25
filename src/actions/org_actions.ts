@@ -22,7 +22,7 @@ import { TruckElectric } from "lucide-react";
 
 export const createOrganization = async (
   _prevState: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -354,7 +354,7 @@ export async function assertOrgAdminOrOwner(orgSlug: string, userId: string) {
 
 export const assertOrgAdminOrOwnerWithId = async (
   orgId: string,
-  userId: string,
+  userId: string
 ) => {
   try {
     const membership = await prisma.orgMembership.findUnique({
@@ -393,7 +393,7 @@ export const assertOrgAdminOrOwnerWithId = async (
 export const updateOrgJoinSettings = async (
   orgId: string,
   userId: string,
-  opts: { joinMode?: OrgJoinMode; allowJoinRequests?: boolean },
+  opts: { joinMode?: OrgJoinMode; allowJoinRequests?: boolean }
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -476,7 +476,7 @@ export async function isOrgOwner(orgId: string, userId: string) {
 
 export const createOrgEvent = async (
   _state: ActionState,
-  fd: FormData,
+  fd: FormData
 ): Promise<ActionState> => {
   try {
     void _state;
@@ -515,6 +515,24 @@ export const createOrgEvent = async (
       endAt: fd.get("endAt") ? String(fd.get("endAt")) : undefined,
       submitDueAt: fd.get("submitDueAt")
         ? String(fd.get("submitDueAt"))
+        : undefined,
+      locationName: fd.get("locationName")
+        ? String(fd.get("locationName"))
+        : undefined,
+      locationAddress: fd.get("locationAddress")
+        ? String(fd.get("locationAddress"))
+        : undefined,
+      locationNotes: fd.get("locationNotes")
+        ? String(fd.get("locationNotes"))
+        : undefined,
+      locationMapUrl: fd.get("locationMapUrl")
+        ? String(fd.get("locationMapUrl"))
+        : undefined,
+      rulesMarkdown: fd.get("rulesMarkdown")
+        ? String(fd.get("rulesMarkdown"))
+        : undefined,
+      rubricMarkdown: fd.get("rubricMarkdown")
+        ? String(fd.get("rubricMarkdown"))
         : undefined,
       maxTeamSize: fd.get("maxTeamSize") ?? "5",
       allowSelfJoinRequests: String(fd.get("allowSelfJoinRequests") ?? "1"),
@@ -583,6 +601,14 @@ export const createOrgEvent = async (
       }) as ActionState;
     }
 
+    const rulesRich = parsed.rulesRich
+      ? ({ type: "markdown", value: parsed.rulesRich } as const)
+      : null;
+
+    const rubricRich = parsed.rubricRich
+      ? ({ type: "markdown", value: parsed.rubricRich } as const)
+      : null;
+
     const regOpen = safeDate(parseDate(parsed.registrationOpensAt));
     const regClose = safeDate(parseDate(parsed.registrationClosesAt));
     const startAt = safeDate(parseDate(parsed.startAt));
@@ -621,6 +647,13 @@ export const createOrgEvent = async (
         startAt,
         endAt,
         submitDueAt,
+        locationName: parsed.locationName,
+        locationAddress: parsed.locationAddress,
+        locationNotes: parsed.locationNotes,
+        locationMapUrl: parsed.locationMapUrl,
+
+        rulesRich: rulesRich ?? undefined,
+        rubricRich: rubricRich ?? undefined,
         maxTeamSize: parsed.maxTeamSize,
         allowSelfJoinRequests: parsed.allowSelfJoinRequests === "1",
         lockTeamChangesAtStart: parsed.lockTeamChangesAtStart === "1",

@@ -5,6 +5,7 @@ import type {
   PublicEventListItem,
 } from "@/src/lib/global_types";
 import crypto from "crypto";
+import { z } from "zod";
 
 export const parseServerActionResponse = <T>(response: T): T => {
   return JSON.parse(JSON.stringify(response));
@@ -328,4 +329,30 @@ export function statusBadgeClasses(status: string) {
     return "bg-amber-400/15 text-amber-200 border-amber-400/20";
   if (s === "CANCELLED") return "bg-red-400/15 text-red-200 border-red-400/20";
   return "bg-white/5 text-white/70 border-white/10";
+}
+
+export const optionalTrimmed = (maxLength: number) =>
+  z.preprocess(
+    (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+    z.string().max(maxLength).optional()
+  );
+
+const httpUrl = z.url({ protocol: /^https?$/ });
+export const optionalUrl = z.preprocess(
+  (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+  httpUrl.optional()
+);
+
+// for markdown stored-as-json wrapper
+export const markdownRichSchema = z
+  .string()
+  .max(20000, "Content is too long.")
+  .optional()
+  .or(z.literal(""));
+
+export function getMarkdownFromRich(rich: unknown | null | undefined): string {
+  if (!rich) return "";
+  if (typeof rich === "object" && "type" in rich && rich.type === "markdown")
+    return (rich as { value?: string }).value ?? "";
+  return ""; // later: support tiptap/slate etc
 }

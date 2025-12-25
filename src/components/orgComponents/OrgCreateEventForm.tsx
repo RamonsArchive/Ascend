@@ -26,7 +26,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
   const router = useRouter();
   const allowedImageMimeTypes = useMemo(
     () => new Set(["image/png", "image/jpeg", "image/webp"]),
-    [],
+    []
   );
 
   const coverRef = useRef<HTMLInputElement>(null);
@@ -50,6 +50,12 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
     startAt: "",
     endAt: "",
     submitDueAt: "",
+    locationName: "",
+    locationAddress: "",
+    locationNotes: "",
+    locationMapUrl: "",
+    rulesMarkdown: "",
+    rubricMarkdown: "",
     maxTeamSize: "5",
     allowSelfJoinRequests: true,
     lockTeamChangesAtStart: true,
@@ -70,6 +76,12 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
     startAt?: string;
     endAt?: string;
     submitDueAt?: string;
+    locationName?: string;
+    locationAddress?: string;
+    locationNotes?: string;
+    locationMapUrl?: string;
+    rulesMarkdown?: string;
+    rubricMarkdown?: string;
     maxTeamSize?: string;
     coverFile?: string;
   }>({});
@@ -88,6 +100,12 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
       startAt: "",
       endAt: "",
       submitDueAt: "",
+      locationName: "",
+      locationAddress: "",
+      locationNotes: "",
+      locationMapUrl: "",
+      rulesMarkdown: "",
+      rubricMarkdown: "",
       maxTeamSize: "5",
       allowSelfJoinRequests: true,
       lockTeamChangesAtStart: true,
@@ -126,7 +144,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
 
   const submitCreateEvent = async (
     _state: ActionState,
-    _fd: FormData,
+    _fd: FormData
   ): Promise<ActionState> => {
     try {
       void _state;
@@ -150,6 +168,12 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
         startAt: formData.startAt || undefined,
         endAt: formData.endAt || undefined,
         submitDueAt: formData.submitDueAt || undefined,
+        locationName: formData.locationName || undefined,
+        locationAddress: formData.locationAddress || undefined,
+        locationNotes: formData.locationNotes || undefined,
+        locationMapUrl: formData.locationMapUrl || undefined,
+        rulesMarkdown: formData.rulesMarkdown || undefined,
+        rubricMarkdown: formData.rubricMarkdown || undefined,
         maxTeamSize: formData.maxTeamSize,
         allowSelfJoinRequests: formData.allowSelfJoinRequests,
         lockTeamChangesAtStart: formData.lockTeamChangesAtStart,
@@ -217,11 +241,21 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
       if (parsed.startAt) fd.set("startAt", parsed.startAt);
       if (parsed.endAt) fd.set("endAt", parsed.endAt);
       if (parsed.submitDueAt) fd.set("submitDueAt", parsed.submitDueAt);
+      if (parsed.locationName) fd.set("locationName", parsed.locationName);
+      if (parsed.locationAddress)
+        fd.set("locationAddress", parsed.locationAddress);
+      if (parsed.locationNotes) fd.set("locationNotes", parsed.locationNotes);
+      if (parsed.locationMapUrl)
+        fd.set("locationMapUrl", parsed.locationMapUrl);
+
+      if (parsed.rulesMarkdown) fd.set("rulesMarkdown", parsed.rulesMarkdown);
+      if (parsed.rubricMarkdown)
+        fd.set("rubricMarkdown", parsed.rubricMarkdown);
 
       fd.set("allowSelfJoinRequests", parsed.allowSelfJoinRequests ? "1" : "0");
       fd.set(
         "lockTeamChangesAtStart",
-        parsed.lockTeamChangesAtStart ? "1" : "0",
+        parsed.lockTeamChangesAtStart ? "1" : "0"
       );
       fd.set("requireImages", parsed.requireImages ? "1" : "0");
       fd.set("requireVideoDemo", parsed.requireVideoDemo ? "1" : "0");
@@ -287,7 +321,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
 
   const [, formAction, isPending] = useActionState(
     submitCreateEvent,
-    initialState,
+    initialState
   );
 
   return (
@@ -601,6 +635,156 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                   {errors.endAt}
                 </p>
               ) : null}
+            </div>
+          </div>
+          <div className="flex flex-col gap-3">
+            <div className="text-white/80 text-sm font-medium">Location</div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              <div className="flex flex-col gap-2">
+                <label className="text-xs md:text-sm text-white/75">
+                  Location name (optional)
+                </label>
+                <input
+                  value={formData.locationName}
+                  onChange={(e) =>
+                    setFormData((p) => ({ ...p, locationName: e.target.value }))
+                  }
+                  placeholder="UCSD Jacobs Hall"
+                  className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                />
+                {errors.locationName ? (
+                  <p className="text-red-500 text-xs md:text-sm">
+                    {errors.locationName}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-xs md:text-sm text-white/75">
+                  Map URL (optional)
+                </label>
+                <input
+                  value={formData.locationMapUrl}
+                  onChange={(e) =>
+                    setFormData((p) => ({
+                      ...p,
+                      locationMapUrl: e.target.value,
+                    }))
+                  }
+                  placeholder="https://maps.google.com/…"
+                  className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                />
+                {errors.locationMapUrl ? (
+                  <p className="text-red-500 text-xs md:text-sm">
+                    {errors.locationMapUrl}
+                  </p>
+                ) : null}
+                <div className="text-white/50 text-xs">
+                  Paste a Google Maps link. This will be shown on the event
+                  page.
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-xs md:text-sm text-white/75">
+                Address (optional)
+              </label>
+              <input
+                value={formData.locationAddress}
+                onChange={(e) =>
+                  setFormData((p) => ({
+                    ...p,
+                    locationAddress: e.target.value,
+                  }))
+                }
+                placeholder="9500 Gilman Dr, La Jolla, CA 92093"
+                className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+              />
+              {errors.locationAddress ? (
+                <p className="text-red-500 text-xs md:text-sm">
+                  {errors.locationAddress}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-xs md:text-sm text-white/75">
+                Location notes (optional)
+              </label>
+              <textarea
+                value={formData.locationNotes}
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, locationNotes: e.target.value }))
+                }
+                placeholder="Room number, parking instructions, check-in info…"
+                className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors min-h-[120px] resize-none shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+              />
+              {errors.locationNotes ? (
+                <p className="text-red-500 text-xs md:text-sm">
+                  {errors.locationNotes}
+                </p>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <div className="text-white/80 text-sm font-medium">
+              Rules & rubric
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              <div className="flex flex-col gap-2">
+                <label className="text-xs md:text-sm text-white/75">
+                  Rules (Markdown)
+                </label>
+                <textarea
+                  value={formData.rulesMarkdown}
+                  onChange={(e) =>
+                    setFormData((p) => ({
+                      ...p,
+                      rulesMarkdown: e.target.value,
+                    }))
+                  }
+                  placeholder={`## Rules\n- Be respectful\n- Teams up to 5\n\n## Schedule\n- Opening…`}
+                  className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors min-h-[240px] resize-none shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] font-mono"
+                />
+                {errors.rulesMarkdown ? (
+                  <p className="text-red-500 text-xs md:text-sm">
+                    {errors.rulesMarkdown}
+                  </p>
+                ) : null}
+                <div className="text-white/50 text-xs">
+                  Supports headings, lists, bold, links. This will render on the
+                  event page.
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-xs md:text-sm text-white/75">
+                  Rubric (Markdown)
+                </label>
+                <textarea
+                  value={formData.rubricMarkdown}
+                  onChange={(e) =>
+                    setFormData((p) => ({
+                      ...p,
+                      rubricMarkdown: e.target.value,
+                    }))
+                  }
+                  placeholder={`## Judging rubric\n- Innovation: 25%\n- Impact: 25%\n- Technical: 25%\n- Presentation: 25%`}
+                  className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors min-h-[240px] resize-none shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] font-mono"
+                />
+                {errors.rubricMarkdown ? (
+                  <p className="text-red-500 text-xs md:text-sm">
+                    {errors.rubricMarkdown}
+                  </p>
+                ) : null}
+                <div className="text-white/50 text-xs">
+                  How submissions will be scored (shown to participants).
+                </div>
+              </div>
             </div>
           </div>
 

@@ -1,5 +1,11 @@
 import { z } from "zod";
-import { TEN_MB, validateImageFile, slugRegex } from "./utils";
+import {
+  TEN_MB,
+  validateImageFile,
+  slugRegex,
+  markdownRichSchema,
+  optionalUrl,
+} from "./utils";
 import { OrgJoinMode } from "@prisma/client";
 
 const emptyToUndefined = (v: unknown) => {
@@ -499,6 +505,23 @@ export const createOrgEventClientSchema = z
     endAt: z.string().optional(),
     submitDueAt: z.string().optional(),
 
+    locationName: z.string().max(120, "Location name is too long.").optional(),
+    locationAddress: z
+      .string()
+      .max(240, "Location address is too long.")
+      .optional(),
+    locationNotes: z
+      .string()
+      .max(1000, "Location notes is too long.")
+      .optional(),
+    locationMapUrl: z
+      .string()
+      .url("Invalid map URL")
+      .optional()
+      .or(z.literal("")),
+    rulesMarkdown: markdownRichSchema,
+    rubricMarkdown: markdownRichSchema,
+
     maxTeamSize: z
       .string()
       .transform((v) => Number(v))
@@ -600,6 +623,18 @@ export const createOrgEventServerSchema = z.object({
   startAt: z.string().optional(),
   endAt: z.string().optional(),
   submitDueAt: z.string().optional(),
+  locationName: z.preprocess(emptyToUndefined, z.string().max(120).optional()),
+  locationAddress: z.preprocess(
+    emptyToUndefined,
+    z.string().max(240).optional()
+  ),
+  locationNotes: z.preprocess(
+    emptyToUndefined,
+    z.string().max(1000).optional()
+  ),
+  locationMapUrl: z.preprocess(emptyToUndefined, optionalUrl),
+  rulesRich: z.unknown().optional(), // we’ll build JSON server-side from markdown
+  rubricRich: z.unknown().optional(),
   maxTeamSize: z.coerce.number().int().min(1).max(50),
   allowSelfJoinRequests: z.enum(["0", "1"]),
   lockTeamChangesAtStart: z.enum(["0", "1"]),
@@ -627,6 +662,12 @@ export const editEventDetailsClientSchema = z.object({
   startAt: z.string().optional().or(z.literal("")),
   endAt: z.string().optional().or(z.literal("")),
   submitDueAt: z.string().optional().or(z.literal("")),
+  locationName: z.string().max(120).optional().or(z.literal("")),
+  locationAddress: z.string().max(240).optional().or(z.literal("")),
+  locationNotes: z.string().max(1000).optional().or(z.literal("")),
+  locationMapUrl: z.httpUrl().optional().or(z.literal("")),
+  rulesMarkdown: z.string().max(20000).optional().or(z.literal("")),
+  rubricMarkdown: z.string().max(20000).optional().or(z.literal("")),
 
   maxTeamSize: z.number().int().min(1).max(50),
 
@@ -657,6 +698,12 @@ export const updateEventDetailsServerSchema = z.object({
   startAt: z.string().optional(),
   endAt: z.string().optional(),
   submitDueAt: z.string().optional(),
+  locationName: z.string().max(120).optional().or(z.literal("")),
+  locationAddress: z.string().max(240).optional().or(z.literal("")),
+  locationNotes: z.string().max(1000).optional().or(z.literal("")),
+  locationMapUrl: z.httpUrl().optional().or(z.literal("")),
+  rulesMarkdown: z.string().max(20000).optional().or(z.literal("")),
+  rubricMarkdown: z.string().max(20000).optional().or(z.literal("")),
 
   maxTeamSize: z.number().int().min(1).max(50),
 
