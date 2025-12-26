@@ -1,7 +1,7 @@
 "use server";
 
 import { checkRateLimit } from "../lib/rate-limiter";
-import { parseServerActionResponse } from "../lib/utils";
+import { parseServerActionResponse, uniqueNames } from "../lib/utils";
 import { auth } from "../lib/auth";
 import type { ActionState } from "../lib/global_types";
 import { newOrgServerFormSchema } from "../lib/validation";
@@ -540,6 +540,12 @@ export const createOrgEvent = async (
       requireImages: String(fd.get("requireImages") ?? "0"),
       requireVideoDemo: String(fd.get("requireVideoDemo") ?? "0"),
       coverKey: fd.get("coverKey") ? String(fd.get("coverKey")) : undefined,
+      tracksJson: fd.get("tracksJson")
+        ? String(fd.get("tracksJson"))
+        : undefined,
+      awardsJson: fd.get("awardsJson")
+        ? String(fd.get("awardsJson"))
+        : undefined,
     };
 
     const parsed = createOrgEventServerSchema.parse(raw);
@@ -601,13 +607,15 @@ export const createOrgEvent = async (
       }) as ActionState;
     }
 
-    const rulesRich = parsed.rulesRich
-      ? ({ type: "markdown", value: parsed.rulesRich } as const)
-      : null;
+    const rulesRich =
+      parsed.rulesMarkdown && parsed.rulesMarkdown.length > 0
+        ? ({ type: "markdown", value: parsed.rulesMarkdown } as const)
+        : null;
 
-    const rubricRich = parsed.rubricRich
-      ? ({ type: "markdown", value: parsed.rubricRich } as const)
-      : null;
+    const rubricRich =
+      parsed.rubricMarkdown && parsed.rubricMarkdown.length > 0
+        ? ({ type: "markdown", value: parsed.rubricMarkdown } as const)
+        : null;
 
     const regOpen = safeDate(parseDate(parsed.registrationOpensAt));
     const regClose = safeDate(parseDate(parsed.registrationClosesAt));
@@ -631,38 +639,84 @@ export const createOrgEvent = async (
       }) as ActionState;
     }
 
-    const created = await prisma.event.create({
-      data: {
-        orgId: org.id,
-        name: parsed.name,
-        slug,
-        type: parsed.type,
-        status: "DRAFT",
-        heroTitle: parsed.heroTitle,
-        heroSubtitle: parsed.heroSubtitle ?? null,
-        visibility: parsed.visibility,
-        joinMode: parsed.joinMode,
-        registrationOpensAt: regOpen,
-        registrationClosesAt: regClose,
-        startAt,
-        endAt,
-        submitDueAt,
-        locationName: parsed.locationName,
-        locationAddress: parsed.locationAddress,
-        locationNotes: parsed.locationNotes,
-        locationMapUrl: parsed.locationMapUrl,
+    const tracks = parsed.tracks ?? [];
+    const awards = parsed.awards ?? [];
 
-        rulesRich: rulesRich ?? undefined,
-        rubricRich: rubricRich ?? undefined,
-        maxTeamSize: parsed.maxTeamSize,
-        allowSelfJoinRequests: parsed.allowSelfJoinRequests === "1",
-        lockTeamChangesAtStart: parsed.lockTeamChangesAtStart === "1",
-        requireImages: parsed.requireImages === "1",
-        requireVideoDemo: parsed.requireVideoDemo === "1",
-        coverKey: parsed.coverKey ?? null,
-        // keep staffJoinMode default from schema unless you want to expose it in this form
-      },
-      select: { id: true, slug: true, name: true },
+    if (tracks.length && !uniqueNames(tracks)) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "Track names must be unique.",
+        data: null,
+      }) as ActionState;
+    }
+
+    if (awards.length && !uniqueNames(awards)) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "Award names must be unique.",
+        data: null,
+      }) as ActionState;
+    }
+
+    const created = await prisma.$transaction(async (tx) => {
+      const event = await tx.event.create({
+        data: {
+          orgId: org.id,
+          name: parsed.name,
+          slug,
+          type: parsed.type,
+          status: "DRAFT",
+          heroTitle: parsed.heroTitle,
+          heroSubtitle: parsed.heroSubtitle ?? null,
+          visibility: parsed.visibility,
+          joinMode: parsed.joinMode,
+          registrationOpensAt: regOpen,
+          registrationClosesAt: regClose,
+          startAt,
+          endAt,
+          submitDueAt,
+          locationName: parsed.locationName,
+          locationAddress: parsed.locationAddress,
+          locationNotes: parsed.locationNotes,
+          locationMapUrl: parsed.locationMapUrl,
+
+          rulesRich: rulesRich ?? undefined,
+          rubricRich: rubricRich ?? undefined,
+
+          maxTeamSize: parsed.maxTeamSize,
+          allowSelfJoinRequests: parsed.allowSelfJoinRequests === "1",
+          lockTeamChangesAtStart: parsed.lockTeamChangesAtStart === "1",
+          requireImages: parsed.requireImages === "1",
+          requireVideoDemo: parsed.requireVideoDemo === "1",
+          coverKey: parsed.coverKey ?? null,
+        },
+        select: { id: true, slug: true, name: true },
+      });
+
+      if (tracks.length > 0) {
+        await tx.eventTrack.createMany({
+          data: tracks.map((t, idx) => ({
+            eventId: event.id,
+            name: t.name.trim(),
+            blurb: t.blurb ?? null,
+            order: typeof t.order === "number" ? t.order : idx,
+          })),
+        });
+      }
+
+      if (awards.length > 0) {
+        await tx.eventAward.createMany({
+          data: awards.map((a, idx) => ({
+            eventId: event.id,
+            name: a.name.trim(),
+            blurb: a.blurb ?? null,
+            order: typeof a.order === "number" ? a.order : idx,
+            allowMultipleWinners: Boolean(a.allowMultipleWinners),
+          })),
+        });
+      }
+
+      return event;
     });
 
     let finalCoverKey: string | null = null;

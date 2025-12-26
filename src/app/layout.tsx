@@ -1,6 +1,7 @@
 import LocalFont from "next/font/local";
 import "./globals.css";
 import { Toaster } from "sonner";
+import GlobalNav from "@/src/components/globalComponents/GlobalNav";
 
 const lexend = LocalFont({
   src: "./fonts/Inter/Inter-VariableFont_opsz,wght.woff2",
@@ -18,6 +19,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${lexend.variable} antialiased`}>
+        <GlobalNav />
         {children}
         <Toaster />
       </body>

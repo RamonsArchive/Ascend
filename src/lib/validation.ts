@@ -5,6 +5,10 @@ import {
   slugRegex,
   markdownRichSchema,
   optionalUrl,
+  awardDraftSchema,
+  trackDraftSchema,
+  uniqueNames,
+  jsonArrayFromString,
 } from "./utils";
 import { OrgJoinMode } from "@prisma/client";
 
@@ -534,6 +538,8 @@ export const createOrgEventClientSchema = z
     requireVideoDemo: z.boolean(),
 
     coverFile: z.instanceof(File).optional(),
+    tracks: z.array(trackDraftSchema).max(50).optional().default([]),
+    awards: z.array(awardDraftSchema).max(50).optional().default([]),
   })
   .superRefine((val, ctx) => {
     const parse = (s?: string) => (s ? new Date(s) : null);
@@ -607,6 +613,21 @@ export const createOrgEventClientSchema = z
         path: ["submitDueAt"],
         message: "Submission due should be after event start (or leave blank).",
       });
+    if (val.tracks && !uniqueNames(val.tracks)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["tracks"],
+        message: "Track names must be unique.",
+      });
+    }
+
+    if (val.awards && !uniqueNames(val.awards)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["awards"],
+        message: "Award names must be unique.",
+      });
+    }
   });
 
 export const createOrgEventServerSchema = z.object({
@@ -641,6 +662,14 @@ export const createOrgEventServerSchema = z.object({
   requireImages: z.enum(["0", "1"]),
   requireVideoDemo: z.enum(["0", "1"]),
   coverKey: z.string().optional(),
+  rulesMarkdown: markdownRichSchema,
+  rubricMarkdown: markdownRichSchema,
+
+  tracksJson: z.string().optional(),
+  awardsJson: z.string().optional(),
+
+  tracks: jsonArrayFromString(trackDraftSchema).optional(),
+  awards: jsonArrayFromString(awardDraftSchema).optional(),
 });
 
 export const editEventDetailsClientSchema = z.object({
@@ -677,6 +706,8 @@ export const editEventDetailsClientSchema = z.object({
   coverFile: z.any().optional(), // validated separately
   coverTmpKey: z.string().optional().or(z.literal("")),
   removeCover: z.boolean().optional(),
+  tracks: z.array(trackDraftSchema).optional().default([]),
+  awards: z.array(awardDraftSchema).optional().default([]),
 });
 
 export const updateEventDetailsServerSchema = z.object({
@@ -712,6 +743,8 @@ export const updateEventDetailsServerSchema = z.object({
 
   coverTmpKey: z.string().optional(),
   removeCover: z.boolean().optional(),
+  tracks: z.array(trackDraftSchema).optional().default([]),
+  awards: z.array(awardDraftSchema).optional().default([]),
 });
 
 export const updateEventTeamSettingsClientSchema = z.object({

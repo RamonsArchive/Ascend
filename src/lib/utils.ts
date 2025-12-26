@@ -356,3 +356,43 @@ export function getMarkdownFromRich(rich: unknown | null | undefined): string {
     return (rich as { value?: string }).value ?? "";
   return ""; // later: support tiptap/slate etc
 }
+
+export const makeClientId = () =>
+  typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+export const trackDraftSchema = z.object({
+  name: z.string().trim().min(1, "Track name is required.").max(80),
+  blurb: optionalTrimmed(400),
+  order: z.number().int().min(0).max(999).optional(),
+});
+
+export const awardDraftSchema = z.object({
+  name: z.string().trim().min(1, "Award name is required.").max(80),
+  blurb: optionalTrimmed(400),
+  order: z.number().int().min(0).max(999).optional(),
+  allowMultipleWinners: z.boolean().optional(),
+});
+
+export const uniqueNames = (arr: { name: string }[]) => {
+  const seen = new Set<string>();
+  for (const x of arr) {
+    const k = x.name.trim().toLowerCase();
+    if (!k) continue;
+    if (seen.has(k)) return false;
+    seen.add(k);
+  }
+  return true;
+};
+
+export const jsonArrayFromString = <T extends z.ZodTypeAny>(item: T) =>
+  z.preprocess((v) => {
+    if (typeof v !== "string" || v.trim() === "") return [];
+    try {
+      const parsed = JSON.parse(v);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }, z.array(item));

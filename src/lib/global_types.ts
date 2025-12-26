@@ -270,8 +270,17 @@ export type UnassignedMember = {
   };
 };
 
-export type EventSettingsView =
-  | "DETAILS"
-  | "TEAM_RULES"
-  | "INVITES"
-  | "MEMBERS";
+export type TrackDraft = {
+  clientId: string;
+  name: string;
+  blurb: string;
+  order: string; // keep as string for input
+};
+
+export type AwardDraft = {
+  clientId: string;
+  name: string;
+  blurb: string;
+  order: string; // keep as string for input
+  allowMultipleWinners: boolean;
+};

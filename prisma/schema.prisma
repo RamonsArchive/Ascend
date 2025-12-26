@@ -38,6 +38,7 @@ model User {
   teamMembers            TeamMember[]
   accounts               Account[]
   sessions               Session[]
+  awardAssignments       AwardAssignment[]          @relation("AwardAssignmentCreatedBy")
 
   @@map("user")
 }
@@ -237,6 +238,7 @@ model Event {
   joinRequests           TeamJoinRequest[]
   awards                 EventAward[]
   awardAssignments       AwardAssignment[]
+  tracks                 EventTrack[]
 
   @@unique([orgId, slug])
   @@index([orgId])
@@ -394,10 +396,12 @@ model EventAward {
   eventId   String
   name      String
   blurb     String?
+  allowMultipleWinners Boolean @default(false)
   order     Int      @default(0)
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  event     Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event        Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
   assignments  AwardAssignment[]
 
   @@index([eventId])
@@ -411,17 +415,36 @@ model AwardAssignment {
   teamId       String?
   submissionId String?
   rank         Int?     // optional (1,2,3)
-  createdAt    DateTime @default(now())
+  assignedByUserId String?
 
+  createdAt    DateTime @default(now())
+  
+  assignedByUser User? @relation("AwardAssignmentCreatedBy", fields: [assignedByUserId], references: [id], onDelete: SetNull)
   event        Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
   award        EventAward @relation(fields: [awardId], references: [id], onDelete: Cascade)
   team         Team?      @relation(fields: [teamId], references: [id], onDelete: SetNull)
   submission   Submission?@relation(fields: [submissionId], references: [id], onDelete: SetNull)
  
 
-  @@unique([eventId, awardId]) // if each award can only be assigned once
   @@index([eventId])
   @@index([awardId])
+  @@index([assignedByUserId])
+}
+
+model EventTrack {
+  id        String   @id @default(cuid())
+  eventId   String
+  name      String
+  blurb     String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  teams Team[]
+
+  @@index([eventId])
+  @@unique([eventId, name])
 }
 
 model SubmissionSchema {
@@ -436,7 +459,8 @@ model Team {
   eventId           String
   name              String
   blurb             String?
-  track             String?
+  trackId           String?
+  track             EventTrack? @relation(fields: [trackId], references: [id], onDelete: SetNull)
   lookingForMembers Boolean           @default(true)
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt

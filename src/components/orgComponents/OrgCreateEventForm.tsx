@@ -5,17 +5,26 @@ import Image from "next/image";
 import { toast } from "sonner";
 import { z } from "zod";
 
-import type { ActionState } from "@/src/lib/global_types";
+import type {
+  ActionState,
+  AwardDraft,
+  TrackDraft,
+} from "@/src/lib/global_types";
 import {
   parseServerActionResponse,
   TEN_MB,
   validateImageFile,
+  makeClientId,
 } from "@/src/lib/utils";
 import { createOrgImageUpload } from "@/src/actions/s3_actions";
 import { uploadToS3PresignedPost } from "@/src/lib/s3-client";
 import { createOrgEvent } from "@/src/actions/org_actions";
 import { createOrgEventClientSchema } from "@/src/lib/validation";
 import { useRouter } from "next/navigation";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeSanitize from "rehype-sanitize";
+
 const initialState: ActionState = {
   status: "INITIAL",
   error: "",
@@ -61,6 +70,8 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
     lockTeamChangesAtStart: true,
     requireImages: false,
     requireVideoDemo: false,
+    tracks: [] as TrackDraft[],
+    awards: [] as AwardDraft[],
   }));
 
   const [errors, setErrors] = useState<{
@@ -83,8 +94,13 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
     rulesMarkdown?: string;
     rubricMarkdown?: string;
     maxTeamSize?: string;
+    tracks?: string;
+    awards?: string;
     coverFile?: string;
   }>({});
+
+  const [showRulesPreview, setShowRulesPreview] = useState(false);
+  const [showRubricPreview, setShowRubricPreview] = useState(false);
 
   const clearForm = () => {
     setFormData({
@@ -111,6 +127,8 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
       lockTeamChangesAtStart: true,
       requireImages: false,
       requireVideoDemo: false,
+      tracks: [],
+      awards: [],
     });
 
     setErrors({});
@@ -154,6 +172,17 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
 
       const coverFile = coverRef.current?.files?.[0] ?? null;
 
+      const tracksPayload = formData.tracks.map((t, idx) => ({
+        name: t.name,
+        blurb: t.blurb || undefined,
+        order: t.order ? Number(t.order) : idx,
+      }));
+      const awardsPayload = formData.awards.map((a, idx) => ({
+        name: a.name,
+        blurb: a.blurb || undefined,
+        order: a.order ? Number(a.order) : idx,
+        allowMultipleWinners: a.allowMultipleWinners,
+      }));
       const parsed = await createOrgEventClientSchema.parseAsync({
         orgSlug,
         name: formData.name,
@@ -180,6 +209,8 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
         requireImages: formData.requireImages,
         requireVideoDemo: formData.requireVideoDemo,
         coverFile: coverFile ?? undefined,
+        tracks: tracksPayload,
+        awards: awardsPayload,
       });
 
       if (coverFile) {
@@ -259,6 +290,8 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
       );
       fd.set("requireImages", parsed.requireImages ? "1" : "0");
       fd.set("requireVideoDemo", parsed.requireVideoDemo ? "1" : "0");
+      fd.set("tracksJson", JSON.stringify(parsed.tracks ?? []));
+      fd.set("awardsJson", JSON.stringify(parsed.awards ?? []));
 
       if (coverKey) fd.set("coverKey", coverKey);
 
@@ -736,25 +769,54 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               <div className="flex flex-col gap-2">
-                <label className="text-xs md:text-sm text-white/75">
-                  Rules (Markdown)
-                </label>
-                <textarea
-                  value={formData.rulesMarkdown}
-                  onChange={(e) =>
-                    setFormData((p) => ({
-                      ...p,
-                      rulesMarkdown: e.target.value,
-                    }))
-                  }
-                  placeholder={`## Rules\n- Be respectful\n- Teams up to 5\n\n## Schedule\n- Opening…`}
-                  className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors min-h-[240px] resize-none shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] font-mono"
-                />
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                  <label className="text-xs md:text-sm text-white/75">
+                    Rules (Markdown)
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowRulesPreview((p) => !p);
+                      if (!showRulesPreview) setShowRubricPreview(false);
+                    }}
+                    className="px-4 py-2 rounded-2xl bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition-colors text-xs md:text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                  >
+                    {showRulesPreview ? "Edit" : "Preview"}
+                  </button>
+                </div>
+
+                {showRulesPreview ? (
+                  <div className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+                    <div className="prose prose-invert max-w-none prose-p:text-white/75 prose-a:text-accent-400 prose-strong:text-white">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeSanitize]}
+                      >
+                        {formData.rulesMarkdown || "*Nothing yet…*"}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                ) : (
+                  <textarea
+                    value={formData.rulesMarkdown}
+                    onChange={(e) =>
+                      setFormData((p) => ({
+                        ...p,
+                        rulesMarkdown: e.target.value,
+                      }))
+                    }
+                    placeholder={`## Rules\n- Be respectful\n- Teams up to 5\n\n## Schedule\n- Opening…`}
+                    className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors min-h-[240px] resize-none shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] font-mono"
+                  />
+                )}
+
                 {errors.rulesMarkdown ? (
                   <p className="text-red-500 text-xs md:text-sm">
                     {errors.rulesMarkdown}
                   </p>
                 ) : null}
+
                 <div className="text-white/50 text-xs">
                   Supports headings, lists, bold, links. This will render on the
                   event page.
@@ -762,30 +824,381 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className="text-xs md:text-sm text-white/75">
-                  Rubric (Markdown)
-                </label>
-                <textarea
-                  value={formData.rubricMarkdown}
-                  onChange={(e) =>
-                    setFormData((p) => ({
-                      ...p,
-                      rubricMarkdown: e.target.value,
-                    }))
-                  }
-                  placeholder={`## Judging rubric\n- Innovation: 25%\n- Impact: 25%\n- Technical: 25%\n- Presentation: 25%`}
-                  className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors min-h-[240px] resize-none shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] font-mono"
-                />
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                  <label className="text-xs md:text-sm text-white/75">
+                    Rubric (Markdown)
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowRubricPreview((p) => !p);
+                      if (!showRubricPreview) setShowRulesPreview(false);
+                    }}
+                    className="px-4 py-2 rounded-2xl bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition-colors text-xs md:text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                  >
+                    {showRubricPreview ? "Edit" : "Preview"}
+                  </button>
+                </div>
+
+                {showRubricPreview ? (
+                  <div className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+                    <div className="prose prose-invert max-w-none prose-p:text-white/75 prose-a:text-accent-400 prose-strong:text-white">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeSanitize]}
+                      >
+                        {formData.rubricMarkdown || "*Nothing yet…*"}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                ) : (
+                  <textarea
+                    value={formData.rubricMarkdown}
+                    onChange={(e) =>
+                      setFormData((p) => ({
+                        ...p,
+                        rubricMarkdown: e.target.value,
+                      }))
+                    }
+                    placeholder={`## Judging rubric\n- Innovation: 25%\n- Impact: 25%\n- Technical: 25%\n- Presentation: 25%`}
+                    className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors min-h-[240px] resize-none shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] font-mono"
+                  />
+                )}
+
                 {errors.rubricMarkdown ? (
                   <p className="text-red-500 text-xs md:text-sm">
                     {errors.rubricMarkdown}
                   </p>
                 ) : null}
+
                 <div className="text-white/50 text-xs">
                   How submissions will be scored (shown to participants).
                 </div>
               </div>
             </div>
+          </div>
+          {/* Tracks */}
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <div className="text-white/80 text-sm font-medium">Tracks</div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setFormData((p) => ({
+                    ...p,
+                    tracks: [
+                      ...p.tracks,
+                      {
+                        clientId: makeClientId(),
+                        name: "",
+                        blurb: "",
+                        order: "",
+                      },
+                    ],
+                  }))
+                }
+                className="px-4 py-2 rounded-2xl bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition-colors text-xs md:text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+              >
+                + Add track
+              </button>
+            </div>
+
+            <div className="text-white/50 text-xs">
+              Optional. Tracks help teams categorize their project (e.g. “AI”,
+              “Health”, “Climate”).
+            </div>
+
+            {formData.tracks.length === 0 ? (
+              <div className="text-white/60 text-sm rounded-2xl bg-white/5 border border-white/10 px-4 py-3">
+                No tracks yet.
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {formData.tracks.map((t, idx) => (
+                  <div
+                    key={t.clientId}
+                    className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-white/80 text-xs md:text-sm">
+                        Track {idx + 1}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormData((p) => ({
+                            ...p,
+                            tracks: p.tracks.filter(
+                              (x) => x.clientId !== t.clientId
+                            ),
+                          }))
+                        }
+                        className="text-xs text-white/70 hover:text-white underline"
+                      >
+                        Remove
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mt-3">
+                      <div className="flex flex-col gap-2 md:col-span-2">
+                        <label className="text-xs md:text-sm text-white/75">
+                          Name <span className="text-xs text-red-500">*</span>
+                        </label>
+                        <input
+                          value={t.name}
+                          onChange={(e) =>
+                            setFormData((p) => ({
+                              ...p,
+                              tracks: p.tracks.map((x) =>
+                                x.clientId === t.clientId
+                                  ? { ...x, name: e.target.value }
+                                  : x
+                              ),
+                            }))
+                          }
+                          placeholder="AI / Machine Learning"
+                          className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label className="text-xs md:text-sm text-white/75">
+                          Order
+                        </label>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={t.order}
+                          onChange={(e) =>
+                            setFormData((p) => ({
+                              ...p,
+                              tracks: p.tracks.map((x) =>
+                                x.clientId === t.clientId
+                                  ? {
+                                      ...x,
+                                      order: e.target.value.replace(
+                                        /[^\d]/g,
+                                        ""
+                                      ),
+                                    }
+                                  : x
+                              ),
+                            }))
+                          }
+                          placeholder={`${idx}`}
+                          className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2 mt-3">
+                      <label className="text-xs md:text-sm text-white/75">
+                        Blurb (optional)
+                      </label>
+                      <textarea
+                        value={t.blurb}
+                        onChange={(e) =>
+                          setFormData((p) => ({
+                            ...p,
+                            tracks: p.tracks.map((x) =>
+                              x.clientId === t.clientId
+                                ? { ...x, blurb: e.target.value }
+                                : x
+                            ),
+                          }))
+                        }
+                        placeholder="Short description shown to participants…"
+                        className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors min-h-[110px] resize-none shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {errors.tracks ? (
+              <p className="text-red-500 text-xs md:text-sm">{errors.tracks}</p>
+            ) : null}
+          </div>
+
+          {/* Awards */}
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <div className="text-white/80 text-sm font-medium">Awards</div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setFormData((p) => ({
+                    ...p,
+                    awards: [
+                      ...p.awards,
+                      {
+                        clientId: makeClientId(),
+                        name: "",
+                        blurb: "",
+                        order: "",
+                        allowMultipleWinners: false,
+                      },
+                    ],
+                  }))
+                }
+                className="px-4 py-2 rounded-2xl bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition-colors text-xs md:text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+              >
+                + Add award
+              </button>
+            </div>
+
+            <div className="text-white/50 text-xs">
+              Optional. You can define any number of awards now (and assign
+              winners later).
+            </div>
+
+            {formData.awards.length === 0 ? (
+              <div className="text-white/60 text-sm rounded-2xl bg-white/5 border border-white/10 px-4 py-3">
+                No awards yet.
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {formData.awards.map((a, idx) => (
+                  <div
+                    key={a.clientId}
+                    className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-white/80 text-xs md:text-sm">
+                        Award {idx + 1}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormData((p) => ({
+                            ...p,
+                            awards: p.awards.filter(
+                              (x) => x.clientId !== a.clientId
+                            ),
+                          }))
+                        }
+                        className="text-xs text-white/70 hover:text-white underline"
+                      >
+                        Remove
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mt-3">
+                      <div className="flex flex-col gap-2 md:col-span-2">
+                        <label className="text-xs md:text-sm text-white/75">
+                          Name <span className="text-xs text-red-500">*</span>
+                        </label>
+                        <input
+                          value={a.name}
+                          onChange={(e) =>
+                            setFormData((p) => ({
+                              ...p,
+                              awards: p.awards.map((x) =>
+                                x.clientId === a.clientId
+                                  ? { ...x, name: e.target.value }
+                                  : x
+                              ),
+                            }))
+                          }
+                          placeholder="Best Overall"
+                          className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label className="text-xs md:text-sm text-white/75">
+                          Order
+                        </label>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={a.order}
+                          onChange={(e) =>
+                            setFormData((p) => ({
+                              ...p,
+                              awards: p.awards.map((x) =>
+                                x.clientId === a.clientId
+                                  ? {
+                                      ...x,
+                                      order: e.target.value.replace(
+                                        /[^\d]/g,
+                                        ""
+                                      ),
+                                    }
+                                  : x
+                              ),
+                            }))
+                          }
+                          placeholder={`${idx}`}
+                          className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2 mt-3">
+                      <label className="text-xs md:text-sm text-white/75">
+                        Blurb (optional)
+                      </label>
+                      <textarea
+                        value={a.blurb}
+                        onChange={(e) =>
+                          setFormData((p) => ({
+                            ...p,
+                            awards: p.awards.map((x) =>
+                              x.clientId === a.clientId
+                                ? { ...x, blurb: e.target.value }
+                                : x
+                            ),
+                          }))
+                        }
+                        placeholder="Short description shown near the award…"
+                        className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors min-h-[110px] resize-none shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                      />
+                    </div>
+
+                    <label className="flex items-center gap-3 w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 mt-3">
+                      <input
+                        type="checkbox"
+                        checked={a.allowMultipleWinners}
+                        onChange={(e) =>
+                          setFormData((p) => ({
+                            ...p,
+                            awards: p.awards.map((x) =>
+                              x.clientId === a.clientId
+                                ? {
+                                    ...x,
+                                    allowMultipleWinners: e.target.checked,
+                                  }
+                                : x
+                            ),
+                          }))
+                        }
+                        className="h-4 w-4"
+                      />
+                      <div className="flex flex-col gap-1">
+                        <div className="text-white text-sm">
+                          Allow multiple winners
+                        </div>
+                        <div className="text-white/60 text-xs">
+                          If enabled, you can assign this award to multiple
+                          teams/submissions.
+                        </div>
+                      </div>
+                    </label>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {errors.awards ? (
+              <p className="text-red-500 text-xs md:text-sm">{errors.awards}</p>
+            ) : null}
           </div>
 
           <div className="flex flex-col gap-3">
