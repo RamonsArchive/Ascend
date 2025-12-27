@@ -1,13 +1,25 @@
 import React from "react";
 import EditOrgHero from "@/src/components/orgComponents/EditOrgHero";
 import EditOrgFormSection from "@/src/components/orgComponents/EditOrgFormSection";
-import { Organization, OrgMembership } from "@prisma/client";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { fetchOrgData, assertOrgAdminOrOwner } from "@/src/actions/org_actions";
+import {
+  assertOrgAdminOrOwner,
+  fetchOrgSettingsData,
+} from "@/src/actions/org_actions";
 import LinkToSponsorsPage from "@/src/components/orgComponents/LinkToSponsorsPage";
 import EditOrgJoinSettingsSection from "@/src/components/orgComponents/EditOrgJoinSettingsSection";
 import { getCachedSession } from "@/src/lib/cached-auth";
+import {
+  OrgJoinRequestWithUser,
+  OrgSponsorWithSponsor,
+  OrgMemberResponse,
+  PublicEventListItem,
+} from "@/src/lib/global_types";
+import { SponsorLibraryItem } from "@/src/components/orgComponents/SponsorLibraryCard";
+import { fetchSponsorLibrary } from "@/src/actions/org_sponsor_actions";
+import { fetchAllOrgEvents } from "@/src/actions/event_actions";
+import { OrgSettingsData } from "@/src/lib/global_types";
 
 const EditOrgPage = async ({
   params,
@@ -49,8 +61,17 @@ const EditOrgPage = async ({
       </div>
     );
 
-  const org = await fetchOrgData(orgSlug);
-  if (org.status === "ERROR" || !org.data)
+  let orgRes = null;
+  let sponsorsLibraryRes = null;
+  let eventsRes = null;
+
+  [orgRes, sponsorsLibraryRes, eventsRes] = await Promise.all([
+    fetchOrgSettingsData(orgSlug),
+    fetchSponsorLibrary(),
+    fetchAllOrgEvents(orgSlug),
+  ]);
+
+  if (orgRes.status === "ERROR" || !orgRes.data)
     return (
       <div className="relative w-full">
         <div className="absolute inset-0 pointer-events-none marketing-bg" />
@@ -74,6 +95,9 @@ const EditOrgPage = async ({
         </div>
       </div>
     );
+
+  if (sponsorsLibraryRes.status === "ERROR") sponsorsLibraryRes = null;
+  if (eventsRes.status === "ERROR") eventsRes = null;
   const {
     id,
     name,
@@ -86,7 +110,17 @@ const EditOrgPage = async ({
     coverKey,
     allowJoinRequests,
     joinMode,
-  } = org.data as Organization;
+    memberships,
+    joinRequests,
+    sponsors,
+  } = orgRes.data as OrgSettingsData;
+
+  const libraryData = sponsorsLibraryRes?.data as SponsorLibraryItem[];
+  const eventsData = eventsRes?.data as PublicEventListItem[];
+
+  const membersData = memberships; // could be but with date and string for createdAt
+  const joinRequestsData = joinRequests;
+  const sponsorsData = sponsors;
 
   return (
     <div className="relative w-full">

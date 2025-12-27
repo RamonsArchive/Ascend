@@ -296,3 +296,62 @@ export type EventSettingsView =
   | "AWARDS"
   | "INVITES"
   | "MEMBERS";
+
+export type OrgSettingsData = Prisma.OrganizationGetPayload<{
+  select: {
+    id: true;
+    name: true;
+    description: true;
+    publicEmail: true;
+    publicPhone: true;
+    websiteUrl: true;
+    contactNote: true;
+    logoKey: true;
+    coverKey: true;
+    allowJoinRequests: true;
+    joinMode: true;
+    memberships: {
+      select: {
+        userId: true;
+        role: true;
+        createdAt: true;
+        user: {
+          select: { id: true; name: true; email: true; image: true };
+        };
+      };
+    };
+    joinRequests: {
+      select: {
+        id: true;
+        userId: true;
+        message: true;
+        status: true;
+        createdAt: true;
+        updatedAt: true;
+        user: {
+          select: { id: true; name: true; email: true; image: true };
+        };
+      };
+    };
+    sponsors: {
+      select: {
+        id: true;
+        sponsorId: true;
+        order: true;
+        createdAt: true;
+        updatedAt: true;
+        sponsor: {
+          select: {
+            id: true;
+            name: true;
+            slug: true;
+            websiteKey: true;
+            description: true;
+            logoKey: true;
+            coverKey: true;
+          };
+        };
+      };
+    };
+  };
+}>;
