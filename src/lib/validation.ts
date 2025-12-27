@@ -9,6 +9,7 @@ import {
   trackDraftSchema,
   uniqueNames,
   jsonArrayFromString,
+  optionalMapsShortUrl,
 } from "./utils";
 import { OrgJoinMode } from "@prisma/client";
 
@@ -518,11 +519,7 @@ export const createOrgEventClientSchema = z
       .string()
       .max(1000, "Location notes is too long.")
       .optional(),
-    locationMapUrl: z
-      .string()
-      .url("Invalid map URL")
-      .optional()
-      .or(z.literal("")),
+    locationMapUrl: optionalMapsShortUrl,
     rulesMarkdown: markdownRichSchema,
     rubricMarkdown: markdownRichSchema,
 
@@ -694,7 +691,7 @@ export const editEventDetailsClientSchema = z.object({
   locationName: z.string().max(120).optional().or(z.literal("")),
   locationAddress: z.string().max(240).optional().or(z.literal("")),
   locationNotes: z.string().max(1000).optional().or(z.literal("")),
-  locationMapUrl: z.httpUrl().optional().or(z.literal("")),
+  locationMapUrl: optionalMapsShortUrl.optional().or(z.literal("")),
   rulesMarkdown: z.string().max(20000).optional().or(z.literal("")),
   rubricMarkdown: z.string().max(20000).optional().or(z.literal("")),
 

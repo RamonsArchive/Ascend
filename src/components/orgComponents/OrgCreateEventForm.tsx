@@ -183,6 +183,9 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
         order: a.order ? Number(a.order) : idx,
         allowMultipleWinners: a.allowMultipleWinners,
       }));
+      console.log("form data", formData);
+      console.log("tracksPayload", tracksPayload);
+      console.log("awardsPayload", awardsPayload);
       const parsed = await createOrgEventClientSchema.parseAsync({
         orgSlug,
         name: formData.name,
@@ -248,7 +251,6 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
           file: coverFile,
         });
         coverKey = presign.key;
-        console.log("coverKey", coverKey);
       }
 
       setStatusMessage("Creating event…");
@@ -292,6 +294,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
       fd.set("requireVideoDemo", parsed.requireVideoDemo ? "1" : "0");
       fd.set("tracksJson", JSON.stringify(parsed.tracks ?? []));
       fd.set("awardsJson", JSON.stringify(parsed.awards ?? []));
+      console.log("fd", fd);
 
       if (coverKey) fd.set("coverKey", coverKey);
 
@@ -308,7 +311,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
       clearForm();
       // push to new event page settings
       const slug = (result.data as { slug: string }).slug;
-      router.push(`${slug}/settings`);
+      // router.push(`${slug}/settings`);
       return result;
     } catch (error) {
       console.error(error);
@@ -714,8 +717,8 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                   </p>
                 ) : null}
                 <div className="text-white/50 text-xs">
-                  Paste a Google Maps link. This will be shown on the event
-                  page.
+                  Paste a Google Maps share link (use the “Share” button in
+                  Google Maps).
                 </div>
               </div>
             </div>

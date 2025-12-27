@@ -24,7 +24,6 @@ const EditOrgPage = async ({
   }
 
   const hasPermissions = await assertOrgAdminOrOwner(orgSlug, userId);
-  console.log(hasPermissions);
   if (!hasPermissions.data || hasPermissions.status === "ERROR")
     return (
       <div className="relative w-full">
@@ -88,9 +87,6 @@ const EditOrgPage = async ({
     allowJoinRequests,
     joinMode,
   } = org.data as Organization;
-
-  console.log("allowJoinRequests in page", allowJoinRequests);
-  console.log("joinMode in page", joinMode);
 
   return (
     <div className="relative w-full">

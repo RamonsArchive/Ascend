@@ -34,8 +34,6 @@ export const createOrganization = async (
       }) as ActionState;
     }
 
-    console.log("formData...", formData);
-
     const name = (formData.get("name")?.toString() ?? "").trim();
     const description = (formData.get("description")?.toString() ?? "").trim();
     const publicEmail = (formData.get("publicEmail")?.toString() ?? "").trim();
@@ -48,8 +46,6 @@ export const createOrganization = async (
       (formData.get("logoKey")?.toString() ?? "").trim() || undefined;
     const coverTmpKey =
       (formData.get("coverKey")?.toString() ?? "").trim() || undefined;
-    console.log("logoTmpKey", logoTmpKey);
-    console.log("coverTmpKey", coverTmpKey);
 
     const isRateLimited = await checkRateLimit("createOrganization");
     if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
@@ -66,7 +62,6 @@ export const createOrganization = async (
       logoKey: logoTmpKey,
       coverKey: coverTmpKey,
     };
-    console.log("payload", payload);
     const parsed = await newOrgServerFormSchema.safeParseAsync(payload);
 
     if (!parsed.success) {
@@ -548,6 +543,7 @@ export const createOrgEvent = async (
         : undefined,
     };
 
+    console.log("raw", raw);
     const parsed = createOrgEventServerSchema.parse(raw);
 
     const org = await prisma.organization.findUnique({
@@ -639,8 +635,11 @@ export const createOrgEvent = async (
       }) as ActionState;
     }
 
-    const tracks = parsed.tracks ?? [];
-    const awards = parsed.awards ?? [];
+    const tracks = parsed.tracksJson ? JSON.parse(parsed.tracksJson) : [];
+    const awards = parsed.awardsJson ? JSON.parse(parsed.awardsJson) : [];
+
+    console.log("tracks", tracks);
+    console.log("awards", awards);
 
     if (tracks.length && !uniqueNames(tracks)) {
       return parseServerActionResponse({
@@ -694,6 +693,7 @@ export const createOrgEvent = async (
       });
 
       if (tracks.length > 0) {
+        console.log("track event being created");
         await tx.eventTrack.createMany({
           data: tracks.map((t, idx) => ({
             eventId: event.id,
@@ -705,6 +705,7 @@ export const createOrgEvent = async (
       }
 
       if (awards.length > 0) {
+        console.log("award event being created");
         await tx.eventAward.createMany({
           data: awards.map((a, idx) => ({
             eventId: event.id,

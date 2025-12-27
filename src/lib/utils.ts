@@ -396,3 +396,18 @@ export const jsonArrayFromString = <T extends z.ZodTypeAny>(item: T) =>
       return [];
     }
   }, z.array(item));
+
+const mapsShortLinkRegex =
+  /^https:\/\/(maps\.app\.goo\.gl|goo\.gl\/maps)\/[A-Za-z0-9_-]+(\/)?(\?.*)?$/;
+
+export const optionalMapsShortUrl = z.preprocess(
+  (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+  z
+    .string()
+    .trim()
+    .regex(
+      mapsShortLinkRegex,
+      "Use a Google Maps share link (maps.app.goo.gl/...). Open Google Maps → Share → Copy link."
+    )
+    .optional()
+);

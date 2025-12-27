@@ -83,7 +83,6 @@ const OrgOverviewPage = async ({
 
   const members =
     membersRes.status === "SUCCESS" ? (membersRes.data as OrgMember[]) : [];
-  console.log(sponsors, events, members);
 
   return (
     <div className="relative w-full">

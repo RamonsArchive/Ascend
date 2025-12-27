@@ -13,9 +13,6 @@ const EditOrgJoinSettingsSection = ({
   joinMode: OrgJoinMode;
   currentUserId: string;
 }) => {
-  console.log("allowJoinRequests", allowJoinRequests);
-  console.log("joinMode", joinMode);
-  console.log("currentUserId", currentUserId);
   return (
     <section className="flex flex-col items-center justify-center w-full">
       <div className="flex flex-col w-full max-w-6xl px-5 sm:px-10 md:px-18 py-10 md:py-14 gap-10 md:gap-12">

@@ -284,3 +284,9 @@ export type AwardDraft = {
   order: string; // keep as string for input
   allowMultipleWinners: boolean;
 };
+
+export type EventSettingsView =
+  | "DETAILS"
+  | "TEAM_RULES"
+  | "INVITES"
+  | "MEMBERS";
