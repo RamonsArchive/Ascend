@@ -1,9 +1,14 @@
-import React, { useMemo } from "react";
+"use client";
+
+import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import type { PublicEventListItem } from "@/src/lib/global_types";
 import { formatDateRange } from "@/src/lib/utils";
 import { s3KeyToPublicUrl } from "@/src/lib/s3-client";
+import { deleteEvent } from "@/src/actions/event_actions";
 
 const AdminEventCard = ({
   event,
@@ -12,6 +17,9 @@ const AdminEventCard = ({
   event: PublicEventListItem;
   orgSlug: string;
 }) => {
+  const router = useRouter();
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const dateRange = useMemo(
     () => formatDateRange(event.startAt ?? null, event.endAt ?? null),
     [event.startAt, event.endAt]
@@ -36,6 +44,34 @@ const AdminEventCard = ({
 
     return { type, join };
   }, [event.type, event.joinMode]);
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const ok = window.confirm(
+      `Delete "${event.heroTitle || event.name}"?\n\nThis will permanently delete teams, submissions, and all event data.`
+    );
+    if (!ok) return;
+
+    setIsDeleting(true);
+    try {
+      const result = await deleteEvent(orgSlug, event.id);
+      if (result.status === "ERROR") {
+        toast.error("Error", { description: result.error });
+        return;
+      }
+      toast.success("Deleted", { description: "Event deleted." });
+
+      // Refresh list (server components) or re-fetch
+      router.refresh();
+    } catch (err) {
+      console.error(err);
+      toast.error("Error", { description: "Failed to delete event." });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <Link
@@ -66,8 +102,26 @@ const AdminEventCard = ({
           </div>
         </div>
 
-        <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-xs font-medium bg-white/10 backdrop-blur-sm text-white/90 border border-white/10 group-hover:bg-white/15">
-          Settings →
+        <div className="absolute top-3 right-3 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className={[
+              "cursor-pointer px-2.5 py-1 rounded-full text-xs font-semibold border backdrop-blur-sm transition-colors",
+              isDeleting
+                ? "bg-red-500/10 border-red-500/20 text-red-200 cursor-not-allowed"
+                : "bg-red-500/15 border-red-500/25 text-red-100 hover:bg-red-500/25",
+            ].join(" ")}
+            aria-label="Delete event"
+            title="Delete event"
+          >
+            {isDeleting ? "Deleting…" : "Delete"}
+          </button>
+
+          <div className="px-2.5 py-1 rounded-full text-xs font-medium bg-white/10 backdrop-blur-sm text-white/90 border border-white/10 group-hover:bg-white/15">
+            Settings →
+          </div>
         </div>
       </div>
 

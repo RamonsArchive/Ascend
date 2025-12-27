@@ -594,7 +594,7 @@ model Submission {
   scores           Score[]
   author           User?            @relation("SubmissionAuthor", fields: [authorId], references: [id])
   event            Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  team             Team?            @relation(fields: [teamId], references: [id])
+  team             Team?            @relation(fields: [teamId], references: [id], onDelete: Cascade)
   awardAssignments AwardAssignment[]  // ✅ back relation
 
   @@index([eventId])

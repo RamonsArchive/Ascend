@@ -47,6 +47,11 @@ export type OrgSponsorWithSponsor = Prisma.OrganizationSponsorGetPayload<{
   select: {
     id: true;
     sponsorId: true;
+    tier: true;
+    isActive: true;
+    displayName: true;
+    blurb: true;
+    logoKey: true;
     order: true;
     createdAt: true;
     updatedAt: true;

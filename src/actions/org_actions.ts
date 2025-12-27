@@ -373,6 +373,11 @@ export const fetchOrgSettingsData = async (orgSlug: string) => {
           select: {
             id: true,
             sponsorId: true,
+            tier: true,
+            isActive: true,
+            displayName: true,
+            blurb: true,
+            logoKey: true,
             order: true,
             createdAt: true,
             updatedAt: true,
@@ -896,6 +901,56 @@ export const fetchPublicOrgCountsData = async (orgSlug: string) => {
     return parseServerActionResponse({
       status: "ERROR",
       error: "Failed to fetch public organization counts data",
+      data: null,
+    }) as ActionState;
+  }
+};
+
+export const assertOrgOwnerSlug = async (
+  orgSlug: string,
+  userId: string
+): Promise<ActionState> => {
+  try {
+    const org = await prisma.organization.findUnique({
+      where: { slug: orgSlug },
+      select: { id: true },
+    });
+    if (!org) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "Organization not found",
+        data: null,
+      }) as ActionState;
+    }
+    const orgId = org.id;
+    const membership = await prisma.orgMembership.findUnique({
+      where: { orgId_userId: { orgId, userId } },
+      select: { role: true },
+    });
+    if (!membership) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "User is not a member of the organization",
+        data: null,
+      }) as ActionState;
+    }
+    if (membership.role !== "OWNER") {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "User is not the owner of the organization",
+        data: null,
+      }) as ActionState;
+    }
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data: { orgId, userId },
+    }) as ActionState;
+  } catch (error) {
+    console.error(error);
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to assert org owner",
       data: null,
     }) as ActionState;
   }

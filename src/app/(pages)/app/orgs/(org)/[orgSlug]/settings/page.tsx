@@ -1,22 +1,13 @@
 import React from "react";
 import EditOrgHero from "@/src/components/orgComponents/EditOrgHero";
-import EditOrgFormSection from "@/src/components/orgComponents/EditOrgFormSection";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   assertOrgAdminOrOwner,
   fetchOrgSettingsData,
 } from "@/src/actions/org_actions";
-import LinkToSponsorsPage from "@/src/components/orgComponents/LinkToSponsorsPage";
-import EditOrgJoinSettingsSection from "@/src/components/orgComponents/EditOrgJoinSettingsSection";
 import { getCachedSession } from "@/src/lib/cached-auth";
-import {
-  OrgJoinRequestWithUser,
-  OrgSponsorWithSponsor,
-  OrgMemberResponse,
-  PublicEventListItem,
-  OrgRole,
-} from "@/src/lib/global_types";
+import { PublicEventListItem, OrgRole } from "@/src/lib/global_types";
 import type { SponsorLibraryItem } from "@/src/lib/global_types";
 import { fetchSponsorLibrary } from "@/src/actions/org_sponsor_actions";
 import { fetchAllOrgEvents } from "@/src/actions/event_actions";
@@ -100,22 +91,7 @@ const EditOrgPage = async ({
 
   if (sponsorsLibraryRes.status === "ERROR") sponsorsLibraryRes = null;
   if (eventsRes.status === "ERROR") eventsRes = null;
-  const {
-    id,
-    name,
-    description,
-    publicEmail,
-    publicPhone,
-    websiteUrl,
-    contactNote,
-    logoKey,
-    coverKey,
-    allowJoinRequests,
-    joinMode,
-    memberships,
-    joinRequests,
-    sponsors,
-  } = orgRes.data as OrgSettingsData;
+  const { memberships, joinRequests } = orgRes.data as OrgSettingsData;
 
   const sponsorLibrary = sponsorsLibraryRes?.data as SponsorLibraryItem[]; // library
   const eventsData = eventsRes?.data as PublicEventListItem[];

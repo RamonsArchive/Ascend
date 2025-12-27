@@ -15,7 +15,7 @@ import type {
   AwardDraft,
 } from "../lib/global_types";
 import { checkRateLimit } from "../lib/rate-limiter";
-import { isOrgOwner } from "./org_actions";
+import { assertOrgOwnerSlug, isOrgOwner } from "./org_actions";
 import { headers } from "next/headers";
 import { auth } from "@/src/lib/auth";
 import { finalizeEventImageFromTmp } from "@/src/lib/s3-upload";
@@ -1133,6 +1133,48 @@ export const updateEventAwards = async (
     return parseServerActionResponse({
       status: "ERROR",
       error: "Failed to update event awards",
+      data: null,
+    }) as ActionState;
+  }
+};
+
+export const deleteEvent = async (
+  orgSlug: string,
+  eventId: string
+): Promise<ActionState> => {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user?.id) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "MUST BE LOGGED IN TO DELETE EVENT",
+        data: null,
+      }) as ActionState;
+    }
+    const isRateLimited = await checkRateLimit("deleteEvent");
+    if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
+
+    const perms = await assertOrgOwnerSlug(orgSlug, session.user.id);
+    if (perms.status === "ERROR") return perms as ActionState;
+
+    await prisma.event.delete({
+      where: {
+        id: eventId,
+        org: { slug: orgSlug }, // ✅ ensures correct org
+      },
+    });
+
+    updateTag(`event-${eventId}`);
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data: { eventId },
+    }) as ActionState;
+  } catch (error) {
+    console.error(error);
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to delete event",
       data: null,
     }) as ActionState;
   }
