@@ -11,6 +11,8 @@ import type {
   EventNavData,
   PublicEventListItem,
   EventCompleteData,
+  TrackDraft,
+  AwardDraft,
 } from "../lib/global_types";
 import { checkRateLimit } from "../lib/rate-limiter";
 import { isOrgOwner } from "./org_actions";
@@ -337,6 +339,24 @@ export const fetchEventCompleteData = async (
           select: { id: true, name: true, slug: true, logoKey: true },
         },
 
+        tracks: {
+          select: {
+            id: true,
+            name: true,
+            blurb: true,
+            order: true,
+          },
+        },
+        awards: {
+          select: {
+            id: true,
+            name: true,
+            blurb: true,
+            allowMultipleWinners: true,
+            order: true,
+          },
+        },
+
         _count: {
           select: {
             teams: true,
@@ -358,6 +378,19 @@ export const fetchEventCompleteData = async (
 
     const data: EventCompleteData = {
       ...event,
+      tracks: event.tracks.map((track) => ({
+        clientId: track.id,
+        name: track.name,
+        blurb: track.blurb ?? "",
+        order: track.order.toString(),
+      })),
+      awards: event.awards.map((award) => ({
+        clientId: award.id,
+        name: award.name,
+        blurb: award.blurb ?? "",
+        allowMultipleWinners: award.allowMultipleWinners,
+        order: award.order.toString(),
+      })),
       _count: {
         teams: event._count.teams,
         submissions: event._count.submissions,
@@ -908,6 +941,198 @@ export const removeEventParticipant = async (
     return parseServerActionResponse({
       status: "ERROR",
       error: "Failed to remove participant",
+      data: null,
+    }) as ActionState;
+  }
+};
+
+export const fetchEventTracks = async (
+  orgSlug: string,
+  eventSlug: string
+): Promise<ActionState> => {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user?.id) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "MUST BE LOGGED IN TO FETCH EVENT TRACKS",
+        data: null,
+      }) as ActionState;
+    }
+    const perms = await assertEventAdminOrOwner(
+      orgSlug,
+      eventSlug,
+      session.user.id
+    );
+    if (perms.status === "ERROR") return perms as ActionState;
+
+    const tracks = await prisma.eventTrack.findMany({
+      where: { event: { org: { slug: orgSlug }, slug: eventSlug } },
+      orderBy: { order: "asc" },
+      select: {
+        id: true,
+        name: true,
+        blurb: true,
+        order: true,
+      },
+    });
+
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data: tracks,
+    }) as ActionState;
+  } catch (error) {
+    console.error(error);
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to fetch event tracks",
+      data: null,
+    }) as ActionState;
+  }
+};
+
+export const fetchEventAwards = async (
+  orgSlug: string,
+  eventSlug: string
+): Promise<ActionState> => {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user?.id) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "MUST BE LOGGED IN TO FETCH EVENT AWARDS",
+        data: null,
+      }) as ActionState;
+    }
+    const perms = await assertEventAdminOrOwner(
+      orgSlug,
+      eventSlug,
+      session.user.id
+    );
+    if (perms.status === "ERROR") return perms as ActionState;
+
+    const awards = await prisma.eventAward.findMany({
+      where: { event: { org: { slug: orgSlug }, slug: eventSlug } },
+      orderBy: { order: "asc" },
+      select: {
+        id: true,
+        name: true,
+        blurb: true,
+        allowMultipleWinners: true,
+        order: true,
+      },
+    });
+
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data: awards,
+    }) as ActionState;
+  } catch (error) {
+    console.error(error);
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to fetch event awards",
+      data: null,
+    }) as ActionState;
+  }
+};
+
+export const updateEventTracks = async (
+  eventId: string,
+  orgId: string,
+  tracks: TrackDraft[]
+): Promise<ActionState> => {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user?.id) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "MUST BE LOGGED IN TO UPDATE EVENT TRACKS",
+        data: null,
+      }) as ActionState;
+    }
+    const isRateLimited = await checkRateLimit("updateEventTracks");
+    if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
+
+    const perms = await assertEventAdminOrOwnerWithId(
+      orgId,
+      eventId,
+      session.user.id
+    );
+    if (perms.status === "ERROR") return perms as ActionState;
+
+    await prisma.eventTrack.deleteMany({ where: { eventId } });
+    await prisma.eventTrack.createMany({
+      data: tracks.map((track) => ({
+        eventId,
+        name: track.name,
+        blurb: track.blurb ?? "",
+        order: parseInt(track.order),
+      })),
+    });
+
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data: { tracks },
+    }) as ActionState;
+  } catch (error) {
+    console.error(error);
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to update event tracks",
+      data: null,
+    }) as ActionState;
+  }
+};
+
+export const updateEventAwards = async (
+  eventId: string,
+  orgId: string,
+  awards: AwardDraft[]
+): Promise<ActionState> => {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user?.id) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "MUST BE LOGGED IN TO UPDATE EVENT AWARDS",
+        data: null,
+      }) as ActionState;
+    }
+    const isRateLimited = await checkRateLimit("updateEventAwards");
+    if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
+
+    const perms = await assertEventAdminOrOwnerWithId(
+      orgId,
+      eventId,
+      session.user.id
+    );
+    if (perms.status === "ERROR") return perms as ActionState;
+
+    await prisma.eventAward.deleteMany({ where: { eventId } });
+    await prisma.eventAward.createMany({
+      data: awards.map((award) => ({
+        eventId,
+        name: award.name,
+        blurb: award.blurb ?? "",
+        allowMultipleWinners: award.allowMultipleWinners,
+        order: parseInt(award.order),
+      })),
+    });
+
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data: { awards },
+    }) as ActionState;
+  } catch (error) {
+    console.error(error);
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to update event awards",
       data: null,
     }) as ActionState;
   }

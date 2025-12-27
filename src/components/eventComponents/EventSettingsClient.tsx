@@ -10,7 +10,8 @@ import EventEditDetails from "@/src/components/eventComponents/EventEditDetails"
 import EventEditTeam from "@/src/components/eventComponents/EventEditTeam";
 import EventMembersAdminSection from "@/src/components/eventComponents/EventMembersAdminSection";
 import EventEditMembersSection from "@/src/components/eventComponents/EventEditMembersSection";
-
+import EventEditTracks from "@/src/components/eventComponents/EventEditTracks";
+import EventEditAwards from "@/src/components/eventComponents/EventEditAwards";
 const EventSettingsClient = ({
   orgSlug,
   event,
@@ -49,6 +50,22 @@ const EventSettingsClient = ({
           orgSlug={orgSlug}
           eventId={event.id}
           membersAdminData={membersAdminData}
+        />
+      ) : null}
+
+      {view === "TRACKS" ? (
+        <EventEditTracks
+          eventId={event.id}
+          orgId={event.orgId ?? ""}
+          defaults={event.tracks ?? []}
+        />
+      ) : null}
+
+      {view === "AWARDS" ? (
+        <EventEditAwards
+          eventId={event.id}
+          orgId={event.orgId ?? ""}
+          defaults={event.awards ?? []}
         />
       ) : null}
     </>

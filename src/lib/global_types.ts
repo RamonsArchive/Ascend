@@ -215,6 +215,9 @@ export type EventCompleteData = {
 
   org: { id: string; name: string; slug: string; logoKey: string | null };
 
+  tracks: TrackDraft[];
+  awards: AwardDraft[];
+
   _count: {
     teams: number;
     submissions: number;
@@ -287,6 +290,9 @@ export type AwardDraft = {
 
 export type EventSettingsView =
   | "DETAILS"
+  | "CONTENT"
   | "TEAM_RULES"
+  | "TRACKS"
+  | "AWARDS"
   | "INVITES"
   | "MEMBERS";

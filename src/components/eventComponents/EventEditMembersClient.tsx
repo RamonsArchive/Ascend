@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { toast } from "sonner";
-import Link from "next/link";
+
 import type { EventMembersAdminData } from "@/src/lib/global_types";
 import AdminEventTeamCard from "./AdminEventTeamCard";
 import EventUnassignedMemberCard from "./EventUnassignedMemberCard";

@@ -805,3 +805,18 @@ export const removeEventParticipantClientSchema = z.object({
   eventId: z.string().min(1, "Missing eventId"),
   participantId: z.string().min(1, "Missing participantId"),
 });
+
+export const commonListEditorSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        name: z.string().trim().min(1, "Name is required").max(80, "Too long"),
+        blurb: z.string().trim().max(240, "Too long").optional(),
+        order: z
+          .string()
+          .optional()
+          .transform((v) => (v ?? "").replace(/[^\d]/g, "")),
+      })
+    )
+    .max(50, "Too many items"),
+});

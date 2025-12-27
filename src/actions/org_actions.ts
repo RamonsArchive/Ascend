@@ -543,7 +543,6 @@ export const createOrgEvent = async (
         : undefined,
     };
 
-    console.log("raw", raw);
     const parsed = createOrgEventServerSchema.parse(raw);
 
     const org = await prisma.organization.findUnique({
@@ -635,8 +634,8 @@ export const createOrgEvent = async (
       }) as ActionState;
     }
 
-    const tracks = parsed.tracksJson ? JSON.parse(parsed.tracksJson) : [];
-    const awards = parsed.awardsJson ? JSON.parse(parsed.awardsJson) : [];
+    const tracks = parsed.tracks ?? [];
+    const awards = parsed.awards ?? [];
 
     console.log("tracks", tracks);
     console.log("awards", awards);

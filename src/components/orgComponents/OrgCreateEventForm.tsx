@@ -183,9 +183,6 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
         order: a.order ? Number(a.order) : idx,
         allowMultipleWinners: a.allowMultipleWinners,
       }));
-      console.log("form data", formData);
-      console.log("tracksPayload", tracksPayload);
-      console.log("awardsPayload", awardsPayload);
       const parsed = await createOrgEventClientSchema.parseAsync({
         orgSlug,
         name: formData.name,
@@ -294,7 +291,6 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
       fd.set("requireVideoDemo", parsed.requireVideoDemo ? "1" : "0");
       fd.set("tracksJson", JSON.stringify(parsed.tracks ?? []));
       fd.set("awardsJson", JSON.stringify(parsed.awards ?? []));
-      console.log("fd", fd);
 
       if (coverKey) fd.set("coverKey", coverKey);
 
