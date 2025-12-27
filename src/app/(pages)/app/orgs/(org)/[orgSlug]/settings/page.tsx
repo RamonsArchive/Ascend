@@ -17,7 +17,7 @@ import {
   PublicEventListItem,
   OrgRole,
 } from "@/src/lib/global_types";
-import { SponsorLibraryItem } from "@/src/components/orgComponents/SponsorLibraryCard";
+import type { SponsorLibraryItem } from "@/src/lib/global_types";
 import { fetchSponsorLibrary } from "@/src/actions/org_sponsor_actions";
 import { fetchAllOrgEvents } from "@/src/actions/event_actions";
 import { OrgSettingsData } from "@/src/lib/global_types";
@@ -123,7 +123,10 @@ const EditOrgPage = async ({
   const membersData = memberships; // could be but with date and string for createdAt
   const joinRequestsData = joinRequests;
 
-  const userRole = hasPermissions.data as OrgRole;
+  const { userRole } = hasPermissions.data as {
+    orgId: string;
+    userRole: OrgRole;
+  };
 
   return (
     <div className="relative w-full">

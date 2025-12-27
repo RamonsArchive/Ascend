@@ -318,6 +318,8 @@ export type OrgSettingsData = Prisma.OrganizationGetPayload<{
     joinMode: true;
     memberships: {
       select: {
+        id: true;
+        orgId: true;
         userId: true;
         role: true;
         createdAt: true;
@@ -329,6 +331,7 @@ export type OrgSettingsData = Prisma.OrganizationGetPayload<{
     joinRequests: {
       select: {
         id: true;
+        orgId: true;
         userId: true;
         message: true;
         status: true;

@@ -21,6 +21,8 @@ import EditOrgMembersSection from "./EditOrgMembersSection";
 import type { SponsorLibraryItem } from "@/src/lib/global_types";
 import InitialOrgSponsorsSection from "./InitialOrgSponsorsSection";
 import EditOrgSponsorsSection from "./EditOrgSponsorsSection";
+import OrgEventsList from "./OrgEventsList";
+import OrgCreateEventSection from "./OrgCreateEventSection";
 
 // If you want “Members” to show invites + requests + members, keep it 1 tab.
 // You can reuse your existing AddOrgMemberSection + EditOrgMembersSection here later.
@@ -109,7 +111,6 @@ const OrgSettingsClient = ({
         key: "MEMBERS" as const,
         render: () => (
           <React.Fragment key="members-section">
-            <EditOrgMembersHero />
             <AddOrgMemberSection
               orgId={org.id}
               joinRequests={joinRequestsData}
@@ -145,25 +146,10 @@ const OrgSettingsClient = ({
       {
         key: "EVENTS" as const,
         render: () => (
-          <section className="flex flex-col items-center justify-center w-full">
-            <div className="flex flex-col w-full max-w-6xl px-5 sm:px-10 md:px-18 py-10 md:py-14 gap-6 md:gap-8">
-              <div className="flex flex-col gap-3">
-                <h2 className="text-2xl md:text-3xl font-semibold text-white">
-                  Events
-                </h2>
-                <div className="text-sm md:text-base text-white/70 leading-relaxed max-w-4xl">
-                  Jump to your org’s events page to manage events.
-                </div>
-              </div>
-
-              <a
-                href={`/app/orgs/${orgSlug}/events`}
-                className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-white text-primary-950 font-semibold text-sm md:text-base transition-opacity hover:opacity-90 text-center"
-              >
-                Go to org events
-              </a>
-            </div>
-          </section>
+          <React.Fragment key="events-section">
+            <OrgCreateEventSection orgSlug={orgSlug} />
+            <OrgEventsList events={eventsData} orgSlug={orgSlug} />
+          </React.Fragment>
         ),
       },
     ],

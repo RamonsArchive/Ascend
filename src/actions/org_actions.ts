@@ -346,6 +346,7 @@ export const fetchOrgSettingsData = async (orgSlug: string) => {
         joinMode: true,
         memberships: {
           select: {
+            id: true,
             userId: true,
             role: true,
             createdAt: true,
@@ -357,6 +358,7 @@ export const fetchOrgSettingsData = async (orgSlug: string) => {
         joinRequests: {
           select: {
             id: true,
+            orgId: true,
             userId: true,
             message: true,
             status: true,
