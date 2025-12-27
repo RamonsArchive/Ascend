@@ -1,6 +1,7 @@
 import type {
   EventType,
   OrgJoinMode,
+  OrgMembership,
   OrganizationSponsor,
   Prisma,
   Sponsor,
@@ -43,7 +44,12 @@ export type SponsorTier =
   | "COMMUNITY";
 
 export type OrgSponsorWithSponsor = Prisma.OrganizationSponsorGetPayload<{
-  include: {
+  select: {
+    id: true;
+    sponsorId: true;
+    order: true;
+    createdAt: true;
+    updatedAt: true;
     sponsor: {
       select: {
         id: true;
@@ -355,3 +361,43 @@ export type OrgSettingsData = Prisma.OrganizationGetPayload<{
     };
   };
 }>;
+
+export type SettingsTab<TView extends string> = {
+  key: TView;
+  label: string;
+  description: string;
+};
+
+export type SettingsSection<TView extends string> = {
+  key: TView;
+  render: () => React.ReactNode;
+};
+
+export type OrgSettingsView =
+  | "DETAILS"
+  | "JOIN"
+  | "MEMBERS"
+  | "SPONSORS"
+  | "EVENTS";
+
+export type OrgRole = OrgMembership["role"];
+
+export type Member = {
+  id: string;
+  userId: string;
+  role: "OWNER" | "ADMIN" | "MEMBER";
+  createdAt: Date;
+  user: { id: string; name: string; email: string; image: string | null };
+};
+
+export type SponsorLibraryItem = {
+  id: string;
+  name: string;
+  slug: string;
+  websiteKey: string | null;
+  description: string | null;
+  logoKey: string | null;
+  coverKey: string | null;
+  visibility: "PUBLIC" | "PRIVATE";
+  createdById: string | null;
+};

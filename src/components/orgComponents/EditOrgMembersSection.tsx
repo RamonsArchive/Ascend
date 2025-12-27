@@ -4,14 +4,7 @@ import React, { useMemo, useState } from "react";
 
 import EditOrgMemberCard from "@/src/components/orgComponents/EditOrgMemberCard";
 import { org_members_data } from "@/src/constants/orgConstants/org_index";
-
-type Member = {
-  id: string;
-  userId: string;
-  role: "OWNER" | "ADMIN" | "MEMBER";
-  createdAt: string;
-  user: { id: string; name: string; email: string; image: string | null };
-};
+import { OrgRole, Member } from "@/src/lib/global_types";
 
 const EditOrgMembersSection = ({
   orgId,
@@ -22,7 +15,7 @@ const EditOrgMembersSection = ({
   orgId: string;
   members: Member[];
   currentUserId: string;
-  viewerRole: "OWNER" | "ADMIN";
+  viewerRole: OrgRole;
 }) => {
   const { section, filters } = org_members_data;
   const [query, setQuery] = useState("");

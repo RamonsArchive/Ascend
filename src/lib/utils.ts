@@ -1,4 +1,4 @@
-import type { SponsorTier, OrgMember } from "@/src/lib/global_types";
+import type { SponsorTier, OrgMember, Member } from "@/src/lib/global_types";
 import { EventType } from "@prisma/client";
 import type {
   EventLikeForTime,
@@ -411,3 +411,16 @@ export const optionalMapsShortUrl = z.preprocess(
     )
     .optional()
 );
+
+export function roleBadgeClasses(role: Member["role"]) {
+  switch (role) {
+    case "OWNER":
+      return "bg-amber-400/15 text-amber-200 border-amber-400/20";
+    case "ADMIN":
+      return "bg-sky-400/15 text-sky-200 border-sky-400/20";
+    case "MEMBER":
+      return "bg-white/5 text-white/70 border-white/10";
+    default:
+      return "bg-white/5 text-white/70 border-white/10";
+  }
+}

@@ -15,11 +15,13 @@ import {
   OrgSponsorWithSponsor,
   OrgMemberResponse,
   PublicEventListItem,
+  OrgRole,
 } from "@/src/lib/global_types";
 import { SponsorLibraryItem } from "@/src/components/orgComponents/SponsorLibraryCard";
 import { fetchSponsorLibrary } from "@/src/actions/org_sponsor_actions";
 import { fetchAllOrgEvents } from "@/src/actions/event_actions";
 import { OrgSettingsData } from "@/src/lib/global_types";
+import OrgSettingsClient from "@/src/components/orgComponents/OrgSettingsClient";
 
 const EditOrgPage = async ({
   params,
@@ -115,38 +117,29 @@ const EditOrgPage = async ({
     sponsors,
   } = orgRes.data as OrgSettingsData;
 
-  const libraryData = sponsorsLibraryRes?.data as SponsorLibraryItem[];
+  const sponsorLibrary = sponsorsLibraryRes?.data as SponsorLibraryItem[]; // library
   const eventsData = eventsRes?.data as PublicEventListItem[];
 
   const membersData = memberships; // could be but with date and string for createdAt
   const joinRequestsData = joinRequests;
-  const sponsorsData = sponsors;
+
+  const userRole = hasPermissions.data as OrgRole;
 
   return (
     <div className="relative w-full">
       <div className="absolute inset-0 pointer-events-none marketing-bg" />
       <div className="relative flex flex-col items-center justify-center w-full gap-12 md:gap-16 lg:gap-20">
         <EditOrgHero />
-        <EditOrgFormSection
-          orgId={id}
-          initialOrg={{
-            name: name,
-            description: description,
-            publicEmail: publicEmail,
-            publicPhone: publicPhone,
-            websiteUrl: websiteUrl,
-            contactNote: contactNote,
-            logoKey: logoKey,
-            coverKey: coverKey,
-          }}
-        />
-        <EditOrgJoinSettingsSection
-          orgId={id}
-          allowJoinRequests={allowJoinRequests}
-          joinMode={joinMode}
+        <OrgSettingsClient
+          orgSlug={orgSlug}
+          org={orgRes.data as OrgSettingsData}
           currentUserId={userId}
+          userRole={userRole}
+          membersData={membersData}
+          joinRequestsData={joinRequestsData}
+          sponsorsData={sponsorLibrary}
+          eventsData={eventsData}
         />
-        <LinkToSponsorsPage orgSlug={orgSlug} />
       </div>
     </div>
   );

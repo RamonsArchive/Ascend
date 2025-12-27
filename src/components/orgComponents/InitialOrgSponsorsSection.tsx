@@ -4,7 +4,7 @@ import EditOrgSponsorForm from "./EditOrgSponsorForm";
 import type { OrgSponsorWithSponsor } from "@/src/lib/global_types";
 import { org_sponsors_data } from "@/src/constants/orgConstants/org_index";
 import AddSponsorToOrgModal from "./AddSponsorToOrgModal";
-import { SponsorLibraryItem } from "./SponsorLibraryCard";
+import type { SponsorLibraryItem } from "@/src/lib/global_types";
 
 const InitialOrgSponsorsSection = ({
   initialSponsors,
@@ -18,7 +18,7 @@ const InitialOrgSponsorsSection = ({
   const { orgSection } = org_sponsors_data;
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [defaultSponsorId, setDefaultSponsorId] = React.useState<string | null>(
-    null,
+    null
   );
   return (
     <section className="flex flex-col items-center justify-center w-full">

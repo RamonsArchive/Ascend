@@ -49,7 +49,7 @@ const EditOrgSponsorForm = ({
   const router = useRouter();
   const allowedImageMimeTypes = useMemo(
     () => new Set(["image/png", "image/jpeg", "image/webp"]),
-    [],
+    []
   );
 
   const submitButtonRef = useRef<HTMLButtonElement>(null);
@@ -71,7 +71,7 @@ const EditOrgSponsorForm = ({
   }));
 
   const [orderInput, setOrderInput] = useState<string>(() =>
-    String(initialSponsor.order ?? 0),
+    String(initialSponsor.order ?? 0)
   );
 
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(() => {
@@ -100,7 +100,7 @@ const EditOrgSponsorForm = ({
 
   const submitForm = async (
     _state: ActionState,
-    _fd: FormData,
+    _fd: FormData
   ): Promise<ActionState> => {
     try {
       void _state;
@@ -222,7 +222,7 @@ const EditOrgSponsorForm = ({
 
   const removeLink = async () => {
     const ok = window.confirm(
-      `Remove ${initialSponsor.sponsor.name} from this organization?`,
+      `Remove ${initialSponsor.sponsor.name} from this organization?`
     );
     if (!ok) return;
 
@@ -275,7 +275,7 @@ const EditOrgSponsorForm = ({
                 {initialSponsor.sponsor.name}
                 <div
                   className={`w-fit px-3 py-1 rounded-full border text-[11px] font-semibold tracking-wide ${tierBadgeClasses(
-                    formData.tier,
+                    formData.tier
                   )}`}
                 >
                   {formData.tier}
@@ -382,7 +382,7 @@ const EditOrgSponsorForm = ({
                   setOrderInput(
                     e.target.value
                       .replace(/[^\d]/g, "")
-                      .replace(/^0+(?=\d)/, ""),
+                      .replace(/^0+(?=\d)/, "")
                   )
                 }
                 onBlur={() => {
@@ -475,7 +475,7 @@ const EditOrgSponsorForm = ({
                     setLogoPreviewUrl(
                       fallbackKey
                         ? (s3KeyToPublicUrl(fallbackKey) as string)
-                        : null,
+                        : null
                     );
                   }}
                   className="text-xs text-white/70 hover:text-white underline text-left"

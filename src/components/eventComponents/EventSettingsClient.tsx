@@ -1,17 +1,47 @@
 "use client";
-import React, { useState } from "react";
+
+import React, { useMemo } from "react";
 import type {
   EventCompleteData,
   EventMembersAdminData,
   EventSettingsView,
 } from "@/src/lib/global_types";
-import EventSettingsFilter from "./EventSettingsFilter";
+
+import SettingsClient from "@/src/components/SettingsClient";
+import type { SettingsTab } from "@/src/lib/global_types";
+
 import EventEditDetails from "@/src/components/eventComponents/EventEditDetails";
 import EventEditTeam from "@/src/components/eventComponents/EventEditTeam";
 import EventMembersAdminSection from "@/src/components/eventComponents/EventMembersAdminSection";
 import EventEditMembersSection from "@/src/components/eventComponents/EventEditMembersSection";
 import EventEditTracks from "@/src/components/eventComponents/EventEditTracks";
 import EventEditAwards from "@/src/components/eventComponents/EventEditAwards";
+
+const eventTabs: Array<SettingsTab<EventSettingsView>> = [
+  {
+    key: "DETAILS",
+    label: "Details",
+    description: "Title, dates, rules, visibility, and settings.",
+  },
+  {
+    key: "TEAM_RULES",
+    label: "Team rules",
+    description: "Join policy, max team size, lock changes, etc.",
+  },
+  {
+    key: "INVITES",
+    label: "Invites",
+    description: "Invite people via email or link.",
+  },
+  {
+    key: "MEMBERS",
+    label: "Members",
+    description: "Manage teams and participants.",
+  },
+  { key: "TRACKS", label: "Tracks", description: "Manage event tracks." },
+  { key: "AWARDS", label: "Awards", description: "Manage event awards." },
+];
+
 const EventSettingsClient = ({
   orgSlug,
   event,
@@ -21,54 +51,75 @@ const EventSettingsClient = ({
   event: EventCompleteData;
   membersAdminData: EventMembersAdminData | null;
 }) => {
-  const [view, setView] = useState<EventSettingsView>("DETAILS");
+  const sections = useMemo(
+    () => [
+      {
+        key: "DETAILS" as const,
+        render: () => <EventEditDetails event={event} />,
+      },
+
+      {
+        key: "TEAM_RULES" as const,
+        render: () => (
+          <EventEditTeam
+            eventId={event.id}
+            orgId={event.orgId ?? ""}
+            defaults={{
+              maxTeamSize: event.maxTeamSize ?? 5,
+              lockTeamChangesAtStart: event.lockTeamChangesAtStart ?? false,
+              allowSelfJoinRequests: event.allowSelfJoinRequests ?? false,
+            }}
+          />
+        ),
+      },
+
+      {
+        key: "INVITES" as const,
+        render: () => <EventMembersAdminSection eventId={event.id} />,
+      },
+
+      {
+        key: "MEMBERS" as const,
+        render: () => (
+          <EventEditMembersSection
+            orgSlug={orgSlug}
+            eventId={event.id}
+            membersAdminData={membersAdminData}
+          />
+        ),
+      },
+
+      {
+        key: "TRACKS" as const,
+        render: () => (
+          <EventEditTracks
+            eventId={event.id}
+            orgId={event.orgId ?? ""}
+            defaults={event.tracks ?? []}
+          />
+        ),
+      },
+
+      {
+        key: "AWARDS" as const,
+        render: () => (
+          <EventEditAwards
+            eventId={event.id}
+            orgId={event.orgId ?? ""}
+            defaults={event.awards ?? []}
+          />
+        ),
+      },
+    ],
+    [event, orgSlug, membersAdminData]
+  );
 
   return (
-    <>
-      <EventSettingsFilter value={view} onChange={setView} />
-
-      {view === "DETAILS" ? <EventEditDetails event={event} /> : null}
-
-      {view === "TEAM_RULES" ? (
-        <EventEditTeam
-          eventId={event.id}
-          orgId={event.orgId ?? ""}
-          defaults={{
-            maxTeamSize: event.maxTeamSize ?? 5,
-            lockTeamChangesAtStart: event.lockTeamChangesAtStart ?? false,
-            allowSelfJoinRequests: event.allowSelfJoinRequests ?? false,
-          }}
-        />
-      ) : null}
-
-      {view === "INVITES" ? (
-        <EventMembersAdminSection eventId={event.id} />
-      ) : null}
-
-      {view === "MEMBERS" ? (
-        <EventEditMembersSection
-          orgSlug={orgSlug}
-          eventId={event.id}
-          membersAdminData={membersAdminData}
-        />
-      ) : null}
-
-      {view === "TRACKS" ? (
-        <EventEditTracks
-          eventId={event.id}
-          orgId={event.orgId ?? ""}
-          defaults={event.tracks ?? []}
-        />
-      ) : null}
-
-      {view === "AWARDS" ? (
-        <EventEditAwards
-          eventId={event.id}
-          orgId={event.orgId ?? ""}
-          defaults={event.awards ?? []}
-        />
-      ) : null}
-    </>
+    <SettingsClient
+      initialView="DETAILS"
+      tabs={eventTabs}
+      sections={sections}
+    />
   );
 };
 

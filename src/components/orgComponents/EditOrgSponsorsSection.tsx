@@ -6,9 +6,8 @@ import type { Prisma } from "@prisma/client";
 import { org_sponsors_data } from "@/src/constants/orgConstants/org_index";
 import AddOrgSponsorForm from "@/src/components/orgComponents/AddOrgSponsorForm";
 import AddSponsorToOrgModal from "@/src/components/orgComponents/AddSponsorToOrgModal";
-import SponsorLibraryCard, {
-  type SponsorLibraryItem,
-} from "@/src/components/orgComponents/SponsorLibraryCard";
+import SponsorLibraryCard from "@/src/components/orgComponents/SponsorLibraryCard";
+import type { SponsorLibraryItem } from "@/src/lib/global_types";
 
 const EditOrgSponsorsSection = ({
   orgId,
@@ -22,8 +21,12 @@ const EditOrgSponsorsSection = ({
   const { librarySection, orgSection } = org_sponsors_data;
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [defaultSponsorId, setDefaultSponsorId] = React.useState<string | null>(
-    null,
+    null
   );
+
+  console.log("sponsorLibrary", sponsorLibrary);
+  console.log("orgId", orgId);
+  console.log("currentUserId", currentUserId);
 
   return (
     <section className="flex flex-col items-center justify-center w-full">

@@ -6,41 +6,22 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 
-import type { ActionState } from "@/src/lib/global_types";
+import type { ActionState, OrgRole, Member } from "@/src/lib/global_types";
 import { parseServerActionResponse } from "@/src/lib/utils";
 import {
   removeOrgMember,
   updateOrgMemberRole,
 } from "@/src/actions/org_members_actions";
 import { org_members_data } from "@/src/constants/orgConstants/org_index";
+import { roleBadgeClasses } from "@/src/lib/utils";
 
 // should be able to edit members role, if I'm admin or owner kick them out,
-type Member = {
-  id: string;
-  userId: string;
-  role: "OWNER" | "ADMIN" | "MEMBER";
-  createdAt: string;
-  user: { id: string; name: string; email: string; image: string | null };
-};
 
 const initialState: ActionState = {
   status: "INITIAL",
   error: "",
   data: null,
 };
-
-function roleBadgeClasses(role: Member["role"]) {
-  switch (role) {
-    case "OWNER":
-      return "bg-amber-400/15 text-amber-200 border-amber-400/20";
-    case "ADMIN":
-      return "bg-sky-400/15 text-sky-200 border-sky-400/20";
-    case "MEMBER":
-      return "bg-white/5 text-white/70 border-white/10";
-    default:
-      return "bg-white/5 text-white/70 border-white/10";
-  }
-}
 
 const EditOrgMemberCard = ({
   orgId,
@@ -51,7 +32,7 @@ const EditOrgMemberCard = ({
   orgId: string;
   member: Member;
   currentUserId: string;
-  viewerRole: "OWNER" | "ADMIN";
+  viewerRole: OrgRole;
 }) => {
   const router = useRouter();
   const { card } = org_members_data;
@@ -76,7 +57,7 @@ const EditOrgMemberCard = ({
 
   const submitRole = async (
     _state: ActionState,
-    _fd: FormData,
+    _fd: FormData
   ): Promise<ActionState> => {
     try {
       void _state;
@@ -200,7 +181,7 @@ const EditOrgMemberCard = ({
                 </div>
                 <div
                   className={`w-fit px-3 py-1 rounded-full border text-[11px] font-semibold tracking-wide ${roleBadgeClasses(
-                    member.role,
+                    member.role
                   )}`}
                 >
                   {member.role}

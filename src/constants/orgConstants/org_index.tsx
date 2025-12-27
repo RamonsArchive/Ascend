@@ -169,21 +169,10 @@ export const org_members_data = {
 export const org_nav_links = (orgSlug: string, hasPermissions: boolean) => {
   const links = [
     { label: "Overview", href: `/app/orgs/${orgSlug}` },
-    { label: "Events", href: `/app/orgs/${orgSlug}/events` },
-    { label: "Members", href: `/app/orgs/${orgSlug}/members` },
-    { label: "Sponsors", href: `/app/orgs/${orgSlug}/sponsors` },
     { label: "Settings", href: `/app/orgs/${orgSlug}/settings` },
   ] as const;
 
-  return hasPermissions
-    ? links
-    : links.filter(
-        (l) =>
-          l.label !== "Settings" &&
-          l.label !== "Sponsors" &&
-          l.label !== "Members" &&
-          l.label !== "Events",
-      );
+  return hasPermissions ? links : links.filter((l) => l.label !== "Settings");
 };
 
 export const JOIN_MODE_OPTIONS: Array<{

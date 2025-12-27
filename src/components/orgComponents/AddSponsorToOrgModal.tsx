@@ -25,7 +25,7 @@ import { createOrgImageUpload } from "@/src/actions/s3_actions";
 import { uploadToS3PresignedPost } from "@/src/lib/s3-client";
 import { addExistingSponsorToOrg } from "@/src/actions/org_sponsor_actions";
 import { addExistingSponsorToOrgClientSchema } from "@/src/lib/validation";
-import type { SponsorLibraryItem } from "@/src/components/orgComponents/SponsorLibraryCard";
+import type { SponsorLibraryItem } from "@/src/lib/global_types";
 import type { SponsorTier } from "@/src/lib/global_types";
 
 const initialState: ActionState = {
@@ -50,7 +50,7 @@ const AddSponsorToOrgModal = ({
   const router = useRouter();
   const allowedImageMimeTypes = useMemo(
     () => new Set(["image/png", "image/jpeg", "image/webp"]),
-    [],
+    []
   );
 
   const logoRef = useRef<HTMLInputElement>(null);
@@ -73,7 +73,7 @@ const AddSponsorToOrgModal = ({
 
   const [search, setSearch] = useState("");
   const [selectedSponsorId, setSelectedSponsorId] = useState<string>(
-    defaultSponsorId ?? "",
+    defaultSponsorId ?? ""
   );
   const [showBlurbPreview, setShowBlurbPreview] = useState(false);
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
@@ -153,7 +153,7 @@ const AddSponsorToOrgModal = ({
 
   const submitAttach = async (
     _state: ActionState,
-    _fd: FormData,
+    _fd: FormData
   ): Promise<ActionState> => {
     try {
       void _state;
@@ -466,7 +466,7 @@ const AddSponsorToOrgModal = ({
                         setOrderInput(
                           e.target.value
                             .replace(/[^\d]/g, "")
-                            .replace(/^0+(?=\d)/, ""),
+                            .replace(/^0+(?=\d)/, "")
                         )
                       }
                       onBlur={() => {

@@ -22,18 +22,7 @@ import {
 } from "@/src/actions/org_sponsor_actions";
 import { updateSponsorProfileClientSchema } from "@/src/lib/validation";
 import { deleteSponsor } from "@/src/actions/org_sponsor_actions";
-
-export type SponsorLibraryItem = {
-  id: string;
-  name: string;
-  slug: string;
-  websiteKey: string | null;
-  description: string | null;
-  logoKey: string | null;
-  coverKey: string | null;
-  visibility: "PUBLIC" | "PRIVATE";
-  createdById: string | null;
-};
+import type { SponsorLibraryItem } from "@/src/lib/global_types";
 
 const initialState: ActionState = {
   status: "INITIAL",
@@ -54,7 +43,7 @@ const SponsorLibraryCard = ({
 
   const allowedImageMimeTypes = useMemo(
     () => new Set(["image/png", "image/jpeg", "image/webp"]),
-    [],
+    []
   );
 
   const logoRef = useRef<HTMLInputElement>(null);
@@ -98,7 +87,7 @@ const SponsorLibraryCard = ({
       fd.set("sponsorId", sponsor.id);
       fd.set(
         "visibility",
-        sponsor.visibility === "PUBLIC" ? "PRIVATE" : "PUBLIC",
+        sponsor.visibility === "PUBLIC" ? "PRIVATE" : "PUBLIC"
       );
       const result = await setSponsorVisibility(initialState, fd);
       if (result.status === "ERROR") {
@@ -121,7 +110,7 @@ const SponsorLibraryCard = ({
     if (!canEdit) return;
 
     const ok = window.confirm(
-      `Delete "${sponsor.name}"?\n\nThis will remove the global sponsor from your library.`,
+      `Delete "${sponsor.name}"?\n\nThis will remove the global sponsor from your library.`
     );
     if (!ok) return;
 
@@ -156,7 +145,7 @@ const SponsorLibraryCard = ({
 
   const submitProfile = async (
     _state: ActionState,
-    _fd: FormData,
+    _fd: FormData
   ): Promise<ActionState> => {
     try {
       void _state;
@@ -174,7 +163,6 @@ const SponsorLibraryCard = ({
 
       const logoFile = logoRef.current?.files?.[0] ?? null;
       const coverFile = coverRef.current?.files?.[0] ?? null;
-      const createdSponsor = sponsor.createdById === currentUserId;
 
       await updateSponsorProfileClientSchema.parseAsync({
         sponsorId: sponsor.id,
@@ -321,6 +309,7 @@ const SponsorLibraryCard = ({
 
   const [, formAction, isPending] = useActionState(submitProfile, initialState);
 
+  console.log("sponsor", sponsor);
   return (
     <div className="marketing-card w-full rounded-3xl px-6 py-6 md:px-8 md:py-8 bg-white/4">
       <div className="flex flex-col gap-6 md:gap-8">
