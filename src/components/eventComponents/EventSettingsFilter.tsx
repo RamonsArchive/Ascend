@@ -28,6 +28,16 @@ const tabs: Array<{
     label: "Members",
     description: "Manage teams and participants.",
   },
+  {
+    key: "TRACKS",
+    label: "Tracks",
+    description: "Manage event tracks.",
+  },
+  {
+    key: "AWARDS",
+    label: "Awards",
+    description: "Manage event awards.",
+  },
 ];
 
 const EventSettingsFilter = ({
