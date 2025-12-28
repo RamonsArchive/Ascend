@@ -1179,3 +1179,37 @@ export const deleteEvent = async (
     }) as ActionState;
   }
 };
+
+export const fetchEventOrg = async (
+  orgSlug: string,
+  eventSlug: string
+): Promise<ActionState> => {
+  try {
+    const isRateLimited = await checkRateLimit("fetchEventOrg");
+    if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
+
+    const event = await prisma.event.findUnique({
+      where: { orgId_slug: { orgId: orgSlug, slug: eventSlug } },
+      select: { org: { select: { id: true, slug: true } } },
+    });
+    if (!event) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "Event not found",
+        data: null,
+      }) as ActionState;
+    }
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data: event.org,
+    }) as ActionState;
+  } catch (error) {
+    console.error(error);
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to fetch event org",
+      data: null,
+    }) as ActionState;
+  }
+};

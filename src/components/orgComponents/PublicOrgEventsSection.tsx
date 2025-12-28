@@ -7,8 +7,10 @@ import type { PublicEventListItem } from "@/src/lib/global_types";
 import type { EventType } from "@prisma/client";
 
 const PublicOrgEventsSection = ({
+  orgSlug,
   events,
 }: {
+  orgSlug: string;
   events: PublicEventListItem[];
 }) => {
   const now = useMemo(() => new Date(), []);
@@ -142,18 +144,21 @@ const PublicOrgEventsSection = ({
           title="Upcoming"
           subtitle="Events that haven’t started yet."
           items={buckets.upcoming}
+          orgSlug={orgSlug}
         />
 
         <PublicEventTimeStateSection
           title="Live"
           subtitle="Events happening right now (based on start/end dates)."
           items={buckets.live}
+          orgSlug={orgSlug}
         />
 
         <PublicEventTimeStateSection
           title="Past"
           subtitle="Completed events."
           items={buckets.past}
+          orgSlug={orgSlug}
         />
       </div>
     </section>

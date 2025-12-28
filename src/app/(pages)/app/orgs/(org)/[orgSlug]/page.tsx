@@ -99,7 +99,7 @@ const OrgOverviewPage = async ({
           }}
         />
         <PublicOrgSponsorsSection sponsors={sponsors} />
-        <PublicOrgEventsSection events={events} />
+        <PublicOrgEventsSection orgSlug={orgSlug} events={events} />
         <PublicOrgMembersSection members={members} />
       </div>
     </div>

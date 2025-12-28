@@ -7,10 +7,16 @@ import { formatDateRange } from "@/src/lib/utils";
 import { s3KeyToPublicUrl } from "@/src/lib/s3-client";
 import type { PublicEventListItem } from "@/src/lib/global_types";
 
-const PublicEventCard = ({ event }: { event: PublicEventListItem }) => {
+const PublicEventCard = ({
+  orgSlug,
+  event,
+}: {
+  orgSlug: string;
+  event: PublicEventListItem;
+}) => {
   const dateRange = useMemo(
     () => formatDateRange(event.startAt ?? null, event.endAt ?? null),
-    [event.startAt, event.endAt],
+    [event.startAt, event.endAt]
   );
 
   const badge = useMemo(() => {
@@ -40,7 +46,7 @@ const PublicEventCard = ({ event }: { event: PublicEventListItem }) => {
 
   return (
     <Link
-      href={`/events/${event.slug}`}
+      href={`app/events/${orgSlug}/${event.slug}`}
       className="group w-full rounded-3xl overflow-hidden border border-white/10 bg-primary-950/70 hover:bg-primary-950 transition-colors duration-200 hover:border-accent-100"
     >
       {/* EXACT HERO-STYLE COVER BLEND */}

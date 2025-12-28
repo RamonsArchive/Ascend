@@ -1,15 +1,17 @@
 import React from "react";
-import type { Event } from "@prisma/client";
+import type { PublicEventListItem } from "@/src/lib/global_types";
 import PublicEventCard from "../PublicEventCard";
 
 const PublicEventTimeStateSection = ({
   title,
   subtitle,
   items,
+  orgSlug,
 }: {
   title: string;
   subtitle?: string;
-  items: Event[];
+  items: PublicEventListItem[];
+  orgSlug: string;
 }) => {
   return (
     <div className="flex flex-col gap-4">
@@ -31,7 +33,7 @@ const PublicEventTimeStateSection = ({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {items.map((e) => (
-            <PublicEventCard key={e.id} event={e} />
+            <PublicEventCard key={e.id} event={e} orgSlug={orgSlug} />
           ))}
         </div>
       )}

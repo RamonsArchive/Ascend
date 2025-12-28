@@ -63,7 +63,7 @@ const EventsExplore = ({
         { key: "HACKATHON" as const, label: "Hackathons" },
         { key: "IDEATHON" as const, label: "Ideathons" },
       ] satisfies Array<{ key: ChipKey; label: string }>,
-    [],
+    []
   );
 
   const Pill = ({
@@ -188,7 +188,11 @@ const EventsExplore = ({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filtered.map((evt) => (
-              <PublicEventCard key={evt.id} event={evt} />
+              <PublicEventCard
+                key={evt.id}
+                event={evt}
+                orgSlug={evt.org.slug}
+              />
             ))}
           </div>
         )}
