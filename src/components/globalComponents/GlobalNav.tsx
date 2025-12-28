@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import ProfileAvatar from "../ProfileAvatar";
 import { nav_links } from "@/src/constants/globalConstants/global_index";
 import GlobalMobileMenu from "./GlobalMobileMenu";
@@ -152,14 +151,6 @@ const FloatingNavbar = ({
 
 // Main Navbar component with scroll detection and throttling
 const GlobalNav = () => {
-  const pathname = usePathname();
-  const segments = (pathname || "").split("/").filter(Boolean);
-  const isOrgDashboardRoute =
-    segments[0] === "app" &&
-    segments[1] === "orgs" &&
-    segments.length >= 3 &&
-    segments[2] !== "new";
-
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showFloatingNavbar, setShowFloatingNavbar] = useState(false);
 
@@ -168,14 +159,13 @@ const GlobalNav = () => {
   };
 
   useEffect(() => {
-    if (isOrgDashboardRoute) return;
     let lastScrollY = window.scrollY || window.pageYOffset || 0;
     let ticking = false;
 
     const updateNavbar = () => {
       const currentScrollY = Math.max(
         0,
-        window.scrollY || window.pageYOffset || 0,
+        window.scrollY || window.pageYOffset || 0
       );
 
       const navbarHeight = 48; // Height of the navbar
@@ -211,11 +201,10 @@ const GlobalNav = () => {
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
-  }, [isOrgDashboardRoute]);
+  }, []);
 
   // Close menu when clicking outside (optional enhancement)
   useEffect(() => {
-    if (isOrgDashboardRoute) return;
     if (isMenuOpen) {
       document.body.style.overflow = "hidden";
     } else {
@@ -225,10 +214,7 @@ const GlobalNav = () => {
     return () => {
       document.body.style.overflow = "unset";
     };
-  }, [isMenuOpen, isOrgDashboardRoute]);
-
-  // Avoid double navbar: org dashboard routes use `OrgNav` via nested layout.
-  if (isOrgDashboardRoute) return null;
+  }, [isMenuOpen]);
 
   return (
     <>

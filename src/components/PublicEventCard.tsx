@@ -46,7 +46,7 @@ const PublicEventCard = ({
 
   return (
     <Link
-      href={`app/events/${orgSlug}/${event.slug}`}
+      href={`/app/orgs/${orgSlug}/${event.slug}`}
       className="group w-full rounded-3xl overflow-hidden border border-white/10 bg-primary-950/70 hover:bg-primary-950 transition-colors duration-200 hover:border-accent-100"
     >
       {/* EXACT HERO-STYLE COVER BLEND */}

@@ -217,7 +217,6 @@ const OrgNav = ({
     };
   }, [isMenuOpen]);
 
-  console.log("showFloatingNavbar", showFloatingNavbar);
   return (
     <>
       <StaticNavbar
