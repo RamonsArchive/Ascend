@@ -52,7 +52,7 @@ export function EventListEditor<T extends TrackLikeDraft | AwardLikeDraft>({
       ...d,
       clientId: d.clientId || makeClientId(),
       order: (d.order ?? "").toString(),
-    }))
+    })),
   );
 
   const [errors, setErrors] = useState<CommonErrors>({});
@@ -86,7 +86,7 @@ export function EventListEditor<T extends TrackLikeDraft | AwardLikeDraft>({
         ...d,
         clientId: d.clientId || makeClientId(),
         order: (d.order ?? "").toString(),
-      }))
+      })),
     );
     setErrors({});
     setStatusMessage("");
@@ -198,8 +198,8 @@ export function EventListEditor<T extends TrackLikeDraft | AwardLikeDraft>({
                 const setItem = (updater: (prev: T) => T) => {
                   setItems((p) =>
                     p.map((x) =>
-                      x.clientId === item.clientId ? updater(x) : x
-                    )
+                      x.clientId === item.clientId ? updater(x) : x,
+                    ),
                   );
                 };
 
@@ -216,7 +216,7 @@ export function EventListEditor<T extends TrackLikeDraft | AwardLikeDraft>({
                         type="button"
                         onClick={() =>
                           setItems((p) =>
-                            p.filter((x) => x.clientId !== item.clientId)
+                            p.filter((x) => x.clientId !== item.clientId),
                           )
                         }
                         className="text-xs text-white/70 hover:text-white underline"

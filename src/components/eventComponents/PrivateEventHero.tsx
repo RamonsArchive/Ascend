@@ -1,12 +1,190 @@
 import React from "react";
+import Link from "next/link";
+import Image from "next/image";
 
-const PrivateEventHero = () => {
+import type { EventCompleteData } from "@/src/lib/global_types";
+import {
+  formatDateRange,
+  formatShortDate,
+  eventJoinModeLabel,
+  eventPillClasses,
+  eventStatusLabel,
+  eventVisibilityLabel,
+} from "@/src/lib/utils";
+import { s3KeyToPublicUrl } from "@/src/lib/s3-client";
+
+const StatPill = ({
+  label,
+  value,
+}: {
+  label: string;
+  value: number | string;
+}) => {
+  return (
+    <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-white/5 border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+      <div className="text-xs text-white/60">{label}</div>
+      <div className="text-sm font-semibold text-white">{value}</div>
+    </div>
+  );
+};
+
+const Pill = ({
+  kind,
+  value,
+  label,
+}: {
+  kind: "STATUS" | "VISIBILITY" | "JOIN";
+  value: string;
+  label: string;
+}) => {
+  return (
+    <div
+      className={`px-3 py-1 rounded-full text-xs font-medium border backdrop-blur-sm ${eventPillClasses(
+        kind,
+        value
+      )}`}
+    >
+      {label}
+    </div>
+  );
+};
+
+const PrivateEventHero = ({
+  orgSlug,
+  event,
+}: {
+  orgSlug: string;
+  event: EventCompleteData;
+}) => {
+  const coverUrl = event.coverKey
+    ? (s3KeyToPublicUrl(event.coverKey) as string)
+    : null;
+
+  const dateRange = formatDateRange(event.startAt ?? null, event.endAt ?? null);
+
+  const regCloses = formatShortDate(event.registrationClosesAt ?? null);
+
+  const statusText = eventStatusLabel(event.status);
+  const visibilityText = eventVisibilityLabel(event.visibility);
+  const joinText = eventJoinModeLabel(event.joinMode);
+
+  const orgHref = `/app/orgs/${orgSlug}`;
+  const eventHomeHref = `/app/orgs/${orgSlug}/events/${event.slug}`;
+  const eventSettingsHref = `/app/orgs/${orgSlug}/events/${event.slug}/settings`;
+
   return (
     <section className="flex flex-col items-center justify-center w-full">
-      <div className="flex flex-col w-full max-w-6xl px-5 sm:px-10 md:px-18 pt-10 md:pt-14 gap-6">
-        <div className="flex flex-col gap-3">
-          <h1 className="text-3xl md:text-5xl font-semibold text-white leading-tight"></h1>
+      <div className="flex flex-col w-full max-w-6xl px-5 sm:px-10 md:px-18 pt-10 md:pt-14 gap-6 md:gap-8">
+        <div className="w-full rounded-3xl overflow-hidden border border-white/10 bg-primary-950/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+          {/* Cover */}
+          <div className="relative w-full h-[210px] md:h-[280px] bg-black/40">
+            {coverUrl ? (
+              <Image
+                src={coverUrl}
+                alt={`${event.name} cover`}
+                fill
+                priority
+                sizes="(max-width: 768px) 100vw, 1200px"
+                className="object-cover opacity-90"
+              />
+            ) : (
+              <div className="absolute inset-0 bg-linear-to-br from-secondary-500/20 via-primary-950 to-primary-950" />
+            )}
+
+            {/* overlays (match your hero blend vibe) */}
+            <div className="absolute inset-0 bg-linear-to-t from-primary-950 via-primary-950/35 to-transparent" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_55%)]" />
+
+            {/* top */}
+            <div className="absolute top-4 left-4 right-4 flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Pill kind="STATUS" value={event.status} label={statusText} />
+                <Pill
+                  kind="VISIBILITY"
+                  value={event.visibility}
+                  label={visibilityText}
+                />
+                <Pill kind="JOIN" value={event.joinMode} label={joinText} />
+              </div>
+
+              <Link
+                href={orgHref}
+                className="px-3 py-1 rounded-full text-xs font-semibold bg-white/10 backdrop-blur-sm text-white/90 border border-white/10 hover:bg-white/15 transition-colors"
+              >
+                {event.org?.name ?? "Organization"} →
+              </Link>
+            </div>
+
+            {/* bottom title */}
+            <div className="absolute bottom-0 left-0 right-0 p-5 md:p-7">
+              <div className="flex flex-col gap-2">
+                <h1 className="text-2xl md:text-4xl font-semibold text-white leading-tight">
+                  {event.heroTitle || event.name}
+                </h1>
+
+                {event.heroSubtitle ? (
+                  <div className="text-sm md:text-base text-white/70 leading-relaxed max-w-3xl">
+                    {event.heroSubtitle}
+                  </div>
+                ) : (
+                  <div className="text-sm md:text-base text-white/70 leading-relaxed max-w-3xl">
+                    Manage tracks, awards, teams, and submissions — plus staff +
+                    member overview.
+                  </div>
+                )}
+
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/65 pt-2">
+                  {dateRange ? <span>{dateRange}</span> : null}
+                  {regCloses ? <span>• Reg closes {regCloses}</span> : null}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Body */}
+          <div className="p-5 md:p-7">
+            <div className="flex flex-col gap-6 md:gap-7">
+              {/* Stats */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                <StatPill label="Teams" value={event._count?.teams ?? 0} />
+                <StatPill
+                  label="Submissions"
+                  value={event._count?.submissions ?? 0}
+                />
+                <StatPill label="Staff" value={event._count?.staff ?? 0} />
+                <StatPill label="Members" value={event._count?.members ?? 0} />
+              </div>
+
+              {/* Actions */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="text-xs md:text-sm text-white/60">
+                  Event slug:{" "}
+                  <span className="text-white/80 font-semibold">
+                    {event.slug}
+                  </span>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                  <Link
+                    href={eventHomeHref}
+                    className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-white text-primary-950 font-semibold text-sm md:text-base transition-opacity hover:opacity-90 text-center"
+                  >
+                    Open event home
+                  </Link>
+
+                  <Link
+                    href={eventSettingsHref}
+                    className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-white/5 border border-white/10 text-white/85 font-semibold text-sm md:text-base hover:bg-white/10 transition-colors text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                  >
+                    Settings
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+
+        <div className="w-full h-px bg-white/10" />
       </div>
     </section>
   );

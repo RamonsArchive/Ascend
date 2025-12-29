@@ -13,6 +13,7 @@ import {
   EventMembersAdminData,
 } from "@/src/lib/global_types";
 import EventSettingsClient from "@/src/components/eventComponents/EventSettingsClient";
+import { fetchOrgId } from "@/src/actions/org_actions";
 
 const EventSettingsPage = async ({
   params,
@@ -57,7 +58,32 @@ const EventSettingsPage = async ({
     );
   }
 
-  const eventData = await fetchEventCompleteData(orgSlug, eventSlug);
+  const orgIdRes = await fetchOrgId(orgSlug);
+  if (orgIdRes.status === "ERROR" || !orgIdRes.data) {
+    return (
+      <div className="relative w-full min-h-[calc(100vh-48px)]">
+        <div className="absolute inset-0 pointer-events-none marketing-bg" />
+        <div className="relative flex flex-col items-center justify-center w-full gap-12 md:gap-16 lg:gap-20">
+          <section className="flex flex-col items-center justify-center w-full">
+            <div className="flex flex-col w-full max-w-3xl px-5 sm:px-10 md:px-18 pt-10 md:pt-14 gap-4">
+              <div className="text-white text-xl font-semibold">Error</div>
+              <div className="text-white/70 text-sm leading-relaxed">
+                Failed to fetch organization id.
+              </div>
+              <Link
+                href={`/orgs/${orgSlug}`}
+                className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-white text-primary-950 font-semibold text-sm md:text-base transition-opacity hover:opacity-90 text-center"
+              >
+                Back to org dashboard
+              </Link>
+            </div>
+          </section>
+        </div>
+      </div>
+    );
+  }
+  const orgId = orgIdRes.data as string;
+  const eventData = await fetchEventCompleteData(orgId, eventSlug);
   console.log(eventData);
   if (eventData.status === "ERROR" || !eventData.data) {
     return (
@@ -84,11 +110,7 @@ const EventSettingsPage = async ({
   }
 
   const event = eventData.data as EventCompleteData;
-  const membersRes = await fetchEventMembersAdminData(
-    orgSlug,
-    eventSlug,
-    event.id
-  );
+  const membersRes = await fetchEventMembersAdminData(orgId, eventSlug);
   console.log(membersRes);
   const membersAdminData =
     membersRes.status === "SUCCESS"

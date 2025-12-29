@@ -111,7 +111,7 @@ const EventSettingsClient = ({
         ),
       },
     ],
-    [event, orgSlug, membersAdminData]
+    [event, orgSlug, membersAdminData],
   );
 
   return (

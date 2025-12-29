@@ -35,7 +35,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
   const router = useRouter();
   const allowedImageMimeTypes = useMemo(
     () => new Set(["image/png", "image/jpeg", "image/webp"]),
-    []
+    [],
   );
 
   const coverRef = useRef<HTMLInputElement>(null);
@@ -162,7 +162,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
 
   const submitCreateEvent = async (
     _state: ActionState,
-    _fd: FormData
+    _fd: FormData,
   ): Promise<ActionState> => {
     try {
       void _state;
@@ -285,7 +285,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
       fd.set("allowSelfJoinRequests", parsed.allowSelfJoinRequests ? "1" : "0");
       fd.set(
         "lockTeamChangesAtStart",
-        parsed.lockTeamChangesAtStart ? "1" : "0"
+        parsed.lockTeamChangesAtStart ? "1" : "0",
       );
       fd.set("requireImages", parsed.requireImages ? "1" : "0");
       fd.set("requireVideoDemo", parsed.requireVideoDemo ? "1" : "0");
@@ -353,7 +353,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
 
   const [, formAction, isPending] = useActionState(
     submitCreateEvent,
-    initialState
+    initialState,
   );
 
   return (
@@ -931,7 +931,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                           setFormData((p) => ({
                             ...p,
                             tracks: p.tracks.filter(
-                              (x) => x.clientId !== t.clientId
+                              (x) => x.clientId !== t.clientId,
                             ),
                           }))
                         }
@@ -954,7 +954,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                               tracks: p.tracks.map((x) =>
                                 x.clientId === t.clientId
                                   ? { ...x, name: e.target.value }
-                                  : x
+                                  : x,
                               ),
                             }))
                           }
@@ -980,10 +980,10 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                                       ...x,
                                       order: e.target.value.replace(
                                         /[^\d]/g,
-                                        ""
+                                        "",
                                       ),
                                     }
-                                  : x
+                                  : x,
                               ),
                             }))
                           }
@@ -1005,7 +1005,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                             tracks: p.tracks.map((x) =>
                               x.clientId === t.clientId
                                 ? { ...x, blurb: e.target.value }
-                                : x
+                                : x,
                             ),
                           }))
                         }
@@ -1078,7 +1078,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                           setFormData((p) => ({
                             ...p,
                             awards: p.awards.filter(
-                              (x) => x.clientId !== a.clientId
+                              (x) => x.clientId !== a.clientId,
                             ),
                           }))
                         }
@@ -1101,7 +1101,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                               awards: p.awards.map((x) =>
                                 x.clientId === a.clientId
                                   ? { ...x, name: e.target.value }
-                                  : x
+                                  : x,
                               ),
                             }))
                           }
@@ -1127,10 +1127,10 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                                       ...x,
                                       order: e.target.value.replace(
                                         /[^\d]/g,
-                                        ""
+                                        "",
                                       ),
                                     }
-                                  : x
+                                  : x,
                               ),
                             }))
                           }
@@ -1152,7 +1152,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                             awards: p.awards.map((x) =>
                               x.clientId === a.clientId
                                 ? { ...x, blurb: e.target.value }
-                                : x
+                                : x,
                             ),
                           }))
                         }
@@ -1174,7 +1174,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                                     ...x,
                                     allowMultipleWinners: e.target.checked,
                                   }
-                                : x
+                                : x,
                             ),
                           }))
                         }

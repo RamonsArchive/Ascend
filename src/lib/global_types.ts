@@ -409,3 +409,20 @@ export type SponsorLibraryItem = {
   visibility: "PUBLIC" | "PRIVATE";
   createdById: string | null;
 };
+
+export type EventStaffRole = Prisma.EventStaffMembershipGetPayload<{
+  select: { role: true };
+}>["role"];
+
+export type EventStaffRow = Prisma.EventStaffMembershipGetPayload<{
+  select: {
+    userId: true;
+    role: true;
+    user: { select: { id: true; name: true; email: true; image: true } };
+  };
+}>;
+
+export type EventStaffData = {
+  eventId: string;
+  staff: EventStaffRow[];
+};

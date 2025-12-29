@@ -424,3 +424,74 @@ export function roleBadgeClasses(role: Member["role"]) {
       return "bg-white/5 text-white/70 border-white/10";
   }
 }
+
+// ===== Event pills (admin/private hero) =====
+
+export function eventStatusLabel(status: string) {
+  const s = (status || "").toUpperCase();
+  if (s === "PUBLISHED") return "Published";
+  if (s === "DRAFT") return "Draft";
+  if (s === "ARCHIVED") return "Archived";
+  return status || "Unknown";
+}
+
+export function eventVisibilityLabel(visibility: string) {
+  const v = (visibility || "").toUpperCase();
+  if (v === "PUBLIC_LISTED") return "Public (Listed)";
+  if (v === "PUBLIC_UNLISTED") return "Public (Unlisted)";
+  if (v === "PRIVATE") return "Private";
+  return visibility || "Unknown";
+}
+
+export function eventJoinModeLabel(joinMode: string) {
+  const j = (joinMode || "").toUpperCase();
+  if (j === "OPEN") return "Open";
+  if (j === "REQUEST") return "Request";
+  if (j === "INVITE_ONLY") return "Invite-only";
+  return joinMode || "Unknown";
+}
+
+export function eventPillClasses(
+  kind: "STATUS" | "VISIBILITY" | "JOIN",
+  value: string
+) {
+  const v = (value || "").toUpperCase();
+
+  // Keep your “soft frosted” vibe; slightly more contrast for important states
+  if (kind === "STATUS") {
+    if (v === "PUBLISHED")
+      return "bg-emerald-400/15 text-emerald-200 border-emerald-400/20";
+    if (v === "DRAFT") return "bg-white/5 text-white/70 border-white/10";
+    if (v === "ARCHIVED") return "bg-white/5 text-white/60 border-white/10";
+    return "bg-white/5 text-white/70 border-white/10";
+  }
+
+  if (kind === "VISIBILITY") {
+    if (v === "PUBLIC_LISTED")
+      return "bg-sky-400/15 text-sky-200 border-sky-400/20";
+    if (v === "PUBLIC_UNLISTED")
+      return "bg-white/5 text-white/70 border-white/10";
+    if (v === "PRIVATE")
+      return "bg-amber-400/15 text-amber-200 border-amber-400/20";
+    return "bg-white/5 text-white/70 border-white/10";
+  }
+
+  // JOIN
+  if (v === "OPEN")
+    return "bg-emerald-400/15 text-emerald-200 border-emerald-400/20";
+  if (v === "REQUEST")
+    return "bg-amber-400/15 text-amber-200 border-amber-400/20";
+  if (v === "INVITE_ONLY") return "bg-white/5 text-white/70 border-white/10";
+  return "bg-white/5 text-white/70 border-white/10";
+}
+
+export function formatShortDate(d: Date | string | null | undefined) {
+  if (!d) return null;
+  const dt = d instanceof Date ? d : new Date(d);
+  if (Number.isNaN(dt.getTime())) return null;
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  }).format(dt);
+}

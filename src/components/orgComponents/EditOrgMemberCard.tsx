@@ -57,7 +57,7 @@ const EditOrgMemberCard = ({
 
   const submitRole = async (
     _state: ActionState,
-    _fd: FormData
+    _fd: FormData,
   ): Promise<ActionState> => {
     try {
       void _state;
@@ -181,7 +181,7 @@ const EditOrgMemberCard = ({
                 </div>
                 <div
                   className={`w-fit px-3 py-1 rounded-full border text-[11px] font-semibold tracking-wide ${roleBadgeClasses(
-                    member.role
+                    member.role,
                   )}`}
                 >
                   {member.role}

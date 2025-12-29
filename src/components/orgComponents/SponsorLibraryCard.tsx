@@ -43,7 +43,7 @@ const SponsorLibraryCard = ({
 
   const allowedImageMimeTypes = useMemo(
     () => new Set(["image/png", "image/jpeg", "image/webp"]),
-    []
+    [],
   );
 
   const logoRef = useRef<HTMLInputElement>(null);
@@ -87,7 +87,7 @@ const SponsorLibraryCard = ({
       fd.set("sponsorId", sponsor.id);
       fd.set(
         "visibility",
-        sponsor.visibility === "PUBLIC" ? "PRIVATE" : "PUBLIC"
+        sponsor.visibility === "PUBLIC" ? "PRIVATE" : "PUBLIC",
       );
       const result = await setSponsorVisibility(initialState, fd);
       if (result.status === "ERROR") {
@@ -110,7 +110,7 @@ const SponsorLibraryCard = ({
     if (!canEdit) return;
 
     const ok = window.confirm(
-      `Delete "${sponsor.name}"?\n\nThis will remove the global sponsor from your library.`
+      `Delete "${sponsor.name}"?\n\nThis will remove the global sponsor from your library.`,
     );
     if (!ok) return;
 
@@ -145,7 +145,7 @@ const SponsorLibraryCard = ({
 
   const submitProfile = async (
     _state: ActionState,
-    _fd: FormData
+    _fd: FormData,
   ): Promise<ActionState> => {
     try {
       void _state;

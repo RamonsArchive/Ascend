@@ -955,3 +955,33 @@ export const assertOrgOwnerSlug = async (
     }) as ActionState;
   }
 };
+
+export const fetchOrgId = async (orgSlug: string) => {
+  try {
+    const isRateLimited = await checkRateLimit("fetchOrgId");
+    if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
+    const org = await prisma.organization.findUnique({
+      where: { slug: orgSlug },
+      select: { id: true },
+    });
+    if (!org) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "Organization not found",
+        data: null,
+      }) as ActionState;
+    }
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data: org.id,
+    }) as ActionState;
+  } catch (error) {
+    console.error(error);
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to fetch org id",
+      data: null,
+    }) as ActionState;
+  }
+};

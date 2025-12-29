@@ -50,7 +50,7 @@ const AddSponsorToOrgModal = ({
   const router = useRouter();
   const allowedImageMimeTypes = useMemo(
     () => new Set(["image/png", "image/jpeg", "image/webp"]),
-    []
+    [],
   );
 
   const logoRef = useRef<HTMLInputElement>(null);
@@ -73,7 +73,7 @@ const AddSponsorToOrgModal = ({
 
   const [search, setSearch] = useState("");
   const [selectedSponsorId, setSelectedSponsorId] = useState<string>(
-    defaultSponsorId ?? ""
+    defaultSponsorId ?? "",
   );
   const [showBlurbPreview, setShowBlurbPreview] = useState(false);
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
@@ -153,7 +153,7 @@ const AddSponsorToOrgModal = ({
 
   const submitAttach = async (
     _state: ActionState,
-    _fd: FormData
+    _fd: FormData,
   ): Promise<ActionState> => {
     try {
       void _state;
@@ -466,7 +466,7 @@ const AddSponsorToOrgModal = ({
                         setOrderInput(
                           e.target.value
                             .replace(/[^\d]/g, "")
-                            .replace(/^0+(?=\d)/, "")
+                            .replace(/^0+(?=\d)/, ""),
                         )
                       }
                       onBlur={() => {

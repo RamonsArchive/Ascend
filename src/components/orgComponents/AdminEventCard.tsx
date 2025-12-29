@@ -22,7 +22,7 @@ const AdminEventCard = ({
 
   const dateRange = useMemo(
     () => formatDateRange(event.startAt ?? null, event.endAt ?? null),
-    [event.startAt, event.endAt]
+    [event.startAt, event.endAt],
   );
 
   const badges = useMemo(() => {
@@ -50,7 +50,7 @@ const AdminEventCard = ({
     e.stopPropagation();
 
     const ok = window.confirm(
-      `Delete "${event.heroTitle || event.name}"?\n\nThis will permanently delete teams, submissions, and all event data.`
+      `Delete "${event.heroTitle || event.name}"?\n\nThis will permanently delete teams, submissions, and all event data.`,
     );
     if (!ok) return;
 
