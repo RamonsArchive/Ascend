@@ -5,6 +5,7 @@ import {
   parseDate,
   safeDate,
   slugify,
+  getMarkdownFromRich,
 } from "@/src/lib/utils";
 import type {
   ActionState,
@@ -363,6 +364,12 @@ export const fetchEventCompleteData = async (
         startAt: true,
         endAt: true,
         submitDueAt: true,
+        rulesRich: true,
+        rubricRich: true,
+        locationAddress: true,
+        locationName: true,
+        locationNotes: true,
+        locationMapUrl: true,
 
         maxTeamSize: true,
         allowSelfJoinRequests: true,
@@ -415,6 +422,8 @@ export const fetchEventCompleteData = async (
 
     const data: EventCompleteData = {
       ...event,
+      rulesMarkdown: getMarkdownFromRich(event.rulesRich),
+      rubricMarkdown: getMarkdownFromRich(event.rubricRich),
       tracks: event.tracks.map((track) => ({
         clientId: track.id,
         name: track.name,
@@ -793,8 +802,14 @@ export const fetchEventMembersAdminData = async (
       orderBy: { createdAt: "asc" },
       select: {
         id: true,
+        eventId: true,
         name: true,
-        track: true,
+        track: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         lookingForMembers: true,
         createdAt: true,
         members: {

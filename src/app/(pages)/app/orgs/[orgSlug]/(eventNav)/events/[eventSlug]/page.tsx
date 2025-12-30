@@ -115,10 +115,14 @@ const PrivateEventHomePage = async ({
       <div className="absolute inset-0 pointer-events-none marketing-bg" />
       <div className="relative flex flex-col items-center justify-center w-full gap-12 md:gap-16 lg:gap-20">
         <PrivateEventHero orgSlug={orgSlug} event={eventData} />
-        <PrivateEventInfo />
-        <PrivateEventTracks />
-        <PrivateEventAwards />
-        <PrivateEventTeams />
+        <PrivateEventInfo event={eventData} />
+        <PrivateEventTracks tracks={eventData.tracks} />
+        <PrivateEventAwards awards={eventData.awards} />
+        <PrivateEventTeams
+          orgSlug={orgSlug}
+          eventSlug={eventSlug}
+          teams={eventMembersData.teams}
+        />
       </div>
     </div>
   );

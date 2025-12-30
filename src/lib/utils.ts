@@ -495,3 +495,7 @@ export function formatShortDate(d: Date | string | null | undefined) {
     year: "numeric",
   }).format(dt);
 }
+
+export function subtlePill() {
+  return "px-3 py-1 rounded-full border border-white/10 bg-white/5 text-white/70 text-[11px] font-semibold";
+}

@@ -21,7 +21,10 @@ const AdminEventTeamCard = ({
   team: {
     id: string;
     name: string;
-    track: string | null;
+    track: {
+      id: string;
+      name: string;
+    } | null;
     lookingForMembers: boolean;
     createdAt: string;
     members: Array<{
@@ -50,13 +53,13 @@ const AdminEventTeamCard = ({
 
   const deleteTeamSubmit = async (
     _s: ActionState,
-    _fd: FormData,
+    _fd: FormData
   ): Promise<ActionState> => {
     try {
       void _s;
       void _fd;
       const ok = window.confirm(
-        `Delete team "${team.name}"? This removes the team and its team memberships.`,
+        `Delete team "${team.name}"? This removes the team and its team memberships.`
       );
       if (!ok) return initialState;
 
@@ -92,7 +95,7 @@ const AdminEventTeamCard = ({
 
   const [, deleteAction, deleting] = useActionState(
     deleteTeamSubmit,
-    initialState,
+    initialState
   );
 
   return (
@@ -109,7 +112,7 @@ const AdminEventTeamCard = ({
               </Link>
               {team.track ? (
                 <div className="px-3 py-1 rounded-full border border-white/10 bg-white/5 text-white/70 text-[11px] font-semibold">
-                  {team.track}
+                  {team.track.name}
                 </div>
               ) : null}
               <div className="px-3 py-1 rounded-full border border-white/10 bg-white/5 text-white/70 text-[11px] font-semibold">

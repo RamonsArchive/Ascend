@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-
 import type { EventMembersAdminData } from "@/src/lib/global_types";
 import AdminEventTeamCard from "./AdminEventTeamCard";
 import EventUnassignedMemberCard from "./EventUnassignedMemberCard";
@@ -25,7 +24,7 @@ const EventEditMembersClient = ({
     return data.teams.filter((t) => {
       const teamMatch =
         t.name.toLowerCase().includes(q) ||
-        (t.track ?? "").toLowerCase().includes(q);
+        (t.track?.name ?? "").toLowerCase().includes(q);
       const memberMatch = t.members.some((m) => {
         const name = (m.user.name ?? "").toLowerCase();
         const email = (m.user.email ?? "").toLowerCase();

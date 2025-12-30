@@ -456,6 +456,7 @@ model SubmissionSchema {
 
 model Team {
   id                String            @id @default(cuid())
+  slug              String 
   eventId           String
   name              String
   blurb             String?
@@ -474,6 +475,7 @@ model Team {
   awardAssignments  AwardAssignment[]  // back relation to AwardAssignment
 
   @@index([eventId])
+  @@unique([eventId, slug])
 }
 
 /// TeamMember design notes:

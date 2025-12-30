@@ -62,7 +62,11 @@ const PrivateEventHero = ({
 
   const dateRange = formatDateRange(event.startAt ?? null, event.endAt ?? null);
 
+  const regOpens = formatShortDate(event.registrationOpensAt ?? null);
   const regCloses = formatShortDate(event.registrationClosesAt ?? null);
+  const submitDue = formatShortDate(event.submitDueAt ?? null);
+
+  const address = (event.locationAddress || "").trim();
 
   const statusText = eventStatusLabel(event.status);
   const visibilityText = eventVisibilityLabel(event.visibility);
@@ -135,7 +139,12 @@ const PrivateEventHero = ({
 
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/65 pt-2">
                   {dateRange ? <span>{dateRange}</span> : null}
+                  {regOpens ? <span>• Reg opens {regOpens}</span> : null}
                   {regCloses ? <span>• Reg closes {regCloses}</span> : null}
+                  {submitDue ? <span>• Submit due {submitDue}</span> : null}
+                  {address ? (
+                    <span className="wrap-break-words">• {address}</span>
+                  ) : null}
                 </div>
               </div>
             </div>

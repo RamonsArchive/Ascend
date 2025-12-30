@@ -215,6 +215,12 @@ export type EventCompleteData = {
   startAt: Date | null;
   endAt: Date | null;
   submitDueAt: Date | null;
+  rulesMarkdown: string | null;
+  rubricMarkdown: string | null;
+  locationAddress: string | null;
+  locationName: string | null;
+  locationNotes: string | null;
+  locationMapUrl: string | null;
 
   maxTeamSize: number;
   allowSelfJoinRequests: boolean;
@@ -241,8 +247,12 @@ export type EventMembersAdminData = {
   eventId: string;
   teams: Array<{
     id: string;
+    slug: string;
     name: string;
-    track: string | null;
+    track: {
+      id: string;
+      name: string;
+    };
     lookingForMembers: boolean;
     createdAt: string;
     members: Array<{
@@ -425,4 +435,36 @@ export type EventStaffRow = Prisma.EventStaffMembershipGetPayload<{
 export type EventStaffData = {
   eventId: string;
   staff: EventStaffRow[];
+};
+
+export type PrivateEventTrack = {
+  id: string;
+  name: string;
+  blurb?: string | null;
+};
+
+export type PrivateEventAward = {
+  id: string;
+  name: string;
+  blurb?: string | null;
+  order?: number | null;
+};
+
+export type PrivateEventTeamCardData = {
+  id: string;
+  slug: string;
+  name: string;
+  lookingForMembers: boolean;
+  createdAt: string | Date;
+  track: { id: string; name: string } | null;
+  members: Array<{
+    id: string;
+    role: "LEADER" | "MEMBER";
+    user: {
+      id: string;
+      name: string | null;
+      email: string;
+      image: string | null;
+    };
+  }>;
 };
