@@ -691,6 +691,7 @@ model OrganizationSponsor {
   logoKey     String?      @db.Text
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  websiteKey String?
   org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   sponsor     Sponsor      @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
 
@@ -712,7 +713,7 @@ model EventSponsor {
   logoKey     String?     @db.Text
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
-  websiteKey  String?
+  websiteKey String?
   event       Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
   sponsor     Sponsor     @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
 

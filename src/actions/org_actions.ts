@@ -18,7 +18,6 @@ import { updateTag } from "next/cache";
 import { slugify, parseDate, safeDate, slugRegex } from "../lib/utils";
 import { createOrgEventServerSchema } from "../lib/validation";
 import { z } from "zod";
-import { TruckElectric } from "lucide-react";
 
 export const createOrganization = async (
   _prevState: ActionState,
@@ -370,6 +369,8 @@ export const fetchOrgSettingsData = async (orgSlug: string) => {
           },
         },
         sponsors: {
+          where: { isActive: true },
+          orderBy: [{ order: "asc" }, { createdAt: "asc" }],
           select: {
             id: true,
             sponsorId: true,
@@ -378,9 +379,6 @@ export const fetchOrgSettingsData = async (orgSlug: string) => {
             displayName: true,
             blurb: true,
             logoKey: true,
-            order: true,
-            createdAt: true,
-            updatedAt: true,
             sponsor: {
               select: {
                 id: true,

@@ -499,3 +499,22 @@ export function formatShortDate(d: Date | string | null | undefined) {
 export function subtlePill() {
   return "px-3 py-1 rounded-full border border-white/10 bg-white/5 text-white/70 text-[11px] font-semibold";
 }
+
+export const tierLabel = (tier: SponsorTier) => {
+  switch (tier) {
+    case "TITLE":
+      return "Title";
+    case "PLATINUM":
+      return "Platinum";
+    case "GOLD":
+      return "Gold";
+    case "SILVER":
+      return "Silver";
+    case "BRONZE":
+      return "Bronze";
+    case "COMMUNITY":
+      return "Community";
+    default:
+      return tier;
+  }
+};

@@ -6,34 +6,14 @@ import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 
-import type { SponsorTier } from "@prisma/client";
-import type { PublicOrgSponsor } from "@/src/lib/global_types";
 import { s3KeyToPublicUrl } from "@/src/lib/s3-client";
-import { tierBadgeClasses } from "@/src/lib/utils";
-
-const tierLabel = (tier: SponsorTier) => {
-  switch (tier) {
-    case "TITLE":
-      return "Title";
-    case "PLATINUM":
-      return "Platinum";
-    case "GOLD":
-      return "Gold";
-    case "SILVER":
-      return "Silver";
-    case "BRONZE":
-      return "Bronze";
-    case "COMMUNITY":
-      return "Community";
-    default:
-      return tier;
-  }
-};
+import { tierBadgeClasses, tierLabel } from "@/src/lib/utils";
+import type { SponsorLinkBase } from "@/src/lib/global_types";
 
 const PublicSponsorCard = ({
   sponsorLink,
 }: {
-  sponsorLink: PublicOrgSponsor;
+  sponsorLink: SponsorLinkBase;
 }) => {
   const { sponsor } = sponsorLink;
 

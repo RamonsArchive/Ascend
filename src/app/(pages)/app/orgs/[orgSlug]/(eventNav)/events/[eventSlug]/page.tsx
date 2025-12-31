@@ -19,6 +19,7 @@ import {
   EventMembersAdminData,
   EventStaffData,
 } from "@/src/lib/global_types";
+import PublicEventSponsorsSection from "@/src/components/eventComponents/PublicEventSponsorSection";
 const PrivateEventHomePage = async ({
   params,
 }: {
@@ -107,7 +108,7 @@ const PrivateEventHomePage = async ({
   }
 
   const eventData = eventDataRes.data as EventCompleteData;
-  const eventStaffData = eventStaffDataRes.data as EventStaffData;
+  const eventStaffData = eventStaffDataRes.data as EventStaffData; // event staff data implement this
   const eventMembersData = eventMembersDataRes.data as EventMembersAdminData;
 
   return (
@@ -115,6 +116,7 @@ const PrivateEventHomePage = async ({
       <div className="absolute inset-0 pointer-events-none marketing-bg" />
       <div className="relative flex flex-col items-center justify-center w-full gap-12 md:gap-16 lg:gap-20">
         <PrivateEventHero orgSlug={orgSlug} event={eventData} />
+        <PublicEventSponsorsSection sponsors={eventData.sponsors} />
         <PrivateEventInfo event={eventData} />
         <PrivateEventTracks tracks={eventData.tracks} />
         <PrivateEventAwards awards={eventData.awards} />

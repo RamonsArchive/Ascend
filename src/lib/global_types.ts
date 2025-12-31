@@ -5,6 +5,7 @@ import type {
   OrganizationSponsor,
   Prisma,
   Sponsor,
+  EventSponsor,
 } from "@prisma/client";
 
 export type ActionState = {
@@ -145,17 +146,31 @@ export type OrgMemberResponse = Omit<OrgMember, "createdAt"> & {
 };
 export type EventBucket = "UPCOMING" | "LIVE" | "PAST";
 
-export type PublicOrgSponsor = OrganizationSponsor & {
-  sponsor: Pick<
-    Sponsor,
-    | "id"
-    | "name"
-    | "slug"
-    | "websiteKey"
-    | "description"
-    | "logoKey"
-    | "coverKey"
-  >;
+export type SponsorPublic = Pick<
+  Sponsor,
+  "id" | "name" | "slug" | "websiteKey" | "description" | "logoKey" | "coverKey"
+>;
+
+export type SponsorLinkBase = {
+  id: string;
+  sponsorId: string;
+  tier: SponsorTier;
+  isActive: boolean;
+  displayName: string | null;
+  blurb: string | null;
+  logoKey: string | null;
+  order: number; // UI sorting
+  // “outer” override (if you add it later to org/event link models)
+  websiteKey?: string | null;
+  sponsor: SponsorPublic;
+};
+
+export type PublicOrgSponsor = SponsorLinkBase & {
+  orgId: string;
+};
+
+export type PublicEventSponsor = SponsorLinkBase & {
+  eventId: string;
 };
 
 export type OrgListItem = {
@@ -234,6 +249,8 @@ export type EventCompleteData = {
 
   tracks: TrackDraft[];
   awards: AwardDraft[];
+
+  sponsors: PublicEventSponsor[];
 
   _count: {
     teams: number;

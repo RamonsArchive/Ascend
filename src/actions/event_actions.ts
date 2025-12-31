@@ -401,6 +401,31 @@ export const fetchEventCompleteData = async (
           },
         },
 
+        sponsors: {
+          select: {
+            id: true,
+            eventId: true,
+            sponsorId: true,
+            tier: true,
+            isActive: true,
+            displayName: true,
+            blurb: true,
+            order: true,
+            logoKey: true,
+            sponsor: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                websiteKey: true,
+                description: true,
+                logoKey: true,
+                coverKey: true,
+              },
+            },
+          },
+        },
+
         _count: {
           select: {
             teams: true,
