@@ -1,11 +1,11 @@
 import React from "react";
 import PublicSponsorCard from "../PublicSponsorCard";
-import type { PublicEventSponsor } from "@/src/lib/global_types";
+import type { PublicSponsorLink } from "@/src/lib/global_types";
 
 const PublicEventSponsorsSection = ({
   sponsors,
 }: {
-  sponsors: PublicEventSponsor[];
+  sponsors: PublicSponsorLink[];
 }) => {
   const active = sponsors.filter((s) => s.isActive);
 

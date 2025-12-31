@@ -1,12 +1,11 @@
 import React from "react";
-import type { OrganizationSponsor, Sponsor } from "@prisma/client";
 import PublicSponsorCard from "../PublicSponsorCard";
-import type { PublicOrgSponsor } from "@/src/lib/global_types";
+import type { PublicSponsorLink } from "@/src/lib/global_types";
 
 const PublicOrgSponsorsSection = ({
   sponsors,
 }: {
-  sponsors: PublicOrgSponsor[];
+  sponsors: PublicSponsorLink[];
 }) => {
   return (
     <section className="flex flex-col items-center justify-center w-full">

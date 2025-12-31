@@ -20,6 +20,8 @@ import {
   EventStaffData,
 } from "@/src/lib/global_types";
 import PublicEventSponsorsSection from "@/src/components/eventComponents/PublicEventSponsorSection";
+import EventStaffSection from "@/src/components/eventComponents/EventStaffSection";
+
 const PrivateEventHomePage = async ({
   params,
 }: {
@@ -117,6 +119,7 @@ const PrivateEventHomePage = async ({
       <div className="relative flex flex-col items-center justify-center w-full gap-12 md:gap-16 lg:gap-20">
         <PrivateEventHero orgSlug={orgSlug} event={eventData} />
         <PublicEventSponsorsSection sponsors={eventData.sponsors} />
+        <EventStaffSection staff={eventStaffData} />
         <PrivateEventInfo event={eventData} />
         <PrivateEventTracks tracks={eventData.tracks} />
         <PrivateEventAwards awards={eventData.awards} />

@@ -15,7 +15,11 @@ import remarkGfm from "remark-gfm";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
-import type { ActionState } from "@/src/lib/global_types";
+import type {
+  ActionState,
+  SponsorLibraryItem,
+  SponsorTier,
+} from "@/src/lib/global_types";
 import {
   parseServerActionResponse,
   TEN_MB,
@@ -23,31 +27,29 @@ import {
 } from "@/src/lib/utils";
 import { createOrgImageUpload } from "@/src/actions/s3_actions";
 import { uploadToS3PresignedPost } from "@/src/lib/s3-client";
-import { addExistingSponsorToOrg } from "@/src/actions/org_sponsor_actions";
-import { addExistingSponsorToOrgClientSchema } from "@/src/lib/validation";
-import type { SponsorLibraryItem } from "@/src/lib/global_types";
-import type { SponsorTier } from "@/src/lib/global_types";
 
-const initialState: ActionState = {
-  status: "INITIAL",
-  error: "",
-  data: null,
-};
+// ✅ you need these server actions (same shape as org)
+import { addExistingSponsorToEvent } from "@/src/actions/event_sponsor_actions";
+// ✅ you need this client schema (same shape as org)
+import { addExistingSponsorToEventClientSchema } from "@/src/lib/validation";
 
-const AddSponsorToOrgModal = ({
-  orgId,
+const initialState: ActionState = { status: "INITIAL", error: "", data: null };
+
+const AddSponsorToEventModal = ({
+  eventId,
   sponsorLibrary,
   isOpen,
   onClose,
   defaultSponsorId,
 }: {
-  orgId: string;
+  eventId: string;
   sponsorLibrary: SponsorLibraryItem[];
   isOpen: boolean;
   onClose: () => void;
   defaultSponsorId?: string | null;
 }) => {
   const router = useRouter();
+
   const allowedImageMimeTypes = useMemo(
     () => new Set(["image/png", "image/jpeg", "image/webp"]),
     []
@@ -85,15 +87,10 @@ const AddSponsorToOrgModal = ({
     displayName: "",
     blurb: "",
   }));
-
   const [orderInput, setOrderInput] = useState<string>("0");
 
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "auto";
-    }
+    document.body.style.overflow = isOpen ? "hidden" : "auto";
   }, [isOpen]);
 
   const filteredSponsors = useMemo(() => {
@@ -134,37 +131,36 @@ const AddSponsorToOrgModal = ({
       setLogoPreviewUrl(null);
       return;
     }
-
     const ok = validateImageFile({
       file,
       options: { allowedMimeTypes: allowedImageMimeTypes, maxBytes: TEN_MB },
     });
     if (!ok) {
       toast.error("ERROR", {
-        description: "Logo must be a PNG, JPG, or WEBP. Max size is 10MB.",
+        description: "Logo must be PNG/JPG/WEBP. Max 10MB.",
       });
       if (logoRef.current) logoRef.current.value = "";
       setLogoPreviewUrl(null);
       return;
     }
-
     setLogoPreviewUrl(URL.createObjectURL(file));
   };
 
   const submitAttach = async (
-    _state: ActionState,
+    _s: ActionState,
     _fd: FormData
   ): Promise<ActionState> => {
     try {
-      void _state;
+      void _s;
       void _fd;
+
       setErrors({});
 
       const logoFile = logoRef.current?.files?.[0] ?? null;
       const orderValue = Math.max(0, Number(orderInput) || 0);
 
-      await addExistingSponsorToOrgClientSchema.parseAsync({
-        orgId,
+      await addExistingSponsorToEventClientSchema.parseAsync({
+        eventId,
         sponsorId: selectedSponsorId,
         tier: formData.tier,
         isActive: formData.isActive,
@@ -187,7 +183,7 @@ const AddSponsorToOrgModal = ({
             {
               code: "custom",
               path: ["logoFile"],
-              message: "Logo must be a PNG, JPG, or WEBP. Max size is 10MB.",
+              message: "Logo must be PNG/JPG/WEBP. Max 10MB.",
             },
           ]);
         }
@@ -197,6 +193,7 @@ const AddSponsorToOrgModal = ({
 
       let logoKey: string | null = null;
       if (logoFile) {
+        // ✅ if you prefer, rename to createEventImageUpload; this works if your backend accepts it.
         const presign = await createOrgImageUpload({
           kind: "logo",
           fileName: logoFile.name,
@@ -213,7 +210,7 @@ const AddSponsorToOrgModal = ({
       setStatusMessage("Adding sponsor…");
 
       const fd = new FormData();
-      fd.set("orgId", orgId);
+      fd.set("eventId", eventId);
       fd.set("sponsorId", selectedSponsorId);
       fd.set("tier", formData.tier);
       fd.set("isActive", formData.isActive ? "true" : "false");
@@ -222,42 +219,39 @@ const AddSponsorToOrgModal = ({
       fd.set("blurb", formData.blurb ?? "");
       if (logoKey) fd.set("logoKey", logoKey);
 
-      const result = await addExistingSponsorToOrg(initialState, fd);
-      if (result.status === "ERROR") {
-        setStatusMessage(result.error || "Failed to add sponsor.");
-        toast.error("ERROR", { description: result.error });
-        return result;
+      const res = await addExistingSponsorToEvent(initialState, fd);
+      if (res.status === "ERROR") {
+        setStatusMessage(res.error || "Failed to add sponsor.");
+        toast.error("ERROR", {
+          description: res.error || "Failed to add sponsor.",
+        });
+        return res;
       }
 
-      setStatusMessage("Added.");
-      toast.success("SUCCESS", {
-        description: "Sponsor added to organization.",
-      });
+      toast.success("SUCCESS", { description: "Sponsor added to event." });
       router.refresh();
       close();
-      return result;
-    } catch (error) {
-      console.error(error);
+      return res;
+    } catch (e) {
+      console.error(e);
       setStatusMessage("Please fix the highlighted fields.");
 
-      if (error instanceof z.ZodError) {
-        const fieldErrors = z.flattenError(error).fieldErrors as Record<
+      if (e instanceof z.ZodError) {
+        const fieldErrors = z.flattenError(e).fieldErrors as Record<
           string,
           string[]
         >;
-        const formattedErrors: Record<string, string> = {};
-        Object.keys(fieldErrors).forEach((key) => {
-          formattedErrors[key] = fieldErrors[key]?.[0] || "";
-        });
-        setErrors(formattedErrors);
+        const formatted: Record<string, string> = {};
+        Object.keys(fieldErrors).forEach(
+          (k) => (formatted[k] = fieldErrors[k]?.[0] || "")
+        );
+        setErrors(formatted);
         toast.error("ERROR", {
-          description: Object.values(formattedErrors)
-            .filter(Boolean)
-            .join(", "),
+          description: Object.values(formatted).filter(Boolean).join(", "),
         });
         return parseServerActionResponse({
           status: "ERROR",
-          error: Object.values(formattedErrors).filter(Boolean).join(", "),
+          error: Object.values(formatted).filter(Boolean).join(", "),
           data: null,
         });
       }
@@ -265,7 +259,6 @@ const AddSponsorToOrgModal = ({
       toast.error("ERROR", {
         description: "An error occurred while saving. Please try again.",
       });
-
       return parseServerActionResponse({
         status: "ERROR",
         error: "An error occurred while saving",
@@ -291,11 +284,11 @@ const AddSponsorToOrgModal = ({
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
               <div className="flex flex-col gap-2">
                 <div className="text-white text-xl md:text-2xl font-semibold">
-                  Add sponsor to organization
+                  Add sponsor to event
                 </div>
                 <div className="text-white/70 text-sm md:text-base leading-relaxed">
-                  Select a sponsor from your library (private) or the public
-                  sponsor directory, then configure placement for this org.
+                  Select a global sponsor, then configure event-specific
+                  placement.
                 </div>
               </div>
 
@@ -350,9 +343,6 @@ const AddSponsorToOrgModal = ({
                           <div className="flex flex-col xs:flex-row xs:items-center gap-2">
                             <div className="text-white/50 text-xs">
                               @{s.slug}
-                            </div>
-                            <div className="text-white/70 text-xs px-3 py-1 rounded-full bg-white/5 border border-white/10 w-fit">
-                              {s.visibility}
                             </div>
                             {s.websiteKey ? (
                               <div className="text-white/60 text-xs break-all">
@@ -469,10 +459,9 @@ const AddSponsorToOrgModal = ({
                             .replace(/^0+(?=\d)/, "")
                         )
                       }
-                      onBlur={() => {
-                        const normalized = orderInput === "" ? "0" : orderInput;
-                        setOrderInput(normalized);
-                      }}
+                      onBlur={() =>
+                        setOrderInput(orderInput === "" ? "0" : orderInput)
+                      }
                       className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
                     />
                     {errors.order ? (
@@ -487,6 +476,7 @@ const AddSponsorToOrgModal = ({
                   <label className="text-xs md:text-sm text-white/75">
                     Blurb (Markdown, optional)
                   </label>
+
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                     <div className="text-xs text-white/60">
                       Markdown supported
@@ -517,7 +507,7 @@ const AddSponsorToOrgModal = ({
                       onChange={(e) =>
                         setFormData((p) => ({ ...p, blurb: e.target.value }))
                       }
-                      placeholder="Optional org-specific sponsor blurb…"
+                      placeholder="Optional event-specific sponsor blurb…"
                       className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors min-h-[140px] resize-none shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
                     />
                   )}
@@ -530,7 +520,7 @@ const AddSponsorToOrgModal = ({
 
                 <div className="flex flex-col gap-2">
                   <label className="text-xs md:text-sm text-white/75">
-                    Org logo override (optional)
+                    Event logo override (optional)
                   </label>
                   <input
                     ref={logoRef}
@@ -540,16 +530,14 @@ const AddSponsorToOrgModal = ({
                     className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] file:mr-4 file:rounded-xl file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-white/80 file:hover:bg-white/15 file:transition-colors"
                   />
                   {logoPreviewUrl ? (
-                    <div className="flex flex-col gap-2">
-                      <div className="relative w-full max-w-xs h-28 rounded-2xl overflow-hidden border border-white/10 bg-white/5">
-                        <Image
-                          src={logoPreviewUrl}
-                          alt="Org logo override preview"
-                          fill
-                          sizes="320px"
-                          className="object-contain p-3"
-                        />
-                      </div>
+                    <div className="relative w-full max-w-xs h-28 rounded-2xl overflow-hidden border border-white/10 bg-white/5">
+                      <Image
+                        src={logoPreviewUrl}
+                        alt="Event logo override preview"
+                        fill
+                        sizes="320px"
+                        className="object-contain p-3"
+                      />
                     </div>
                   ) : null}
                   {errors.logoFile ? (
@@ -589,4 +577,4 @@ const AddSponsorToOrgModal = ({
   );
 };
 
-export default AddSponsorToOrgModal;
+export default AddSponsorToEventModal;

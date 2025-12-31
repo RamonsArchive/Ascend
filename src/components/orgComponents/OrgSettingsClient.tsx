@@ -16,7 +16,6 @@ import type { SettingsTab } from "@/src/lib/global_types";
 
 import EditOrgFormSection from "./EditOrgFormSection";
 import EditOrgJoinSettingsSection from "./EditOrgJoinSettingsSection";
-import EditOrgMembersHero from "./EditOrgMembersHero";
 import AddOrgMemberSection from "./AddOrgMemberSection";
 import EditOrgMembersSection from "./EditOrgMembersSection";
 import type { SponsorLibraryItem } from "@/src/lib/global_types";
@@ -154,7 +153,7 @@ const OrgSettingsClient = ({
         ),
       },
     ],
-    [org, orgSlug, currentUserId],
+    [org, orgSlug, currentUserId]
   );
 
   return (

@@ -10,7 +10,7 @@ import { fetchOrgMembers } from "@/src/actions/org_members_actions";
 import { fetchAllOrgEvents } from "@/src/actions/event_actions";
 import type {
   PublicEventListItem,
-  PublicOrgSponsor,
+  PublicSponsorLink,
   OrgMember,
 } from "@/src/lib/global_types";
 import { fetchPublicOrgCountsData } from "@/src/actions/org_actions";
@@ -73,7 +73,7 @@ const OrgOverviewPage = async ({
 
   const sponsors =
     sponsorsRes.status === "SUCCESS"
-      ? (sponsorsRes.data as PublicOrgSponsor[])
+      ? (sponsorsRes.data as PublicSponsorLink[])
       : [];
 
   const events =

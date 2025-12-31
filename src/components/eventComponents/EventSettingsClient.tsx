@@ -16,6 +16,9 @@ import EventMembersAdminSection from "@/src/components/eventComponents/EventMemb
 import EventEditMembersSection from "@/src/components/eventComponents/EventEditMembersSection";
 import EventEditTracks from "@/src/components/eventComponents/EventEditTracks";
 import EventEditAwards from "@/src/components/eventComponents/EventEditAwards";
+import EventEditSponsorsSection from "@/src/components/eventComponents/EventEditSponsorsSection";
+import InitialEventSponsorsSection from "@/src/components/eventComponents/InitialEventSponsorsSection";
+import type { SponsorLibraryItem } from "@/src/lib/global_types";
 
 const eventTabs: Array<SettingsTab<EventSettingsView>> = [
   {
@@ -40,16 +43,25 @@ const eventTabs: Array<SettingsTab<EventSettingsView>> = [
   },
   { key: "TRACKS", label: "Tracks", description: "Manage event tracks." },
   { key: "AWARDS", label: "Awards", description: "Manage event awards." },
+  {
+    key: "SPONSORS",
+    label: "Sponsors",
+    description: "Attach global sponsors and manage ordering.",
+  },
 ];
 
 const EventSettingsClient = ({
   orgSlug,
   event,
   membersAdminData,
+  sponsorLibrary, // ✅ new
+  currentUserId, // optional if you want to gate stuff
 }: {
   orgSlug: string;
   event: EventCompleteData;
   membersAdminData: EventMembersAdminData | null;
+  sponsorLibrary: SponsorLibraryItem[];
+  currentUserId: string;
 }) => {
   const sections = useMemo(
     () => [
@@ -110,8 +122,25 @@ const EventSettingsClient = ({
           />
         ),
       },
+      {
+        key: "SPONSORS" as const,
+        render: () => (
+          <React.Fragment key="event-sponsors-section">
+            <EventEditSponsorsSection
+              eventId={event.id}
+              sponsorLibrary={sponsorLibrary}
+              currentUserId={currentUserId ?? ""}
+            />
+            <InitialEventSponsorsSection
+              eventId={event.id}
+              initialSponsors={event.sponsors ?? []}
+              sponsorLibrary={sponsorLibrary}
+            />
+          </React.Fragment>
+        ),
+      },
     ],
-    [event, orgSlug, membersAdminData],
+    [event, orgSlug, membersAdminData, sponsorLibrary, currentUserId]
   );
 
   return (
