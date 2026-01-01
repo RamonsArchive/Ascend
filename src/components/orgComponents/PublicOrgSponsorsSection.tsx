@@ -1,11 +1,11 @@
 import React from "react";
 import PublicSponsorCard from "../PublicSponsorCard";
-import type { PublicSponsorLink } from "@/src/lib/global_types";
+import type { PublicOrgSponsorLink } from "@/src/lib/global_types";
 
 const PublicOrgSponsorsSection = ({
   sponsors,
 }: {
-  sponsors: PublicSponsorLink[];
+  sponsors: PublicOrgSponsorLink[];
 }) => {
   return (
     <section className="flex flex-col items-center justify-center w-full">

@@ -12,7 +12,7 @@ import PublicOrgEventsSection from "@/src/components/orgComponents/PublicOrgEven
 import PublicOrgMembersSection from "@/src/components/orgComponents/PublicOrgMembersSection";
 import type {
   PublicEventListItem,
-  PublicOrgSponsor,
+  PublicOrgSponsorLink,
   OrgMember,
 } from "@/src/lib/global_types";
 import { auth } from "@/src/lib/auth";
@@ -70,7 +70,7 @@ const PublicOrgPage = async ({
 
   const sponsors =
     sponsorsRes.status === "SUCCESS"
-      ? (sponsorsRes.data as PublicOrgSponsor[])
+      ? (sponsorsRes.data as PublicOrgSponsorLink[])
       : [];
 
   const events =
@@ -92,7 +92,7 @@ const PublicOrgPage = async ({
           role={membership?.role ?? null}
         />
         <PublicOrgSponsorsSection sponsors={sponsors} />
-        <PublicOrgEventsSection events={events} />
+        <PublicOrgEventsSection orgSlug={orgSlug} events={events} />
         <PublicOrgMembersSection members={members} />
       </div>
     </div>
