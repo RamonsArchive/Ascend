@@ -59,6 +59,8 @@ export async function addExistingSponsorToEvent(
     const logoTmpKey =
       (formData.get("logoKey")?.toString() ?? "").trim() || undefined;
 
+    console.log("logoTmpKey", logoTmpKey);
+
     if (!orgId || !eventId || !sponsorId) {
       return parseServerActionResponse({
         status: "ERROR",
@@ -92,6 +94,7 @@ export async function addExistingSponsorToEvent(
       });
     }
 
+    console.log("finalLogoKey", finalLogoKey);
     try {
       const created = await prisma.eventSponsor.create({
         data: {

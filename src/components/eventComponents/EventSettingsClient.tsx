@@ -142,7 +142,7 @@ const EventSettingsClient = ({
         ),
       },
     ],
-    [event, orgSlug, membersAdminData, sponsorLibrary, currentUserId]
+    [event, orgSlug, membersAdminData, sponsorLibrary, currentUserId],
   );
 
   return (

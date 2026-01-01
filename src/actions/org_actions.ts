@@ -21,7 +21,7 @@ import { z } from "zod";
 
 export const createOrganization = async (
   _prevState: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -326,7 +326,7 @@ export const fetchOrgSettingsData = async (orgSlug: string) => {
     if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
     const hasPermissions = await assertOrgAdminOrOwner(
       orgSlug,
-      session.user.id
+      session.user.id,
     );
     if (hasPermissions.status === "ERROR") return hasPermissions as ActionState;
     const org = await prisma.organization.findUnique({
@@ -456,7 +456,7 @@ export async function assertOrgAdminOrOwner(orgSlug: string, userId: string) {
 
 export const assertOrgAdminOrOwnerWithId = async (
   orgId: string,
-  userId: string
+  userId: string,
 ) => {
   try {
     const membership = await prisma.orgMembership.findUnique({
@@ -495,7 +495,7 @@ export const assertOrgAdminOrOwnerWithId = async (
 export const updateOrgJoinSettings = async (
   orgId: string,
   userId: string,
-  opts: { joinMode?: OrgJoinMode; allowJoinRequests?: boolean }
+  opts: { joinMode?: OrgJoinMode; allowJoinRequests?: boolean },
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -578,7 +578,7 @@ export async function isOrgOwner(orgId: string, userId: string) {
 
 export const createOrgEvent = async (
   _state: ActionState,
-  fd: FormData
+  fd: FormData,
 ): Promise<ActionState> => {
   try {
     void _state;
@@ -910,7 +910,7 @@ export const fetchPublicOrgCountsData = async (orgSlug: string) => {
 
 export const assertOrgOwnerSlug = async (
   orgSlug: string,
-  userId: string
+  userId: string,
 ): Promise<ActionState> => {
   try {
     const org = await prisma.organization.findUnique({

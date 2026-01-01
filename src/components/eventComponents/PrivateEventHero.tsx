@@ -81,7 +81,8 @@ const PrivateEventHero = ({
       <div className="flex flex-col w-full max-w-6xl px-5 sm:px-10 md:px-18 pt-10 md:pt-14 gap-6 md:gap-8">
         <div className="w-full rounded-3xl overflow-hidden border border-white/10 bg-primary-950/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
           {/* Cover */}
-          <div className="relative w-full h-[210px] md:h-[280px] bg-black/40">
+          <div className="relative w-full min-h-[180px] md:min-h-[210px] bg-black/40">
+            {/* image / background */}
             {coverUrl ? (
               <Image
                 src={coverUrl}
@@ -95,32 +96,36 @@ const PrivateEventHero = ({
               <div className="absolute inset-0 bg-linear-to-br from-secondary-500/20 via-primary-950 to-primary-950" />
             )}
 
-            {/* overlays (match your hero blend vibe) */}
+            {/* overlays */}
             <div className="absolute inset-0 bg-linear-to-t from-primary-950 via-primary-950/35 to-transparent" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_55%)]" />
 
-            {/* top */}
-            <div className="absolute top-4 left-4 right-4 flex items-start justify-between gap-3">
-              <div className="flex items-center gap-2 flex-wrap">
-                <Pill kind="STATUS" value={event.status} label={statusText} />
-                <Pill
-                  kind="VISIBILITY"
-                  value={event.visibility}
-                  label={visibilityText}
-                />
-                <Pill kind="JOIN" value={event.joinMode} label={joinText} />
+            {/* ✅ ONE parent overlay that controls spacing */}
+            <div className="relative z-10 flex flex-col min-h-[210px] md:min-h-[280px] p-5 md:p-7 gap-6 md:gap-8">
+              {/* top row */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Pill kind="STATUS" value={event.status} label={statusText} />
+                  <Pill
+                    kind="VISIBILITY"
+                    value={event.visibility}
+                    label={visibilityText}
+                  />
+                  <Pill kind="JOIN" value={event.joinMode} label={joinText} />
+                </div>
+
+                <Link
+                  href={orgHref}
+                  className="px-3 py-1 rounded-full text-xs font-semibold bg-white/10 backdrop-blur-sm text-white/90 border border-white/10 hover:bg-white/15 transition-colors"
+                >
+                  {event.org?.name ?? "Organization"} →
+                </Link>
               </div>
 
-              <Link
-                href={orgHref}
-                className="px-3 py-1 rounded-full text-xs font-semibold bg-white/10 backdrop-blur-sm text-white/90 border border-white/10 hover:bg-white/15 transition-colors"
-              >
-                {event.org?.name ?? "Organization"} →
-              </Link>
-            </div>
+              {/* ✅ spacer pushes title section down WITHOUT overlap */}
+              <div className="flex-1" />
 
-            {/* bottom title */}
-            <div className="absolute bottom-0 left-0 right-0 p-5 md:p-7">
+              {/* bottom title */}
               <div className="flex flex-col gap-2">
                 <h1 className="text-2xl md:text-4xl font-semibold text-white leading-tight">
                   {event.heroTitle || event.name}
@@ -137,14 +142,83 @@ const PrivateEventHero = ({
                   </div>
                 )}
 
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/65 pt-2">
-                  {dateRange ? <span>{dateRange}</span> : null}
-                  {regOpens ? <span>• Reg opens {regOpens}</span> : null}
-                  {regCloses ? <span>• Reg closes {regCloses}</span> : null}
-                  {submitDue ? <span>• Submit due {submitDue}</span> : null}
-                  {address ? (
-                    <span className="wrap-break-words">• {address}</span>
-                  ) : null}
+                <div className="pt-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+                    {(event.startAt || event.endAt) && dateRange ? (
+                      <div className="px-4 py-3 rounded-2xl bg-white/5 border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+                        <div className="text-[11px] md:text-xs text-white/55">
+                          Event dates
+                        </div>
+                        <div className="pt-1 text-sm md:text-base text-white/80 font-semibold leading-snug">
+                          {dateRange}
+                        </div>
+                        <div className="pt-1 text-xs text-white/55">
+                          Start:{" "}
+                          {formatShortDate(event.startAt ?? null) || "TBD"} ·
+                          End: {formatShortDate(event.endAt ?? null) || "TBD"}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {regOpens || regCloses || submitDue ? (
+                      <div className="px-4 py-3 rounded-2xl bg-white/5 border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+                        <div className="text-[11px] md:text-xs text-white/55">
+                          Registration
+                        </div>
+
+                        <div className="pt-1 flex flex-col gap-1 text-sm text-white/75">
+                          {regOpens ? (
+                            <div className="flex items-baseline justify-between gap-3">
+                              <span className="text-white/55 text-xs">
+                                Opens
+                              </span>
+                              <span className="text-white/85 font-semibold">
+                                {regOpens}
+                              </span>
+                            </div>
+                          ) : null}
+
+                          {regCloses ? (
+                            <div className="flex items-baseline justify-between gap-3">
+                              <span className="text-white/55 text-xs">
+                                Closes
+                              </span>
+                              <span className="text-white/85 font-semibold">
+                                {regCloses}
+                              </span>
+                            </div>
+                          ) : null}
+
+                          {submitDue ? (
+                            <div className="flex items-baseline justify-between gap-3">
+                              <span className="text-white/55 text-xs">
+                                Submission due
+                              </span>
+                              <span className="text-white/85 font-semibold">
+                                {submitDue}
+                              </span>
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {address ? (
+                      <div className="px-4 py-3 rounded-2xl bg-white/5 border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+                        <div className="text-[11px] md:text-xs text-white/55">
+                          Location
+                        </div>
+                        <div className="pt-1 text-sm md:text-base text-white/80 font-semibold leading-snug wrap-break-words">
+                          {address}
+                        </div>
+                        {event.locationName ? (
+                          <div className="pt-1 text-xs text-white/55 wrap-break-words">
+                            {event.locationName}
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
               </div>
             </div>

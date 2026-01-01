@@ -155,7 +155,7 @@ const OrgSettingsClient = ({
         ),
       },
     ],
-    [org, orgSlug, currentUserId]
+    [org, orgSlug, currentUserId],
   );
 
   return (

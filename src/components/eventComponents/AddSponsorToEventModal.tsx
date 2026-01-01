@@ -54,7 +54,7 @@ const AddSponsorToEventModal = ({
 
   const allowedImageMimeTypes = useMemo(
     () => new Set(["image/png", "image/jpeg", "image/webp"]),
-    []
+    [],
   );
 
   const logoRef = useRef<HTMLInputElement>(null);
@@ -77,7 +77,7 @@ const AddSponsorToEventModal = ({
 
   const [search, setSearch] = useState("");
   const [selectedSponsorId, setSelectedSponsorId] = useState<string>(
-    defaultSponsorId ?? ""
+    defaultSponsorId ?? "",
   );
   const [showBlurbPreview, setShowBlurbPreview] = useState(false);
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
@@ -150,7 +150,7 @@ const AddSponsorToEventModal = ({
 
   const submitAttach = async (
     _s: ActionState,
-    _fd: FormData
+    _fd: FormData,
   ): Promise<ActionState> => {
     try {
       void _s;
@@ -247,7 +247,7 @@ const AddSponsorToEventModal = ({
         >;
         const formatted: Record<string, string> = {};
         Object.keys(fieldErrors).forEach(
-          (k) => (formatted[k] = fieldErrors[k]?.[0] || "")
+          (k) => (formatted[k] = fieldErrors[k]?.[0] || ""),
         );
         setErrors(formatted);
         toast.error("ERROR", {
@@ -460,7 +460,7 @@ const AddSponsorToEventModal = ({
                         setOrderInput(
                           e.target.value
                             .replace(/[^\d]/g, "")
-                            .replace(/^0+(?=\d)/, "")
+                            .replace(/^0+(?=\d)/, ""),
                         )
                       }
                       onBlur={() =>

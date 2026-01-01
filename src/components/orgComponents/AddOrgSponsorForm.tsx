@@ -36,7 +36,7 @@ const AddOrgSponsorForm = ({ orgId }: { orgId?: string }) => {
   void orgId;
   const allowedImageMimeTypes = useMemo(
     () => new Set(["image/png", "image/jpeg", "image/webp"]),
-    []
+    [],
   );
 
   const logoRef = useRef<HTMLInputElement>(null);
@@ -104,7 +104,7 @@ const AddOrgSponsorForm = ({ orgId }: { orgId?: string }) => {
         submitButtonRef.current,
         previewButtonRef.current,
         ...Array.from(
-          triggerEl.querySelectorAll("input, textarea, select")
+          triggerEl.querySelectorAll("input, textarea, select"),
         ).filter(Boolean),
       ] as HTMLElement[];
 
@@ -124,7 +124,7 @@ const AddOrgSponsorForm = ({ orgId }: { orgId?: string }) => {
       tl.to(allLabels, { opacity: 1, y: 0, stagger: 0.02 }, 0).to(
         allInputs,
         { opacity: 1, y: 0, stagger: 0.04 },
-        0.05
+        0.05,
       );
 
       requestAnimationFrame(() => ScrollTrigger.refresh());
@@ -198,7 +198,7 @@ const AddOrgSponsorForm = ({ orgId }: { orgId?: string }) => {
 
   const submitSponsorForm = async (
     _state: ActionState,
-    _fd: FormData
+    _fd: FormData,
   ): Promise<ActionState> => {
     try {
       void _state;
@@ -346,7 +346,7 @@ const AddOrgSponsorForm = ({ orgId }: { orgId?: string }) => {
 
   const [, formAction, isPending] = useActionState(
     submitSponsorForm,
-    initialState
+    initialState,
   );
 
   return (

@@ -53,13 +53,13 @@ const AdminEventTeamCard = ({
 
   const deleteTeamSubmit = async (
     _s: ActionState,
-    _fd: FormData
+    _fd: FormData,
   ): Promise<ActionState> => {
     try {
       void _s;
       void _fd;
       const ok = window.confirm(
-        `Delete team "${team.name}"? This removes the team and its team memberships.`
+        `Delete team "${team.name}"? This removes the team and its team memberships.`,
       );
       if (!ok) return initialState;
 
@@ -95,7 +95,7 @@ const AdminEventTeamCard = ({
 
   const [, deleteAction, deleting] = useActionState(
     deleteTeamSubmit,
-    initialState
+    initialState,
   );
 
   return (

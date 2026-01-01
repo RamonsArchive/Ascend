@@ -5,7 +5,7 @@ import Image from "next/image";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
-
+import Link from "next/link";
 import { s3KeyToPublicUrl } from "@/src/lib/s3-client";
 import { tierBadgeClasses, tierLabel } from "@/src/lib/utils";
 import type { SponsorLinkBase } from "@/src/lib/global_types";
@@ -16,6 +16,7 @@ const PublicSponsorCard = ({
   sponsorLink: SponsorLinkBase;
 }) => {
   const { sponsor } = sponsorLink;
+  console.log("sponsorLink", sponsorLink);
 
   const name = sponsorLink.displayName?.trim() || sponsor.name;
   const slug = sponsor.slug;
@@ -48,7 +49,12 @@ const PublicSponsorCard = ({
   }, [sponsorLink.blurb, sponsor.description]);
 
   return (
-    <div className="group w-full rounded-3xl border border-white/10 bg-white/4 hover:bg-white/6 transition-colors duration-200 overflow-hidden hover:border-accent-100">
+    <Link
+      href={website ?? ""}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group w-full rounded-3xl border border-white/10 bg-white/4 hover:bg-white/6 transition-colors duration-200 overflow-hidden hover:border-accent-100"
+    >
       {/* Cover */}
       <div className="relative w-full h-[160px] bg-black/40">
         {coverUrl ? (
@@ -125,7 +131,7 @@ const PublicSponsorCard = ({
           </div>
         )}
       </div>
-    </div>
+    </Link>
   );
 };
 

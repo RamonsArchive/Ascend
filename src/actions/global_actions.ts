@@ -67,7 +67,7 @@ export const writeContactMessage = async (formObject: FormDataType) => {
 };
 
 export const fetchSponsorLibrary = async (
-  query?: string
+  query?: string,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });

@@ -19,7 +19,7 @@ const InitialEventSponsorsSection = ({
 }) => {
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [defaultSponsorId, setDefaultSponsorId] = React.useState<string | null>(
-    null
+    null,
   );
 
   return (

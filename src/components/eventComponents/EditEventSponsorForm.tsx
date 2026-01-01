@@ -43,7 +43,7 @@ const EditEventSponsorForm = ({
 
   const allowedImageMimeTypes = useMemo(
     () => new Set(["image/png", "image/jpeg", "image/webp"]),
-    []
+    [],
   );
   const logoRef = useRef<HTMLInputElement>(null);
 
@@ -69,7 +69,7 @@ const EditEventSponsorForm = ({
   }));
 
   const [orderInput, setOrderInput] = useState<string>(
-    String(initialSponsor.order ?? 0)
+    String(initialSponsor.order ?? 0),
   );
 
   const name =
@@ -98,7 +98,7 @@ const EditEventSponsorForm = ({
 
   const submitUpdate = async (
     _s: ActionState,
-    _fd: FormData
+    _fd: FormData,
   ): Promise<ActionState> => {
     try {
       void _s;
@@ -192,7 +192,7 @@ const EditEventSponsorForm = ({
         >;
         const formatted: Record<string, string> = {};
         Object.keys(fieldErrors).forEach(
-          (k) => (formatted[k] = fieldErrors[k]?.[0] || "")
+          (k) => (formatted[k] = fieldErrors[k]?.[0] || ""),
         );
         setErrors(formatted);
         toast.error("ERROR", {
@@ -356,7 +356,7 @@ const EditEventSponsorForm = ({
               onFocus={(e) => e.currentTarget.select()}
               onChange={(e) =>
                 setOrderInput(
-                  e.target.value.replace(/[^\d]/g, "").replace(/^0+(?=\d)/, "")
+                  e.target.value.replace(/[^\d]/g, "").replace(/^0+(?=\d)/, ""),
                 )
               }
               onBlur={() => setOrderInput(orderInput === "" ? "0" : orderInput)}

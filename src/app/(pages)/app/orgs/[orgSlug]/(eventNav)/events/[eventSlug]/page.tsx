@@ -112,7 +112,7 @@ const PrivateEventHomePage = async ({
   const eventData = eventDataRes.data as EventCompleteData;
   const eventStaffData = eventStaffDataRes.data as EventStaffData; // event staff data implement this
   const eventMembersData = eventMembersDataRes.data as EventMembersAdminData;
-
+  console.log("event data sponsors", eventData.sponsors);
   return (
     <div className="relative w-full">
       <div className="absolute inset-0 pointer-events-none marketing-bg" />
