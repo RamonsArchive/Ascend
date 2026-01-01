@@ -518,3 +518,12 @@ export const tierLabel = (tier: SponsorTier) => {
       return tier;
   }
 };
+
+export const allowedTiers = new Set<SponsorTier>([
+  "TITLE",
+  "PLATINUM",
+  "GOLD",
+  "SILVER",
+  "BRONZE",
+  "COMMUNITY",
+]);

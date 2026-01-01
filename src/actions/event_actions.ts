@@ -1305,27 +1305,3 @@ export const deleteEvent = async (
     }) as ActionState;
   }
 };
-
-export async function addExistingSponsorToEvent(
-  _s: ActionState,
-  _fd: FormData
-): Promise<ActionState> {
-  // eventId, sponsorId, tier, isActive, order, displayName, blurb, logoKey?
-  throw new Error("Implement addExistingSponsorToEvent");
-}
-
-export async function updateEventSponsor(
-  _s: ActionState,
-  _fd: FormData
-): Promise<ActionState> {
-  // eventSponsorId, tier, isActive, order, displayName, blurb, logoKey?
-  throw new Error("Implement updateEventSponsor");
-}
-
-export async function removeEventSponsor(
-  _s: ActionState,
-  _fd: FormData
-): Promise<ActionState> {
-  // eventSponsorId
-  throw new Error("Implement removeEventSponsor");
-}

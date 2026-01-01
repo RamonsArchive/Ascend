@@ -127,11 +127,13 @@ const EventSettingsClient = ({
         render: () => (
           <React.Fragment key="event-sponsors-section">
             <EventEditSponsorsSection
+              orgId={event.orgId ?? ""}
               eventId={event.id}
               sponsorLibrary={sponsorLibrary}
               currentUserId={currentUserId ?? ""}
             />
             <InitialEventSponsorsSection
+              orgId={event.orgId ?? ""}
               eventId={event.id}
               initialSponsors={event.sponsors ?? []}
               sponsorLibrary={sponsorLibrary}

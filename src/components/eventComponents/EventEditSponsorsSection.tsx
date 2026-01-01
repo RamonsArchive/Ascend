@@ -5,10 +5,12 @@ import type { SponsorLibraryItem } from "@/src/lib/global_types";
 import AddSponsorToEventModal from "./AddSponsorToEventModal";
 
 const EventEditSponsorsSection = ({
+  orgId,
   eventId,
   sponsorLibrary,
   currentUserId,
 }: {
+  orgId: string;
   eventId: string;
   sponsorLibrary: SponsorLibraryItem[];
   currentUserId: string;
@@ -24,6 +26,7 @@ const EventEditSponsorsSection = ({
     <section className="flex flex-col items-center justify-center w-full">
       <div className="flex flex-col w-full max-w-6xl px-5 sm:px-10 md:px-18 py-10 md:py-14 gap-10 md:gap-12">
         <AddSponsorToEventModal
+          orgId={orgId}
           eventId={eventId}
           sponsorLibrary={sponsorLibrary}
           isOpen={isAddModalOpen}

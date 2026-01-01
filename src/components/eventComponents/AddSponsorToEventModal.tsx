@@ -29,19 +29,21 @@ import { createOrgImageUpload } from "@/src/actions/s3_actions";
 import { uploadToS3PresignedPost } from "@/src/lib/s3-client";
 
 // ✅ you need these server actions (same shape as org)
-import { addExistingSponsorToEvent } from "@/src/actions/event_actions";
+import { addExistingSponsorToEvent } from "@/src/actions/event_sponsor_actions";
 // ✅ you need this client schema (same shape as org)
 import { addExistingSponsorToEventClientSchema } from "@/src/lib/validation";
 
 const initialState: ActionState = { status: "INITIAL", error: "", data: null };
 
 const AddSponsorToEventModal = ({
+  orgId,
   eventId,
   sponsorLibrary,
   isOpen,
   onClose,
   defaultSponsorId,
 }: {
+  orgId: string;
   eventId: string;
   sponsorLibrary: SponsorLibraryItem[];
   isOpen: boolean;
@@ -160,6 +162,7 @@ const AddSponsorToEventModal = ({
       const orderValue = Math.max(0, Number(orderInput) || 0);
 
       await addExistingSponsorToEventClientSchema.parseAsync({
+        orgId,
         eventId,
         sponsorId: selectedSponsorId,
         tier: formData.tier,
@@ -210,6 +213,7 @@ const AddSponsorToEventModal = ({
       setStatusMessage("Adding sponsor…");
 
       const fd = new FormData();
+      fd.set("orgId", orgId);
       fd.set("eventId", eventId);
       fd.set("sponsorId", selectedSponsorId);
       fd.set("tier", formData.tier);

@@ -823,6 +823,7 @@ export const commonListEditorSchema = z.object({
 });
 
 export const addExistingSponsorToEventClientSchema = z.object({
+  orgId: z.string().min(1),
   eventId: z.string().min(1),
   sponsorId: z.string().min(1, "Select a sponsor."),
   tier: z.string().min(1) as z.ZodType<SponsorTier>,
@@ -834,6 +835,8 @@ export const addExistingSponsorToEventClientSchema = z.object({
 });
 
 export const editEventSponsorClientSchema = z.object({
+  orgId: z.string().min(1),
+  eventId: z.string().min(1),
   eventSponsorId: z.string().min(1),
   tier: z.string().min(1) as z.ZodType<SponsorTier>,
   isActive: z.boolean(),
@@ -841,4 +844,5 @@ export const editEventSponsorClientSchema = z.object({
   displayName: optionalTrimmed(120),
   blurb: markdownRichSchema,
   logoFile: z.any().optional(),
+  removeLogo: z.boolean().optional(),
 });

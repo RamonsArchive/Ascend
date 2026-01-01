@@ -7,10 +7,12 @@ import AddSponsorToEventModal from "./AddSponsorToEventModal";
 import EditEventSponsorForm from "./EditEventSponsorForm";
 
 const InitialEventSponsorsSection = ({
+  orgId,
   eventId,
   initialSponsors,
   sponsorLibrary,
 }: {
+  orgId: string;
   eventId: string;
   initialSponsors: PublicEventSponsorLink[];
   sponsorLibrary: SponsorLibraryItem[];
@@ -24,6 +26,7 @@ const InitialEventSponsorsSection = ({
     <section className="flex flex-col items-center justify-center w-full">
       <div className="flex flex-col w-full max-w-6xl px-5 sm:px-10 md:px-18 py-10 md:py-14 gap-10 md:gap-12">
         <AddSponsorToEventModal
+          orgId={orgId}
           eventId={eventId}
           sponsorLibrary={sponsorLibrary}
           isOpen={isAddModalOpen}
@@ -72,6 +75,7 @@ const InitialEventSponsorsSection = ({
               .map((s) => (
                 <EditEventSponsorForm
                   key={s.id}
+                  orgId={orgId}
                   eventId={eventId}
                   initialSponsor={s}
                 />

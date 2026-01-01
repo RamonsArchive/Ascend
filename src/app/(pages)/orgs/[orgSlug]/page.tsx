@@ -1,12 +1,10 @@
 import React from "react";
-import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/src/lib/prisma";
 import PublicOrgHero from "@/src/components/orgComponents/PublicOrgHero";
 import Link from "next/link";
 import { fetchOrgSponsors } from "@/src/actions/org_sponsor_actions";
 import { fetchAllOrgEvents } from "@/src/actions/event_actions";
 import { fetchOrgMembers } from "@/src/actions/org_members_actions";
-import type { OrgMembership } from "@prisma/client";
 import PublicOrgSponsorsSection from "@/src/components/orgComponents/PublicOrgSponsorsSection";
 import PublicOrgEventsSection from "@/src/components/orgComponents/PublicOrgEventsSection";
 import PublicOrgMembersSection from "@/src/components/orgComponents/PublicOrgMembersSection";

@@ -25,19 +25,20 @@ import { uploadToS3PresignedPost } from "@/src/lib/s3-client";
 import {
   updateEventSponsor,
   removeEventSponsor,
-} from "@/src/actions/event_actions";
+} from "@/src/actions/event_sponsor_actions";
 import { editEventSponsorClientSchema } from "@/src/lib/validation";
 
 const initialState: ActionState = { status: "INITIAL", error: "", data: null };
 
 const EditEventSponsorForm = ({
+  orgId,
   eventId,
   initialSponsor,
 }: {
+  orgId: string;
   eventId: string;
   initialSponsor: PublicEventSponsorLink;
 }) => {
-  void eventId;
   const router = useRouter();
 
   const allowedImageMimeTypes = useMemo(
@@ -49,6 +50,7 @@ const EditEventSponsorForm = ({
   const [statusMessage, setStatusMessage] = useState("");
   const [showBlurbPreview, setShowBlurbPreview] = useState(false);
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
+  const [removeLogo, setRemoveLogo] = useState(false);
 
   const [errors, setErrors] = useState<
     Partial<
@@ -107,6 +109,8 @@ const EditEventSponsorForm = ({
       const orderValue = Math.max(0, Number(orderInput) || 0);
 
       await editEventSponsorClientSchema.parseAsync({
+        orgId,
+        eventId,
         eventSponsorId: initialSponsor.id,
         tier: formData.tier,
         isActive: formData.isActive,
@@ -114,6 +118,7 @@ const EditEventSponsorForm = ({
         displayName: formData.displayName,
         blurb: formData.blurb,
         logoFile: logoFile ?? undefined,
+        removeLogo,
       });
 
       let logoKey: string | null = null;
@@ -152,12 +157,15 @@ const EditEventSponsorForm = ({
       setStatusMessage("Saving…");
 
       const fd = new FormData();
+      fd.set("orgId", orgId);
+      fd.set("eventId", eventId);
       fd.set("eventSponsorId", initialSponsor.id);
       fd.set("tier", formData.tier);
       fd.set("isActive", formData.isActive ? "true" : "false");
       fd.set("order", String(orderValue));
       fd.set("displayName", formData.displayName ?? "");
       fd.set("blurb", formData.blurb ?? "");
+      fd.set("removeLogo", removeLogo ? "true" : "false");
       if (logoKey) fd.set("logoKey", logoKey);
 
       const res = await updateEventSponsor(initialState, fd);
@@ -215,6 +223,8 @@ const EditEventSponsorForm = ({
     try {
       setStatusMessage("Removing…");
       const fd = new FormData();
+      fd.set("orgId", orgId);
+      fd.set("eventId", eventId);
       fd.set("eventSponsorId", initialSponsor.id);
 
       const res = await removeEventSponsor(initialState, fd);
@@ -234,6 +244,13 @@ const EditEventSponsorForm = ({
     }
   };
 
+  const onRemoveLogoOverride = () => {
+    setRemoveLogo(true);
+    if (logoRef.current) logoRef.current.value = "";
+    setLogoPreviewUrl(null);
+    toast.success("Logo override will be removed on Save.");
+  };
+
   const [, updateAction, updating] = useActionState(submitUpdate, initialState);
 
   return (
@@ -242,7 +259,7 @@ const EditEventSponsorForm = ({
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 md:gap-6">
           <div className="flex flex-col gap-2 min-w-0">
             <div className="text-white font-semibold text-lg truncate">
-              {name}
+              {name}s
             </div>
             <div className="text-white/50 text-xs truncate">@{slug}</div>
           </div>
@@ -395,13 +412,46 @@ const EditEventSponsorForm = ({
           <label className="text-xs md:text-sm text-white/75">
             Event logo override (optional)
           </label>
-          <input
-            ref={logoRef}
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            onChange={(e) => onSelectLogo(e.target.files?.[0] ?? null)}
-            className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white file:mr-4 file:rounded-xl file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-white/80"
-          />
+
+          <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+            <input
+              ref={logoRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              onChange={(e) => onSelectLogo(e.target.files?.[0] ?? null)}
+              className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white file:mr-4 file:rounded-xl file:border-0 file:bg-white/10 file:px-3 file:py-2 file:text-white/80"
+            />
+
+            {/* ✅ only show this if there is something to remove */}
+            {(initialSponsor.logoKey || logoPreviewUrl) && !removeLogo ? (
+              <button
+                type="button"
+                onClick={onRemoveLogoOverride}
+                className="shrink-0 px-4 py-2 rounded-2xl bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition-colors text-xs md:text-sm"
+              >
+                Remove logo override
+              </button>
+            ) : null}
+
+            {/* Optional: allow undo */}
+            {removeLogo ? (
+              <button
+                type="button"
+                onClick={() => setRemoveLogo(false)}
+                className="shrink-0 px-4 py-2 rounded-2xl bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition-colors text-xs md:text-sm"
+              >
+                Undo remove
+              </button>
+            ) : null}
+          </div>
+
+          {removeLogo ? (
+            <p className="text-xs text-white/60">
+              Logo override will be removed when you click{" "}
+              <span className="text-white/80">Save</span>.
+            </p>
+          ) : null}
+
           {logoPreviewUrl ? (
             <div className="relative w-full max-w-xs h-28 rounded-2xl overflow-hidden border border-white/10 bg-white/5">
               <Image
@@ -413,6 +463,7 @@ const EditEventSponsorForm = ({
               />
             </div>
           ) : null}
+
           {errors.logoFile ? (
             <p className="text-red-500 text-xs md:text-sm">{errors.logoFile}</p>
           ) : null}
