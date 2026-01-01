@@ -42,53 +42,6 @@ export type SponsorTier =
   | "BRONZE"
   | "COMMUNITY";
 
-export type OrgSponsorWithSponsor = Prisma.OrganizationSponsorGetPayload<{
-  select: {
-    id: true;
-    sponsorId: true;
-    tier: true;
-    isActive: true;
-    displayName: true;
-    blurb: true;
-    logoKey: true;
-    order: true;
-    createdAt: true;
-    updatedAt: true;
-    sponsor: {
-      select: {
-        id: true;
-        name: true;
-        slug: true;
-        websiteKey: true;
-        description: true;
-        logoKey: true;
-        coverKey: true;
-      };
-    };
-  };
-}>;
-
-export type EventSponsorWithSponsor = {
-  id: string;
-  eventId: string;
-  sponsorId: string;
-  tier: SponsorTier;
-  isActive: boolean;
-  displayName: string | null;
-  blurb: string | null;
-  order: number;
-  logoKey: string | null;
-  sponsor: {
-    id: string;
-    name: string;
-    slug: string;
-    websiteKey: string | null;
-    description: string | null;
-    logoKey: string | null;
-    coverKey: string | null;
-  };
-};
-
 export type OrgJoinRequestWithUser = Prisma.OrgJoinRequestGetPayload<{
   include: {
     user: {
@@ -184,11 +137,8 @@ export type SponsorLinkBase = {
   sponsor: SponsorPublic;
 };
 
-export type SponsorLinkScope =
-  | { kind: "ORG"; orgId: string }
-  | { kind: "EVENT"; eventId: string };
-
-export type PublicSponsorLink = SponsorLinkBase & SponsorLinkScope;
+export type PublicOrgSponsorLink = SponsorLinkBase & { orgId: string };
+export type PublicEventSponsorLink = SponsorLinkBase & { eventId: string };
 
 export type OrgListItem = {
   id: string;
@@ -267,7 +217,7 @@ export type EventCompleteData = {
   tracks: TrackDraft[];
   awards: AwardDraft[];
 
-  sponsors: PublicSponsorLink[];
+  sponsors: PublicEventSponsorLink[];
 
   _count: {
     teams: number;

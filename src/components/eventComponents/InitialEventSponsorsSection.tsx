@@ -1,6 +1,5 @@
 import {
-  EventSponsorWithSponsor,
-  PublicSponsorLink,
+  PublicEventSponsorLink,
   SponsorLibraryItem,
 } from "@/src/lib/global_types";
 import React from "react";
@@ -13,7 +12,7 @@ const InitialEventSponsorsSection = ({
   sponsorLibrary,
 }: {
   eventId: string;
-  initialSponsors: EventSponsorWithSponsor[];
+  initialSponsors: PublicEventSponsorLink[];
   sponsorLibrary: SponsorLibraryItem[];
 }) => {
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);

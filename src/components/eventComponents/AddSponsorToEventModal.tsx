@@ -29,7 +29,7 @@ import { createOrgImageUpload } from "@/src/actions/s3_actions";
 import { uploadToS3PresignedPost } from "@/src/lib/s3-client";
 
 // ✅ you need these server actions (same shape as org)
-import { addExistingSponsorToEvent } from "@/src/actions/event_sponsor_actions";
+import { addExistingSponsorToEvent } from "@/src/actions/event_actions";
 // ✅ you need this client schema (same shape as org)
 import { addExistingSponsorToEventClientSchema } from "@/src/lib/validation";
 

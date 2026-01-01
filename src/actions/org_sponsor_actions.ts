@@ -24,7 +24,7 @@ function slugify(input: string) {
 
 export const createSponsorProfile = async (
   _prevState: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -143,7 +143,7 @@ export const createSponsorProfile = async (
 
 export const updateSponsorProfile = async (
   _prevState: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -286,7 +286,7 @@ export const updateSponsorProfile = async (
 
 export const setSponsorVisibility = async (
   _prevState: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -368,77 +368,9 @@ export const setSponsorVisibility = async (
   }
 };
 
-export const fetchSponsorLibrary = async (
-  query?: string,
-): Promise<ActionState> => {
-  try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user?.id) {
-      return parseServerActionResponse({
-        status: "ERROR",
-        error: "MUST BE LOGGED IN",
-        data: null,
-      }) as ActionState;
-    }
-
-    const isRateLimited = await checkRateLimit("fetchSponsorLibrary");
-    if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
-
-    const q = (query ?? "").trim();
-    const userId = session.user.id;
-
-    const sponsors = await prisma.sponsor.findMany({
-      where: {
-        AND: [
-          {
-            OR: [
-              { createdById: userId },
-              { visibility: SponsorVisibility.PUBLIC },
-            ],
-          },
-          q
-            ? {
-                OR: [
-                  { name: { contains: q } },
-                  { websiteKey: { contains: q } },
-                ],
-              }
-            : {},
-        ],
-      },
-      orderBy: [{ updatedAt: "desc" }],
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        websiteKey: true,
-        description: true,
-        logoKey: true,
-        coverKey: true,
-        visibility: true,
-        createdById: true,
-        updatedAt: true,
-      },
-    });
-
-    return parseServerActionResponse({
-      status: "SUCCESS",
-      error: "",
-      data: sponsors,
-    }) as ActionState;
-  } catch (err) {
-    console.error(err);
-    return parseServerActionResponse({
-      status: "ERROR",
-      error: "Failed to fetch sponsor library",
-      data: null,
-    }) as ActionState;
-  }
-};
-
 export const addExistingSponsorToOrg = async (
   _prevState: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -492,7 +424,7 @@ export const addExistingSponsorToOrg = async (
 
     const hasPermissions = await assertOrgAdminOrOwnerWithId(
       orgId,
-      session.user.id,
+      session.user.id
     );
     if (hasPermissions.status === "ERROR") return hasPermissions as ActionState;
 
@@ -571,7 +503,7 @@ export const fetchOrgSponsors = async (orgId: string) => {
 
     const hasPermissions = await assertOrgAdminOrOwnerWithId(
       orgId,
-      session.user.id,
+      session.user.id
     );
     if (hasPermissions.status === "ERROR") return hasPermissions as ActionState;
 
@@ -633,7 +565,7 @@ export const fetchAllPublicSponsors = async (): Promise<ActionState> => {
 
 export const deleteSponsor = async (
   _prevState: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });

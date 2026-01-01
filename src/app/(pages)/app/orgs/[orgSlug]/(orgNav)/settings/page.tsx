@@ -9,7 +9,7 @@ import {
 import { getCachedSession } from "@/src/lib/cached-auth";
 import { PublicEventListItem, OrgRole } from "@/src/lib/global_types";
 import type { SponsorLibraryItem } from "@/src/lib/global_types";
-import { fetchSponsorLibrary } from "@/src/actions/org_sponsor_actions";
+import { fetchSponsorLibrary } from "@/src/actions/global_actions";
 import { fetchAllOrgEvents } from "@/src/actions/event_actions";
 import { OrgSettingsData } from "@/src/lib/global_types";
 import OrgSettingsClient from "@/src/components/orgComponents/OrgSettingsClient";

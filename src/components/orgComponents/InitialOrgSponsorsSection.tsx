@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import EditOrgSponsorForm from "./EditOrgSponsorForm";
-import type { OrgSponsorWithSponsor } from "@/src/lib/global_types";
+import { PublicOrgSponsorLink } from "@/src/lib/global_types";
 import { org_sponsors_data } from "@/src/constants/orgConstants/org_index";
 import AddSponsorToOrgModal from "./AddSponsorToOrgModal";
 import type { SponsorLibraryItem } from "@/src/lib/global_types";
@@ -11,15 +11,16 @@ const InitialOrgSponsorsSection = ({
   orgId,
   sponsorLibrary,
 }: {
-  initialSponsors: OrgSponsorWithSponsor[];
+  initialSponsors: PublicOrgSponsorLink[];
   orgId: string;
   sponsorLibrary: SponsorLibraryItem[];
 }) => {
   const { orgSection } = org_sponsors_data;
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [defaultSponsorId, setDefaultSponsorId] = React.useState<string | null>(
-    null,
+    null
   );
+
   return (
     <section className="flex flex-col items-center justify-center w-full">
       <div className="flex flex-col w-full max-w-6xl px-5 sm:px-10 md:px-18 py-10 md:py-14 gap-10 md:gap-12">

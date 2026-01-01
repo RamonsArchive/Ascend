@@ -373,12 +373,16 @@ export const fetchOrgSettingsData = async (orgSlug: string) => {
           orderBy: [{ order: "asc" }, { createdAt: "asc" }],
           select: {
             id: true,
+            orgId: true, // ✅ add
             sponsorId: true,
-            tier: true,
-            isActive: true,
-            displayName: true,
-            blurb: true,
-            logoKey: true,
+            tier: true, // ✅ add
+            isActive: true, // ✅ add
+            displayName: true, // ✅ add
+            blurb: true, // ✅ add
+            logoKey: true, // ✅ add
+            order: true, // ✅ add
+            createdAt: true,
+            updatedAt: true,
             sponsor: {
               select: {
                 id: true,

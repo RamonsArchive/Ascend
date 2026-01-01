@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 
 import type {
   ActionState,
-  EventSponsorWithSponsor,
+  PublicEventSponsorLink,
   SponsorTier,
 } from "@/src/lib/global_types";
 import {
@@ -25,7 +25,7 @@ import { uploadToS3PresignedPost } from "@/src/lib/s3-client";
 import {
   updateEventSponsor,
   removeEventSponsor,
-} from "@/src/actions/event_sponsor_actions";
+} from "@/src/actions/event_actions";
 import { editEventSponsorClientSchema } from "@/src/lib/validation";
 
 const initialState: ActionState = { status: "INITIAL", error: "", data: null };
@@ -35,7 +35,7 @@ const EditEventSponsorForm = ({
   initialSponsor,
 }: {
   eventId: string;
-  initialSponsor: EventSponsorWithSponsor;
+  initialSponsor: PublicEventSponsorLink;
 }) => {
   void eventId;
   const router = useRouter();

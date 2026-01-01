@@ -11,9 +11,11 @@ import EventSettingsHero from "@/src/components/eventComponents/EventSettingsHer
 import {
   EventCompleteData,
   EventMembersAdminData,
+  SponsorLibraryItem,
 } from "@/src/lib/global_types";
 import EventSettingsClient from "@/src/components/eventComponents/EventSettingsClient";
 import { fetchOrgId } from "@/src/actions/org_actions";
+import { fetchSponsorLibrary } from "@/src/actions/global_actions";
 
 const EventSettingsPage = async ({
   params,
@@ -82,10 +84,17 @@ const EventSettingsPage = async ({
       </div>
     );
   }
-  const orgId = orgIdRes.data as string;
-  const eventData = await fetchEventCompleteData(orgId, eventSlug);
-  console.log(eventData);
-  if (eventData.status === "ERROR" || !eventData.data) {
+
+  let eventDataRes = null;
+  let sponsorLibraryRes = null;
+  let memberRes = null;
+
+  [eventDataRes, sponsorLibraryRes, memberRes] = await Promise.all([
+    fetchEventCompleteData(orgIdRes.data as string, eventSlug),
+    fetchSponsorLibrary(),
+    fetchEventMembersAdminData(orgIdRes.data as string, eventSlug),
+  ]);
+  if (eventDataRes.status === "ERROR" || !eventDataRes.data) {
     return (
       <div className="relative w-full min-h-[calc(100vh-48px)]">
         <div className="absolute inset-0 pointer-events-none marketing-bg" />
@@ -109,14 +118,9 @@ const EventSettingsPage = async ({
     );
   }
 
-  const event = eventData.data as EventCompleteData;
-  const membersRes = await fetchEventMembersAdminData(orgId, eventSlug);
-  console.log(membersRes);
-  const membersAdminData =
-    membersRes.status === "SUCCESS"
-      ? (membersRes.data as EventMembersAdminData)
-      : null;
-  console.log(membersAdminData);
+  const event = eventDataRes.data as EventCompleteData;
+  const membersAdminData = (memberRes.data as EventMembersAdminData) ?? [];
+  const sponsorLibrary = (sponsorLibraryRes.data as SponsorLibraryItem[]) ?? [];
 
   return (
     <div className="relative w-full min-h-[calc(100vh-48px)]">
@@ -127,6 +131,8 @@ const EventSettingsPage = async ({
           orgSlug={orgSlug}
           event={event}
           membersAdminData={membersAdminData}
+          sponsorLibrary={sponsorLibrary}
+          currentUserId={userId}
         />
       </div>
     </div>

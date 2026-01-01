@@ -462,6 +462,11 @@ export const fetchEventCompleteData = async (
         allowMultipleWinners: award.allowMultipleWinners,
         order: award.order.toString(),
       })),
+      sponsors: event.sponsors.map((sponsor) => ({
+        ...sponsor,
+        kind: "EVENT",
+        eventId: sponsor.eventId,
+      })),
       _count: {
         teams: event._count.teams,
         submissions: event._count.submissions,

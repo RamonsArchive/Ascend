@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import type { Prisma } from "@prisma/client";
 
 import { org_sponsors_data } from "@/src/constants/orgConstants/org_index";
 import AddOrgSponsorForm from "@/src/components/orgComponents/AddOrgSponsorForm";
@@ -21,7 +20,7 @@ const EditOrgSponsorsSection = ({
   const { librarySection, orgSection } = org_sponsors_data;
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [defaultSponsorId, setDefaultSponsorId] = React.useState<string | null>(
-    null,
+    null
   );
 
   console.log("sponsorLibrary", sponsorLibrary);

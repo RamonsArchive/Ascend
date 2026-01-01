@@ -7,8 +7,8 @@ import type {
   OrgSettingsView,
   PublicEventListItem,
   OrgJoinRequestWithUser,
+  PublicOrgSponsorLink,
   OrgMember,
-  OrgSponsorWithSponsor,
 } from "@/src/lib/global_types";
 
 import SettingsClient from "@/src/components/SettingsClient";
@@ -135,7 +135,9 @@ const OrgSettingsClient = ({
               currentUserId={currentUserId}
             />
             <InitialOrgSponsorsSection
-              initialSponsors={org.sponsors as OrgSponsorWithSponsor[]}
+              initialSponsors={
+                org.sponsors as unknown as PublicOrgSponsorLink[]
+              }
               orgId={org.id}
               sponsorLibrary={sponsorsData}
             />
