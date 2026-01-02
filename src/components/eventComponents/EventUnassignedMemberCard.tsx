@@ -30,11 +30,9 @@ const EventUnassignedMemberCard = ({
     return n.slice(0, 1).toUpperCase();
   }, [member.user.name, member.user.email]);
 
-  const profileHref = `/app/orgs/${orgSlug}/members`; // optional: change to a user profile route if you have one
-
   const submitRemove = async (
     _state: ActionState,
-    _fd: FormData,
+    _fd: FormData
   ): Promise<ActionState> => {
     try {
       void _state;
@@ -42,7 +40,7 @@ const EventUnassignedMemberCard = ({
 
       setErrors({});
       const ok = window.confirm(
-        `Remove ${member.user.name ?? member.user.email} from this event?`,
+        `Remove ${member.user.name ?? member.user.email} from this event?`
       );
       if (!ok) return initialState;
 
@@ -94,7 +92,7 @@ const EventUnassignedMemberCard = ({
 
   const [, removeAction, removePending] = useActionState(
     submitRemove,
-    initialState,
+    initialState
   );
 
   return (
@@ -156,13 +154,6 @@ const EventUnassignedMemberCard = ({
                 {removePending ? "Removing..." : "Remove from event"}
               </button>
             </form>
-
-            <Link
-              href={profileHref}
-              className="w-full md:w-auto px-4 py-2 rounded-2xl bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 transition-colors text-xs md:text-sm text-center"
-            >
-              View admin tools
-            </Link>
           </div>
         </div>
 

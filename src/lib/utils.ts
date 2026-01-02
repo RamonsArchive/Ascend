@@ -15,7 +15,7 @@ export const parseServerActionResponse = <T>(response: T): T => {
 export const updatePhoneNumber = (
   value: string,
   phoneNumber: string,
-  setPhoneNumber: (value: string) => void,
+  setPhoneNumber: (value: string) => void
 ) => {
   // If the user is backspacing and hit a dash, remove the digit before the dash
   const prevLength = phoneNumber.length;
@@ -45,7 +45,7 @@ export const updatePhoneNumber = (
   if (cleanedValue.length >= 6) {
     formattedValue = `${cleanedValue.slice(0, 3)}-${cleanedValue.slice(
       3,
-      6,
+      6
     )}-${cleanedValue.slice(6, 10)}`;
   } else if (cleanedValue.length >= 3) {
     formattedValue = `${cleanedValue.slice(0, 3)}-${cleanedValue.slice(3)}`;
@@ -86,7 +86,7 @@ export function formatDate(date: string | Date | null | undefined): string {
 
 export function formatDateRange(
   startAt: Date | string | null | undefined,
-  endAt: Date | string | null | undefined,
+  endAt: Date | string | null | undefined
 ) {
   const toValidDate = (v: Date | string | null | undefined) => {
     if (!v) return null;
@@ -124,7 +124,7 @@ const DEFAULT_ALLOWED_IMAGE_MIME_TYPES = new Set([
  */
 export function isAllowedImageFile(
   file: File | null | undefined,
-  allowedMimeTypes: Set<string> = DEFAULT_ALLOWED_IMAGE_MIME_TYPES,
+  allowedMimeTypes: Set<string> = DEFAULT_ALLOWED_IMAGE_MIME_TYPES
 ) {
   if (!file) return false;
   return allowedMimeTypes.has(file.type);
@@ -138,7 +138,7 @@ export function getFileExtension(filename: string) {
 
 export function isUnderFileSize(
   file: File | null | undefined,
-  maxBytes: number,
+  maxBytes: number
 ) {
   if (!file) return false;
   return file.size <= maxBytes;
@@ -202,7 +202,7 @@ export function parseOptionalDateFromMinutes(minutesStr: string | null) {
 }
 
 export function statusPill(
-  status: "PENDING" | "ACCEPTED" | "DECLINED" | "CANCELLED",
+  status: "PENDING" | "ACCEPTED" | "DECLINED" | "CANCELLED"
 ) {
   // same palette vibes as your app: whites, subtle borders
   switch (status) {
@@ -218,7 +218,7 @@ export function statusPill(
 }
 
 export function statusLabel(
-  status: "PENDING" | "ACCEPTED" | "DECLINED" | "CANCELLED",
+  status: "PENDING" | "ACCEPTED" | "DECLINED" | "CANCELLED"
 ) {
   switch (status) {
     case "PENDING":
@@ -334,13 +334,13 @@ export function statusBadgeClasses(status: string) {
 export const optionalTrimmed = (maxLength: number) =>
   z.preprocess(
     (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
-    z.string().max(maxLength).optional(),
+    z.string().max(maxLength).optional()
   );
 
 const httpUrl = z.url({ protocol: /^https?$/ });
 export const optionalUrl = z.preprocess(
   (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
-  httpUrl.optional(),
+  httpUrl.optional()
 );
 
 // for markdown stored-as-json wrapper
@@ -407,9 +407,9 @@ export const optionalMapsShortUrl = z.preprocess(
     .trim()
     .regex(
       mapsShortLinkRegex,
-      "Use a Google Maps share link (maps.app.goo.gl/...). Open Google Maps → Share → Copy link.",
+      "Use a Google Maps share link (maps.app.goo.gl/...). Open Google Maps → Share → Copy link."
     )
-    .optional(),
+    .optional()
 );
 
 export function roleBadgeClasses(role: Member["role"]) {
@@ -453,7 +453,7 @@ export function eventJoinModeLabel(joinMode: string) {
 
 export function eventPillClasses(
   kind: "STATUS" | "VISIBILITY" | "JOIN",
-  value: string,
+  value: string
 ) {
   const v = (value || "").toUpperCase();
 
@@ -527,3 +527,8 @@ export const allowedTiers = new Set<SponsorTier>([
   "BRONZE",
   "COMMUNITY",
 ]);
+
+export const baseUrl =
+  process.env.SITE_URL ??
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");

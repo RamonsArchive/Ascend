@@ -1,14 +1,16 @@
 import React from "react";
 import type { EventMembersData } from "@/src/lib/global_types";
-import EventEditMembersClient from "./EventEditMembersClient";
+import PublicEventMembersClient from "./PublicEventMembersClient";
 
-const EventEditMembersSection = ({
+const PublicEventMembersSection = ({
+  userId,
   orgSlug,
-  eventId,
+  eventSlug,
   membersData,
 }: {
+  userId: string;
   orgSlug: string;
-  eventId: string;
+  eventSlug: string;
   membersData: EventMembersData | null;
 }) => {
   return (
@@ -16,23 +18,24 @@ const EventEditMembersSection = ({
       <div className="flex flex-col w-full max-w-6xl px-5 sm:px-10 md:px-18 py-10 md:py-14 gap-10 md:gap-12">
         <div className="flex flex-col gap-3">
           <h2 className="text-2xl md:text-3xl font-semibold text-white">
-            Event members
+            Teams
           </h2>
           <div className="text-sm md:text-base text-white/70 leading-relaxed max-w-4xl">
-            Manage teams and members. Remove someone from a team, or remove them
-            from the event entirely.
+            Browse teams and request to join. If you’re not registered yet, join
+            the event first.
           </div>
         </div>
 
         <div className="marketing-card w-full rounded-3xl px-6 py-6 md:px-8 md:py-8 bg-white/4">
           {membersData ? (
-            <EventEditMembersClient
+            <PublicEventMembersClient
+              userId={userId}
               orgSlug={orgSlug}
-              eventId={eventId}
+              eventSlug={eventSlug}
               data={membersData}
             />
           ) : (
-            <div className="text-white/70 text-sm">Failed to load members.</div>
+            <div className="text-white/70 text-sm">Failed to load teams.</div>
           )}
         </div>
       </div>
@@ -40,4 +43,4 @@ const EventEditMembersSection = ({
   );
 };
 
-export default EventEditMembersSection;
+export default PublicEventMembersSection;

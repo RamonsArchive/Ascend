@@ -1,16 +1,23 @@
 import React from "react";
-import JoinOrgGate from "@/src/components/orgComponents/join/JoinOrgGate";
-import { acceptOrgInvite } from "@/src/actions/org_invites_actions"; // <-- wherever you put it
-import { fetchOrgJoinInvitePageData } from "@/src/actions/org_invites_actions";
+import JoinGate from "@/src/components/JoinGate";
+import {
+  acceptEventEmailInvite,
+  fetchEventJoinInvitePageData,
+} from "@/src/actions/event_invites_actions";
 import { baseUrl } from "@/src/lib/utils";
-const JoinOrgPage = async ({
+
+const EventJoinPage = async ({
   params,
 }: {
-  params: Promise<{ orgSlug: string; token: string }>;
+  params: Promise<{ orgSlug: string; eventSlug: string; token: string }>;
 }) => {
-  const { orgSlug, token } = await params;
+  const { orgSlug, eventSlug, token } = await params;
 
-  const pageData = await fetchOrgJoinInvitePageData(orgSlug, token);
+  const pageData = await fetchEventJoinInvitePageData(
+    orgSlug,
+    eventSlug,
+    token
+  );
   if (pageData.status === "ERROR") {
     return (
       <div className="min-h-[60vh] flex items-center justify-center px-5">
@@ -30,27 +37,30 @@ const JoinOrgPage = async ({
       ? "INVITE_EXPIRED"
       : !data.invite.isPending
         ? "INVITE_NOT_PENDING"
-        : null;
+        : data.invite.emailMismatch
+          ? "EMAIL_MISMATCH"
+          : null;
 
   return (
     <div className="relative w-full min-h-[calc(100vh-48px)]">
       <div className="absolute inset-0 pointer-events-none marketing-bg" />
 
       <div className="relative flex items-center justify-center px-5 py-10">
-        <JoinOrgGate
+        <JoinGate
           baseUrl={baseUrl}
           kind="EMAIL_INVITE"
-          org={data.org}
+          entityType="EVENT"
+          entity={data.event}
           inviteEmail={data.invite.email}
           session={data.session}
-          isMember={data.isMember}
+          isMember={data.isParticipant}
           token={token}
           disabledReason={disabledReason}
-          acceptAction={acceptOrgInvite}
+          acceptAction={acceptEventEmailInvite}
         />
       </div>
     </div>
   );
 };
 
-export default JoinOrgPage;
+export default EventJoinPage;

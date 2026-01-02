@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import type {
   EventCompleteData,
-  EventMembersAdminData,
+  EventMembersData,
   EventSettingsView,
 } from "@/src/lib/global_types";
 
@@ -53,13 +53,13 @@ const eventTabs: Array<SettingsTab<EventSettingsView>> = [
 const EventSettingsClient = ({
   orgSlug,
   event,
-  membersAdminData,
+  membersData,
   sponsorLibrary, // ✅ new
   currentUserId, // optional if you want to gate stuff
 }: {
   orgSlug: string;
   event: EventCompleteData;
-  membersAdminData: EventMembersAdminData | null;
+  membersData: EventMembersData | null;
   sponsorLibrary: SponsorLibraryItem[];
   currentUserId: string;
 }) => {
@@ -96,7 +96,7 @@ const EventSettingsClient = ({
           <EventEditMembersSection
             orgSlug={orgSlug}
             eventId={event.id}
-            membersAdminData={membersAdminData}
+            membersData={membersData}
           />
         ),
       },
@@ -142,7 +142,7 @@ const EventSettingsClient = ({
         ),
       },
     ],
-    [event, orgSlug, membersAdminData, sponsorLibrary, currentUserId],
+    [event, orgSlug, membersData, sponsorLibrary, currentUserId]
   );
 
   return (

@@ -269,7 +269,7 @@ model EventParticipant {
   status          ParticipantStatus @default(REGISTERED)
   newsletterOptIn Boolean           @default(false)
   contactEmail    String?
-  lookingForTeam  Boolean           @default(true)
+  lookingForTeam  Boolean           @default(false)
   trackPreference String?
   skills          Json?
   interests       Json?

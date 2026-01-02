@@ -1,17 +1,19 @@
 import React from "react";
-import JoinOrgGate from "@/src/components/orgComponents/join/JoinOrgGate";
-import { acceptOrgInviteLink } from "@/src/actions/org_invites_actions"; // <-- wherever you put it
-import { fetchOrgJoinLinkPageData } from "@/src/actions/org_invites_actions";
+import JoinGate from "@/src/components/JoinGate";
+import {
+  acceptEventInviteLink,
+  fetchEventJoinLinkPageData,
+} from "@/src/actions/event_invites_actions";
 import { baseUrl } from "@/src/lib/utils";
 
-const JoinOrgLinkPage = async ({
+const EventJoinLinkPage = async ({
   params,
 }: {
-  params: Promise<{ orgSlug: string; token: string }>;
+  params: Promise<{ orgSlug: string; eventSlug: string; token: string }>;
 }) => {
-  const { orgSlug, token } = await params;
+  const { orgSlug, eventSlug, token } = await params;
 
-  const pageData = await fetchOrgJoinLinkPageData(orgSlug, token);
+  const pageData = await fetchEventJoinLinkPageData(orgSlug, eventSlug, token);
   if (pageData.status === "ERROR") {
     return (
       <div className="min-h-[60vh] flex items-center justify-center px-5">
@@ -42,19 +44,20 @@ const JoinOrgLinkPage = async ({
       <div className="absolute inset-0 pointer-events-none marketing-bg" />
 
       <div className="relative flex items-center justify-center px-5 py-10">
-        <JoinOrgGate
+        <JoinGate
           baseUrl={baseUrl}
           kind="INVITE_LINK"
-          org={data.org}
+          entityType="EVENT"
+          entity={data.event}
           session={data.session}
-          isMember={data.isMember}
+          isMember={data.isParticipant}
           token={token}
           disabledReason={disabledReason}
-          acceptAction={acceptOrgInviteLink}
+          acceptAction={acceptEventInviteLink}
         />
       </div>
     </div>
   );
 };
 
-export default JoinOrgLinkPage;
+export default EventJoinLinkPage;

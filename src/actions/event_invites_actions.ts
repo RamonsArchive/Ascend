@@ -21,8 +21,8 @@ import {
 import { updateTag } from "next/cache";
 import { assertEventAdminOrOwnerWithId } from "@/src/actions/event_actions";
 import {
-  createEventInviteEmailClientSchema,
-  createEventInviteLinkClientSchema,
+  createEventInviteEmailServerSchema,
+  createEventInviteLinkServerSchema,
   EventRegistrationRequestSchema,
   ReviewRegistrationRequestSchema,
 } from "@/src/lib/validation";
@@ -32,7 +32,7 @@ import { SendEventEmailInvite } from "@/src/emails/SendEventEmailInvite";
 
 export const createEventEmailInvite = async (
   _prev: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -58,7 +58,7 @@ export const createEventEmailInvite = async (
         : null,
     };
 
-    const parsed = createEventInviteEmailClientSchema.safeParse(payload);
+    const parsed = createEventInviteEmailServerSchema.safeParse(payload);
     if (!parsed.success) {
       return parseServerActionResponse({
         status: "ERROR",
@@ -71,7 +71,7 @@ export const createEventEmailInvite = async (
     const normalizedEmail = normalizeEmail(email);
     const expiresAt = parseOptionalDateFromMinutes(
       minutesToExpire?.toString() ??
-        new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(),
+        new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString()
     );
 
     const event = await prisma.event.findUnique({
@@ -95,7 +95,7 @@ export const createEventEmailInvite = async (
     const perms = await assertEventAdminOrOwnerWithId(
       event.orgId,
       event.id,
-      session.user.id,
+      session.user.id
     );
     if (perms.status === "ERROR") return perms as ActionState;
 
@@ -187,7 +187,7 @@ export const createEventEmailInvite = async (
  */
 export const createEventInviteLink = async (
   _prev: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -204,14 +204,15 @@ export const createEventInviteLink = async (
 
     const payload = {
       eventId: (formData.get("eventId")?.toString() ?? "").trim(),
-      maxUses: (formData.get("maxUses")?.toString() ?? "").trim() || null,
+      maxUses: (formData.get("maxUses")?.toString() ?? "").trim() || undefined,
       minutesToExpire:
-        (formData.get("minutesToExpire")?.toString() ?? "").trim() || null,
-      note: (formData.get("note")?.toString() ?? "").trim() || null,
+        (formData.get("minutesToExpire")?.toString() ?? "").trim() || undefined,
+      note: (formData.get("note")?.toString() ?? "").trim() || undefined,
     };
+    console.log("payload", payload);
 
-    const parsed = createEventInviteLinkClientSchema.safeParse(payload);
-    if (!parsed.success) {
+    const parsed = createEventInviteLinkServerSchema.safeParse(payload);
+    if (!parsed.success || !parsed.data) {
       return parseServerActionResponse({
         status: "ERROR",
         error: parsed.error.issues[0]?.message ?? "Invalid fields",
@@ -241,15 +242,16 @@ export const createEventInviteLink = async (
     const perms = await assertEventAdminOrOwnerWithId(
       event.orgId,
       event.id,
-      session.user.id,
+      session.user.id
     );
     if (perms.status === "ERROR") return perms as ActionState;
 
     const maxUsesInt = parseOptionalInt(maxUses?.toString() ?? null);
+    console.log("maxUsesInt", maxUsesInt);
 
     const oneWeekFromNow = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
     const expiresAt = parseOptionalDateFromMinutes(
-      minutesToExpire?.toString() ?? oneWeekFromNow.toISOString(),
+      minutesToExpire?.toString() ?? oneWeekFromNow.toISOString()
     );
 
     const token = makeToken(24);
@@ -294,6 +296,216 @@ export const createEventInviteLink = async (
 };
 
 /**
+ * EMAIL invite join page data
+ */
+export const fetchEventJoinInvitePageData = async (
+  orgSlug: string,
+  eventSlug: string,
+  token: string
+): Promise<ActionState> => {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    const event = await prisma.event.findFirst({
+      where: { slug: eventSlug, org: { slug: orgSlug } },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        org: { select: { slug: true } },
+      },
+    });
+
+    if (!event) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "EVENT_NOT_FOUND",
+        data: null,
+      }) as ActionState;
+    }
+
+    const invite = await prisma.eventEmailInvite.findUnique({
+      where: { token },
+      select: {
+        id: true,
+        eventId: true,
+        email: true,
+        status: true,
+        expiresAt: true,
+      },
+    });
+
+    if (!invite || invite.eventId !== event.id) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "INVITE_INVALID",
+        data: null,
+      }) as ActionState;
+    }
+
+    const isExpired = !!(
+      invite.expiresAt && invite.expiresAt.getTime() < Date.now()
+    );
+    const isPending = invite.status === InviteStatus.PENDING;
+
+    const sessionEmail = session?.user?.email
+      ? normalizeEmail(session.user.email)
+      : null;
+    const inviteEmail = normalizeEmail(invite.email);
+    const emailMismatch = !!(sessionEmail && inviteEmail !== sessionEmail);
+
+    const userId = session?.user?.id ?? null;
+
+    const isParticipant =
+      !!userId &&
+      !!(await prisma.eventParticipant.findUnique({
+        where: { eventId_userId: { eventId: event.id, userId } },
+        select: { id: true },
+      }));
+
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data: {
+        event: {
+          id: event.id,
+          name: event.name,
+          slug: event.slug,
+          orgSlug: event.org.slug,
+          description: null,
+        },
+        invite: {
+          email: invite.email,
+          status: invite.status,
+          expiresAt: invite.expiresAt,
+          isExpired,
+          isPending,
+          emailMismatch,
+        },
+        isParticipant,
+        session: {
+          userId,
+          email: session?.user?.email ?? null,
+          name: session?.user?.name ?? null,
+        },
+      },
+    }) as ActionState;
+  } catch (e) {
+    console.error(e);
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to load invite page",
+      data: null,
+    }) as ActionState;
+  }
+};
+
+/**
+ * SHAREABLE link join page data
+ */
+export const fetchEventJoinLinkPageData = async (
+  orgSlug: string,
+  eventSlug: string,
+  token: string
+): Promise<ActionState> => {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    const event = await prisma.event.findFirst({
+      where: { slug: eventSlug, org: { slug: orgSlug } },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        org: { select: { slug: true } },
+      },
+    });
+
+    if (!event) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "EVENT_NOT_FOUND",
+        data: null,
+      }) as ActionState;
+    }
+
+    const link = await prisma.eventInviteLink.findUnique({
+      where: { token },
+      select: {
+        id: true,
+        eventId: true,
+        status: true,
+        expiresAt: true,
+        maxUses: true,
+        uses: true,
+      },
+    });
+
+    if (!link || link.eventId !== event.id) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "LINK_INVALID",
+        data: null,
+      }) as ActionState;
+    }
+
+    const isExpired = !!(
+      link.expiresAt && link.expiresAt.getTime() < Date.now()
+    );
+    const isPending = link.status === InviteStatus.PENDING;
+    const maxUsesReached =
+      link.maxUses !== null && link.maxUses !== undefined
+        ? link.uses >= link.maxUses
+        : false;
+
+    const userId = session?.user?.id ?? null;
+
+    const isParticipant =
+      !!userId &&
+      !!(await prisma.eventParticipant.findUnique({
+        where: { eventId_userId: { eventId: event.id, userId } },
+        select: { id: true },
+      }));
+
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data: {
+        event: {
+          id: event.id,
+          name: event.name,
+          slug: event.slug,
+          orgSlug: event.org.slug,
+          description: null,
+        },
+        link: {
+          status: link.status,
+          expiresAt: link.expiresAt,
+          maxUses: link.maxUses,
+          uses: link.uses,
+          isExpired,
+          isPending,
+          maxUsesReached,
+        },
+        isParticipant,
+        session: {
+          userId,
+          email: session?.user?.email ?? null,
+          name: session?.user?.name ?? null,
+        },
+      },
+    }) as ActionState;
+  } catch (e) {
+    console.error(e);
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to load link page",
+      data: null,
+    }) as ActionState;
+  }
+};
+
+/**
  * Accept EVENT EMAIL invite:
  * - must be logged in
  * - token must be PENDING + not expired
@@ -301,8 +513,8 @@ export const createEventInviteLink = async (
  * - create EventParticipant (if not already)
  * - mark invite ACCEPTED
  */
-export const acceptEventInvite = async (
-  token: string,
+export const acceptEventEmailInvite = async (
+  token: string
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -314,7 +526,7 @@ export const acceptEventInvite = async (
       }) as ActionState;
     }
 
-    const isRateLimited = await checkRateLimit("acceptEventInvite");
+    const isRateLimited = await checkRateLimit("acceptEventEmailInvite");
     if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
 
     const invite = await prisma.eventEmailInvite.findUnique({
@@ -378,7 +590,7 @@ export const acceptEventInvite = async (
       return { eventId: invite.eventId };
     });
 
-    updateTag(`event-accept-invites-${invite.eventId}`);
+    updateTag(`event-accept-email-invites-${invite.eventId}`);
 
     return parseServerActionResponse({
       status: "SUCCESS",
@@ -389,7 +601,7 @@ export const acceptEventInvite = async (
     console.error(e);
     return parseServerActionResponse({
       status: "ERROR",
-      error: "Failed to accept invite",
+      error: "Failed to accept email invite",
       data: null,
     }) as ActionState;
   }
@@ -404,7 +616,7 @@ export const acceptEventInvite = async (
  * - increment uses
  */
 export const acceptEventInviteLink = async (
-  token: string,
+  token: string
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -508,7 +720,7 @@ export const acceptEventInviteLink = async (
  */
 export const createEventRegistrationRequest = async (
   _prev: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -521,7 +733,7 @@ export const createEventRegistrationRequest = async (
     }
 
     const isRateLimited = await checkRateLimit(
-      "createEventRegistrationRequest",
+      "createEventRegistrationRequest"
     );
     if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
 
@@ -623,7 +835,7 @@ export const createEventRegistrationRequest = async (
  */
 export const reviewEventRegistrationRequest = async (
   _prev: ActionState,
-  formData: FormData,
+  formData: FormData
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -636,7 +848,7 @@ export const reviewEventRegistrationRequest = async (
     }
 
     const isRateLimited = await checkRateLimit(
-      "reviewEventRegistrationRequest",
+      "reviewEventRegistrationRequest"
     );
     if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
 
@@ -672,7 +884,7 @@ export const reviewEventRegistrationRequest = async (
     const perms = await assertEventAdminOrOwnerWithId(
       event.orgId,
       event.id,
-      session.user.id,
+      session.user.id
     );
     if (perms.status === "ERROR") return perms as ActionState;
 

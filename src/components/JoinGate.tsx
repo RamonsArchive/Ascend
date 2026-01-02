@@ -4,37 +4,95 @@ import React, { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { signInWithGoogle } from "@/src/lib/auth-client";
-import { JoinOrgGateProps } from "@/src/lib/global_types";
+import type { ActionState } from "@/src/lib/global_types";
 
-const JoinOrgGate = (props: JoinOrgGateProps) => {
+type DisabledReason =
+  | "INVITE_INVALID"
+  | "INVITE_EXPIRED"
+  | "INVITE_NOT_PENDING"
+  | "LINK_INVALID"
+  | "LINK_EXPIRED"
+  | "LINK_NOT_PENDING"
+  | "LINK_MAX_USES_REACHED"
+  | "EMAIL_MISMATCH"
+  | null;
+
+type SessionShape = {
+  userId: string | null;
+  email: string | null;
+  name: string | null;
+};
+
+type JoinGateProps = {
+  baseUrl: string;
+  kind: "EMAIL_INVITE" | "INVITE_LINK";
+  entityType: "ORG" | "EVENT" | "TEAM";
+  entity: {
+    name: string;
+    slug: string;
+    description?: string | null;
+    orgSlug?: string;
+  }; // minimal
+  inviteEmail?: string | null;
+  session: SessionShape;
+  isMember: boolean;
+  token: string;
+  disabledReason: DisabledReason;
+  acceptAction: (token: string) => Promise<ActionState>;
+};
+
+const JoinGate = (props: JoinGateProps) => {
   const searchParams = useSearchParams();
-
   const router = useRouter();
+
   const [statusMessage, setStatusMessage] = useState("");
   const [isPending, startTransition] = useTransition();
 
   const isLoggedIn = !!props.session.userId;
 
+  const joinPath = useMemo(() => {
+    if (props.entityType === "EVENT") {
+      // entity.slug is eventSlug, entity.orgSlug must be provided
+      const orgSlug = props.entity.orgSlug!;
+      const eventSlug = props.entity.slug;
+      return props.kind === "EMAIL_INVITE"
+        ? `/app/orgs/${orgSlug}/events/${eventSlug}/join/${props.token}`
+        : `/app/orgs/${orgSlug}/events/${eventSlug}/join-link/${props.token}`;
+    }
+
+    if (props.entityType === "ORG") {
+      const orgSlug = props.entity.slug;
+      return props.kind === "EMAIL_INVITE"
+        ? `/app/orgs/${orgSlug}/join/${props.token}`
+        : `/app/orgs/${orgSlug}/join-link/${props.token}`;
+    }
+
+    // TEAM: later
+    return "/";
+  }, [props.entityType, props.kind, props.entity, props.token]);
+
   const callbackURL = useMemo(() => {
-    const path =
-      props.kind === "EMAIL_INVITE"
-        ? `/app/orgs/${props.org.slug}/join/${props.token}`
-        : `/app/orgs/${props.org.slug}/join-link/${props.token}`;
+    return `${props.baseUrl}${joinPath}?autojoin=1`;
+  }, [props.baseUrl, joinPath]);
 
-    return `${props.baseUrl}${path}?autojoin=1`;
-  }, [props.baseUrl, props.kind, props.org.slug, props.token]);
-
-  const goToOrg = () => {
-    router.push(`/app/orgs/${props.org.slug}`);
+  const goToEntity = () => {
+    if (props.entityType === "EVENT") {
+      const orgSlug = props.entity.orgSlug!;
+      router.push(`/app/orgs/${orgSlug}/events/${props.entity.slug}`);
+      return;
+    }
+    if (props.entityType === "ORG") {
+      router.push(`/app/orgs/${props.entity.slug}`);
+      return;
+    }
+    router.push("/app");
   };
 
   const onLogin = async () => {
     setStatusMessage("Redirecting to sign in…");
     try {
-      console.log("signing in with google");
       await signInWithGoogle(callbackURL);
-      console.log("refreshing page");
-      router.refresh(); // refetch the page to check if we're logged in
+      router.refresh();
     } catch (e) {
       console.error(e);
       toast.error("ERROR", { description: "Failed to start sign-in." });
@@ -45,7 +103,14 @@ const JoinOrgGate = (props: JoinOrgGateProps) => {
   const onAccept = () => {
     startTransition(async () => {
       try {
-        setStatusMessage("Joining organization…");
+        setStatusMessage(
+          props.entityType === "EVENT"
+            ? "Joining event…"
+            : props.entityType === "ORG"
+              ? "Joining organization…"
+              : "Joining…"
+        );
+
         const result = await props.acceptAction(props.token);
 
         if (result.status === "ERROR") {
@@ -56,32 +121,24 @@ const JoinOrgGate = (props: JoinOrgGateProps) => {
           return;
         }
 
-        toast.success("SUCCESS", {
-          description: "You’ve joined the organization.",
-        });
+        toast.success("SUCCESS", { description: "You’ve joined." });
         setStatusMessage("Joined. Redirecting…");
         router.refresh();
-        router.push(`/app/orgs/${props.org.slug}`);
+        goToEntity();
       } catch (e) {
         console.error(e);
-        toast.error("ERROR", { description: "Failed to join organization." });
-        setStatusMessage("Failed to join organization.");
+        toast.error("ERROR", { description: "Failed to join." });
+        setStatusMessage("Failed to join.");
       }
     });
   };
 
   useEffect(() => {
     const autojoin = searchParams.get("autojoin") === "1";
-    console.log("autojoin", autojoin);
-    console.log("isLoggedIn", isLoggedIn);
-    console.log("disabledReason", props.disabledReason);
-    console.log("isMember", props.isMember);
-
-    // only do it once, only if logged in, and only if link/invite is valid
     if (autojoin && isLoggedIn && !props.disabledReason && !props.isMember) {
       onAccept();
     }
-  }, [isLoggedIn, searchParams, props.disabledReason, props.isMember]); // ok
+  }, [isLoggedIn, searchParams, props.disabledReason, props.isMember]);
 
   const errorCopy = useMemo(() => {
     switch (props.disabledReason) {
@@ -103,26 +160,42 @@ const JoinOrgGate = (props: JoinOrgGateProps) => {
     }
   }, [props.disabledReason, props.inviteEmail, props.session.email]);
 
-  // ✅ already-member UX (button, no auto redirect)
+  const headline =
+    props.entityType === "EVENT"
+      ? `Join ${props.entity.name}`
+      : props.entityType === "ORG"
+        ? `Join ${props.entity.name}`
+        : `Join`;
+
+  const joinButtonLabel =
+    props.entityType === "EVENT"
+      ? "Join event"
+      : props.entityType === "ORG"
+        ? "Join organization"
+        : "Join";
+
   if (props.isMember && isLoggedIn) {
     return (
       <div className="marketing-card w-full max-w-xl rounded-3xl px-6 py-6 md:px-8 md:py-8 bg-white/4 border border-white/10 z-10">
         <div className="flex flex-col gap-4">
           <div className="text-white text-xl md:text-2xl font-semibold">
-            You’re already a member
+            You’re already in
           </div>
           <div className="text-white/70 text-sm md:text-base leading-relaxed">
             You already have access to{" "}
-            <span className="text-white font-semibold">{props.org.name}</span>.
+            <span className="text-white font-semibold">
+              {props.entity.name}
+            </span>
+            .
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <button
               type="button"
-              onClick={goToOrg}
+              onClick={goToEntity}
               className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-white text-primary-950 font-semibold text-sm md:text-base transition-opacity hover:opacity-90"
             >
-              Go to organization
+              Continue
             </button>
 
             <button
@@ -143,16 +216,16 @@ const JoinOrgGate = (props: JoinOrgGateProps) => {
       <div className="flex flex-col gap-5">
         <div className="flex flex-col gap-2">
           <div className="text-white text-xl md:text-2xl font-semibold">
-            Join {props.org.name}
+            {headline}
           </div>
 
-          {props.org.description ? (
+          {props.entity.description ? (
             <div className="text-white/70 text-sm md:text-base leading-relaxed">
-              {props.org.description}
+              {props.entity.description}
             </div>
           ) : (
             <div className="text-white/60 text-sm md:text-base leading-relaxed">
-              You’ve been invited to join this organization on Ascend.
+              You’ve been invited to join on Ascend.
             </div>
           )}
         </div>
@@ -179,7 +252,7 @@ const JoinOrgGate = (props: JoinOrgGateProps) => {
               onClick={onAccept}
               className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-white text-primary-950 font-semibold text-sm md:text-base transition-opacity hover:opacity-90 disabled:opacity-60"
             >
-              {isPending ? "Joining..." : "Join organization"}
+              {isPending ? "Joining..." : joinButtonLabel}
             </button>
           )}
 
@@ -204,4 +277,4 @@ const JoinOrgGate = (props: JoinOrgGateProps) => {
   );
 };
 
-export default JoinOrgGate;
+export default JoinGate;

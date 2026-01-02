@@ -227,7 +227,7 @@ export type EventCompleteData = {
   };
 };
 
-export type EventMembersAdminData = {
+export type EventMembersData = {
   eventId: string;
   teams: Array<{
     id: string;

@@ -4,13 +4,13 @@ import { redirect } from "next/navigation";
 import {
   assertEventAdminOrOwner,
   fetchEventCompleteData,
-  fetchEventMembersAdminData,
+  fetchEventMembersData,
 } from "@/src/actions/event_actions";
 import Link from "next/link";
 import EventSettingsHero from "@/src/components/eventComponents/EventSettingsHero";
 import {
   EventCompleteData,
-  EventMembersAdminData,
+  EventMembersData,
   SponsorLibraryItem,
 } from "@/src/lib/global_types";
 import EventSettingsClient from "@/src/components/eventComponents/EventSettingsClient";
@@ -32,9 +32,9 @@ const EventSettingsPage = async ({
   const hasPermissions = await assertEventAdminOrOwner(
     orgSlug,
     eventSlug,
-    userId,
+    userId
   );
-  if (!hasPermissions) {
+  if (!hasPermissions.data || hasPermissions.status === "ERROR") {
     return (
       <div className="relative w-full min-h-[calc(100vh-48px)]">
         <div className="absolute inset-0 pointer-events-none marketing-bg" />
@@ -48,7 +48,7 @@ const EventSettingsPage = async ({
                 You need OWNER or ADMIN access to view this page.
               </div>
               <Link
-                href={`/app/events/${eventSlug}`}
+                href={`/app/orgs/${orgSlug}/events/${eventSlug}`}
                 className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-white text-primary-950 font-semibold text-sm md:text-base transition-opacity hover:opacity-90 text-center"
               >
                 Back to event home
@@ -92,7 +92,7 @@ const EventSettingsPage = async ({
   [eventDataRes, sponsorLibraryRes, memberRes] = await Promise.all([
     fetchEventCompleteData(orgIdRes.data as string, eventSlug),
     fetchSponsorLibrary(),
-    fetchEventMembersAdminData(orgIdRes.data as string, eventSlug),
+    fetchEventMembersData(orgIdRes.data as string, eventSlug),
   ]);
   if (eventDataRes.status === "ERROR" || !eventDataRes.data) {
     return (
@@ -119,7 +119,7 @@ const EventSettingsPage = async ({
   }
 
   const event = eventDataRes.data as EventCompleteData;
-  const membersAdminData = (memberRes.data as EventMembersAdminData) ?? [];
+  const membersData = (memberRes.data as EventMembersData) ?? [];
   const sponsorLibrary = (sponsorLibraryRes.data as SponsorLibraryItem[]) ?? [];
 
   return (
@@ -130,7 +130,7 @@ const EventSettingsPage = async ({
         <EventSettingsClient
           orgSlug={orgSlug}
           event={event}
-          membersAdminData={membersAdminData}
+          membersData={membersData}
           sponsorLibrary={sponsorLibrary}
           currentUserId={userId}
         />

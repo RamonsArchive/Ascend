@@ -43,7 +43,7 @@ const EventInviteLinkForm = ({ eventId }: { eventId: string }) => {
 
   const submit = async (
     _state: ActionState,
-    _fd: FormData,
+    _fd: FormData
   ): Promise<ActionState> => {
     try {
       void _state;
@@ -73,8 +73,7 @@ const EventInviteLinkForm = ({ eventId }: { eventId: string }) => {
       const fd = new FormData();
       fd.set("eventId", parsed.eventId);
       if (parsed.note) fd.set("note", parsed.note);
-      if (typeof parsed.maxUses === "number")
-        fd.set("maxUses", String(parsed.maxUses));
+      fd.set("maxUses", parsed.maxUses?.toString() ?? "1");
       if (typeof parsed.minutesToExpire === "number") {
         fd.set("minutesToExpire", String(parsed.minutesToExpire));
       }

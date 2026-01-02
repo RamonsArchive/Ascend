@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import type { EventMembersAdminData } from "@/src/lib/global_types";
+import type { EventMembersData } from "@/src/lib/global_types";
 import AdminEventTeamCard from "./AdminEventTeamCard";
 import EventUnassignedMemberCard from "./EventUnassignedMemberCard";
 
@@ -12,10 +12,11 @@ const EventEditMembersClient = ({
 }: {
   orgSlug: string;
   eventId: string;
-  data: EventMembersAdminData;
+  data: EventMembersData;
 }) => {
   const [query, setQuery] = useState("");
   const [view, setView] = useState<"GRID" | "LIST">("GRID");
+  console.log("data", data);
 
   const filteredTeams = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -33,6 +34,7 @@ const EventEditMembersClient = ({
       return teamMatch || memberMatch;
     });
   }, [data.teams, query]);
+  console.log("filteredTeams", filteredTeams);
 
   const filteredUnassigned = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -43,7 +45,7 @@ const EventEditMembersClient = ({
       return name.includes(q) || email.includes(q);
     });
   }, [data.unassigned, query]);
-
+  console.log("filteredUnassigned", filteredUnassigned);
   const teamCount = data.teams.length;
   const memberCount =
     data.unassigned.length +
