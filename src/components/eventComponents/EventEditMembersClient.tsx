@@ -6,11 +6,11 @@ import AdminEventTeamCard from "./AdminEventTeamCard";
 import EventUnassignedMemberCard from "./EventUnassignedMemberCard";
 
 const EventEditMembersClient = ({
-  orgSlug,
+  orgId,
   eventId,
   data,
 }: {
-  orgSlug: string;
+  orgId: string;
   eventId: string;
   data: EventMembersData;
 }) => {
@@ -115,7 +115,7 @@ const EventEditMembersClient = ({
             {filteredTeams.map((team) => (
               <AdminEventTeamCard
                 key={team.id}
-                orgSlug={orgSlug}
+                orgId={orgId}
                 eventId={eventId}
                 team={team}
               />
@@ -126,7 +126,7 @@ const EventEditMembersClient = ({
             {filteredTeams.map((team) => (
               <AdminEventTeamCard
                 key={team.id}
-                orgSlug={orgSlug}
+                orgId={orgId}
                 eventId={eventId}
                 team={team}
                 dense
@@ -152,7 +152,7 @@ const EventEditMembersClient = ({
           {filteredUnassigned.map((m) => (
             <EventUnassignedMemberCard
               key={m.id}
-              orgSlug={orgSlug}
+              orgId={orgId}
               eventId={eventId}
               member={m}
             />

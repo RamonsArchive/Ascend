@@ -3,11 +3,11 @@ import type { EventMembersData } from "@/src/lib/global_types";
 import EventEditMembersClient from "./EventEditMembersClient";
 
 const EventEditMembersSection = ({
-  orgSlug,
+  orgId,
   eventId,
   membersData,
 }: {
-  orgSlug: string;
+  orgId: string;
   eventId: string;
   membersData: EventMembersData | null;
 }) => {
@@ -27,7 +27,7 @@ const EventEditMembersSection = ({
         <div className="marketing-card w-full rounded-3xl px-6 py-6 md:px-8 md:py-8 bg-white/4">
           {membersData ? (
             <EventEditMembersClient
-              orgSlug={orgSlug}
+              orgId={orgId}
               eventId={eventId}
               data={membersData}
             />

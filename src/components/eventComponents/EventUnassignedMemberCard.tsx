@@ -14,11 +14,11 @@ import type { UnassignedMember } from "@/src/lib/global_types";
 const initialState: ActionState = { status: "INITIAL", error: "", data: null };
 
 const EventUnassignedMemberCard = ({
-  orgSlug,
+  orgId,
   eventId,
   member,
 }: {
-  orgSlug: string;
+  orgId: string;
   eventId: string;
   member: UnassignedMember;
 }) => {
@@ -50,7 +50,7 @@ const EventUnassignedMemberCard = ({
       fd.set("eventId", eventId);
       fd.set("participantId", member.id);
 
-      const result = await removeEventParticipant(orgSlug, initialState, fd);
+      const result = await removeEventParticipant(orgId, initialState, fd);
 
       if (result.status === "ERROR") {
         setStatusMessage(result.error || "Failed to remove participant.");

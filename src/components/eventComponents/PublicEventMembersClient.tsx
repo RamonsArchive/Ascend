@@ -1,10 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import type { EventMembersData } from "@/src/lib/global_types";
+import type { ActionState, EventMembersData } from "@/src/lib/global_types";
 import PublicEventTeamCardInteractive from "./PublicEventTeamCardInteractive";
 import PublicEventLookingForTeamCard from "./PublicEventLookingForTeamCard";
 import { createTeamEmailInvite } from "@/src/actions/team_invites_actions";
+import { parseServerActionResponse } from "@/src/lib/utils";
+import { setLookingForTeam } from "@/src/actions/team_actions";
+import { toast } from "sonner";
 
 const PublicEventMembersClient = ({
   userId,
@@ -25,9 +28,9 @@ const PublicEventMembersClient = ({
   const [inviteError, setInviteError] = useState<string>("");
   const [inviteSuccess, setInviteSuccess] = useState<string>("");
 
-  const meUnassigned =
-    data.unassigned.find((m) => m.user.id === userId) ?? null;
-  const showToggle = !!meUnassigned; // (you said you'll wire toggle elsewhere)
+  const meLookingForTeam =
+    data.unassigned.find((m) => m.user.id === userId && m.lookingForTeam) ??
+    null;
 
   const q = query.trim().toLowerCase();
 
@@ -107,6 +110,41 @@ const PublicEventMembersClient = ({
     }
 
     setInviteSuccess(`Invite sent to ${target.user.email}`);
+  };
+
+  const handleSetLookingForTeam = async () => {
+    try {
+      const res = await setLookingForTeam(
+        orgSlug,
+        eventSlug,
+        !meLookingForTeam
+      );
+      if (res.status === "ERROR") {
+        toast.error("ERROR", {
+          description: res.error || "Failed to set looking for team.",
+        });
+        return;
+      }
+
+      toast.success("SUCCESS", {
+        description: `Looking for team set to ${!meLookingForTeam ? "true" : "false"}.`,
+      });
+      return parseServerActionResponse({
+        status: "SUCCESS",
+        error: "",
+        data: null,
+      }) as ActionState;
+    } catch (error) {
+      console.error(error);
+      toast.error("ERROR", {
+        description: "Failed to set looking for team.",
+      });
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "Failed to set looking for team.",
+        data: null,
+      }) as ActionState;
+    }
   };
 
   return (
@@ -210,8 +248,21 @@ const PublicEventMembersClient = ({
 
       {/* People looking for a team */}
       <div className="flex flex-col gap-3">
-        <div className="text-white/80 text-sm md:text-base font-semibold">
-          People looking for a team
+        <div className="flex md:flex-row flex-col items-start md:items-center justify-between gap-2">
+          <div className="text-white/80 text-sm md:text-base font-semibold">
+            People looking for a team{" "}
+            <span className="text-white/60 text-xs">
+              (Create a team to invite people to join.)
+            </span>
+          </div>
+          <button
+            className="px-4 py-2 cursor-pointer rounded-2xl bg-white text-primary-950 font-semibold text-xs md:text-sm hover:opacity-95 transition-opacity"
+            onClick={handleSetLookingForTeam}
+          >
+            {meLookingForTeam
+              ? "Stop looking for a team"
+              : "Start looking for a team"}
+          </button>
         </div>
 
         {canInvite ? (

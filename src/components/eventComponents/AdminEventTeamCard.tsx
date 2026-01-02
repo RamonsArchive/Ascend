@@ -11,12 +11,12 @@ import { removeEventTeam } from "@/src/actions/event_actions";
 const initialState: ActionState = { status: "INITIAL", error: "", data: null };
 
 const AdminEventTeamCard = ({
-  orgSlug,
+  orgId,
   eventId,
   team,
   dense,
 }: {
-  orgSlug: string;
+  orgId: string;
   eventId: string;
   team: {
     id: string;
@@ -53,13 +53,13 @@ const AdminEventTeamCard = ({
 
   const deleteTeamSubmit = async (
     _s: ActionState,
-    _fd: FormData,
+    _fd: FormData
   ): Promise<ActionState> => {
     try {
       void _s;
       void _fd;
       const ok = window.confirm(
-        `Delete team "${team.name}"? This removes the team and its team memberships.`,
+        `Delete team "${team.name}"? This removes the team and its team memberships.`
       );
       if (!ok) return initialState;
 
@@ -69,7 +69,7 @@ const AdminEventTeamCard = ({
       fd.set("eventId", eventId);
       fd.set("teamId", team.id);
 
-      const res = await removeEventTeam(orgSlug, initialState, fd);
+      const res = await removeEventTeam(orgId, initialState, fd);
       if (res.status === "ERROR") {
         setStatusMessage(res.error || "Failed to delete team.");
         toast.error("ERROR", {
@@ -95,7 +95,7 @@ const AdminEventTeamCard = ({
 
   const [, deleteAction, deleting] = useActionState(
     deleteTeamSubmit,
-    initialState,
+    initialState
   );
 
   return (

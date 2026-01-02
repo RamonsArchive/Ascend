@@ -893,7 +893,7 @@ export const fetchEventMembersData = async (
 };
 
 export const removeEventTeam = async (
-  orgSlug: string,
+  orgId: string,
   _prev: ActionState,
   formData: FormData
 ): Promise<ActionState> => {
@@ -915,7 +915,7 @@ export const removeEventTeam = async (
     });
 
     const perms = await assertEventAdminOrOwnerWithId(
-      orgSlug,
+      orgId,
       parsed.eventId,
       session.user.id
     );
@@ -1001,7 +1001,7 @@ export const removeEventTeamMember = async (
 };
 
 export const removeEventParticipant = async (
-  orgSlug: string,
+  orgId: string,
   _prev: ActionState,
   formData: FormData
 ): Promise<ActionState> => {
@@ -1022,8 +1022,10 @@ export const removeEventParticipant = async (
       participantId: formData.get("participantId")?.toString() ?? "",
     });
 
-    const perms = await assertEventAdminOrOwner(
-      orgSlug,
+    console.log("parsed", parsed);
+
+    const perms = await assertEventAdminOrOwnerWithId(
+      orgId,
       parsed.eventId,
       session.user.id
     );
