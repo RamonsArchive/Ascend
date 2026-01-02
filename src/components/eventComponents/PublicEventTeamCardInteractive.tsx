@@ -47,7 +47,7 @@ const PublicEventTeamCardInteractive = ({
 
   const submitRequest = async (
     _state: ActionState,
-    _fd: FormData
+    _fd: FormData,
   ): Promise<ActionState> => {
     try {
       void _state;
@@ -87,7 +87,7 @@ const PublicEventTeamCardInteractive = ({
 
   const [, requestAction, requestPending] = useActionState(
     submitRequest,
-    initialState
+    initialState,
   );
 
   return (

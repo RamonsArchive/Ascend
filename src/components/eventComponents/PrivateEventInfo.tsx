@@ -43,11 +43,15 @@ const MarkdownCard = ({
 };
 
 // want to show the event rules very big and clear, including rubric
-const PrivateEventInfo = ({ event }: { event: EventCompleteData }) => {
+const PrivateEventInfo = ({
+  rulesMarkdown,
+  rubricMarkdown,
+}: {
+  rulesMarkdown: string | null;
+  rubricMarkdown: string | null;
+}) => {
   console.log("event", event);
 
-  const rulesMd = event.rulesMarkdown;
-  const rubricMd = event.rubricMarkdown;
   return (
     <section className="flex flex-col items-center justify-center w-full">
       <div className="flex flex-col w-full max-w-6xl px-5 sm:px-10 md:px-18 py-10 md:py-14 gap-6 md:gap-8">
@@ -64,13 +68,13 @@ const PrivateEventInfo = ({ event }: { event: EventCompleteData }) => {
         <div className="grid grid-cols-1 gap-5 md:gap-6">
           <MarkdownCard
             title="Rules"
-            value={rulesMd ?? ""}
+            value={rulesMarkdown ?? ""}
             emptyText="No rules added yet."
           />
 
           <MarkdownCard
             title="Rubric"
-            value={rubricMd ?? ""}
+            value={rubricMarkdown ?? ""}
             emptyText="No rubric added yet."
           />
         </div>

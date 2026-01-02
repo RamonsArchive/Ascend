@@ -95,7 +95,10 @@ const PrivateEventHomePage = async ({
         <PrivateEventHero orgSlug={orgSlug} event={eventData} />
         <PublicEventSponsorsSection sponsors={eventData.sponsors} />
         <EventStaffSection staff={eventStaffData} />
-        <PrivateEventInfo event={eventData} />
+        <PrivateEventInfo
+          rulesMarkdown={eventData.rulesMarkdown}
+          rubricMarkdown={eventData.rubricMarkdown}
+        />
         <PrivateEventTracks tracks={eventData.tracks} />
         <PrivateEventAwards awards={eventData.awards} />
         <PublicEventMembersSection

@@ -68,13 +68,13 @@ const PublicEventMembersClient = ({
   // Single-team-per-event: find the ONE team where I'm LEADER
   const myLeaderTeam =
     data.teams.find((t) =>
-      t.members.some((m) => m.userId === userId && m.role === "LEADER")
+      t.members.some((m) => m.userId === userId && m.role === "LEADER"),
     ) ?? null;
 
   const canInvite = !!myLeaderTeam;
 
   const handleInvite = async (
-    target: EventMembersData["unassigned"][number]
+    target: EventMembersData["unassigned"][number],
   ) => {
     setInviteError("");
     setInviteSuccess("");
@@ -99,7 +99,7 @@ const PublicEventMembersClient = ({
       teamIdToUse,
       target.user.email,
       null,
-      null
+      null,
     );
 
     setInvitingUserId(null);
@@ -117,7 +117,7 @@ const PublicEventMembersClient = ({
       const res = await setLookingForTeam(
         orgSlug,
         eventSlug,
-        !meLookingForTeam
+        !meLookingForTeam,
       );
       if (res.status === "ERROR") {
         toast.error("ERROR", {

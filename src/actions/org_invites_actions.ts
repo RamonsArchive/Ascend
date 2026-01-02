@@ -32,7 +32,7 @@ import { updateTag } from "next/cache";
  */
 export const createOrgEmailInvite = async (
   _prev: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -51,7 +51,7 @@ export const createOrgEmailInvite = async (
     const emailRaw = (formData.get("email")?.toString() ?? "").trim();
     const message = (formData.get("message")?.toString() ?? "").trim() || null;
     const expiresAt = parseOptionalDateFromMinutes(
-      formData.get("expiresInMinutes")?.toString() ?? null
+      formData.get("expiresInMinutes")?.toString() ?? null,
     );
 
     if (!orgId || !emailRaw) {
@@ -171,7 +171,7 @@ export const createOrgEmailInvite = async (
  */
 export const createOrgInviteLink = async (
   _prev: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -188,12 +188,12 @@ export const createOrgInviteLink = async (
 
     const orgId = (formData.get("orgId")?.toString() ?? "").trim();
     const maxUses = parseOptionalInt(
-      formData.get("maxUses")?.toString() ?? null
+      formData.get("maxUses")?.toString() ?? null,
     );
     const oneWeekFromNow = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
     const expiresAt = parseOptionalDateFromMinutes(
       formData.get("expiresInMinutes")?.toString() ??
-        oneWeekFromNow.toISOString()
+        oneWeekFromNow.toISOString(),
     );
     const note = (formData.get("note")?.toString() ?? "").trim() || null;
 
@@ -375,7 +375,7 @@ export const acceptOrgInvite = async (token: string): Promise<ActionState> => {
  * - join as MEMBER
  */
 export const acceptOrgInviteLink = async (
-  token: string
+  token: string,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -478,7 +478,7 @@ export const acceptOrgInviteLink = async (
  */
 export const createOrgJoinRequest = async (
   _prev: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -582,7 +582,7 @@ export const createOrgJoinRequest = async (
  */
 export const reviewOrgJoinRequest = async (
   _prev: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -690,7 +690,7 @@ export const reviewOrgJoinRequest = async (
 
 export const fetchOrgJoinRequests = async (
   orgId: string,
-  userId: string
+  userId: string,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -748,7 +748,7 @@ export const fetchOrgJoinRequests = async (
 
 export const fetchOrgJoinInvitePageData = async (
   orgSlug: string,
-  token: string
+  token: string,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -828,7 +828,7 @@ export const fetchOrgJoinInvitePageData = async (
 
 export const fetchOrgJoinLinkPageData = async (
   orgSlug: string,
-  token: string
+  token: string,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });

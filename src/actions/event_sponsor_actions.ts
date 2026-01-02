@@ -28,7 +28,7 @@ function requireLogin(session: any): session is { user: { id: string } } {
  */
 export async function addExistingSponsorToEvent(
   _prevState: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -81,7 +81,7 @@ export async function addExistingSponsorToEvent(
     const hasPerm = await assertEventAdminOrOwnerWithId(
       orgId,
       eventId,
-      session.user.id
+      session.user.id,
     );
     if (hasPerm.status === "ERROR") return hasPerm as ActionState;
 
@@ -151,7 +151,7 @@ export async function addExistingSponsorToEvent(
  */
 export async function updateEventSponsor(
   _prevState: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -206,7 +206,7 @@ export async function updateEventSponsor(
     const hasPerm = await assertEventAdminOrOwnerWithId(
       orgId,
       eventId,
-      session.user.id
+      session.user.id,
     );
     if (hasPerm.status === "ERROR") return hasPerm as ActionState;
 
@@ -297,7 +297,7 @@ export async function updateEventSponsor(
  */
 export async function removeEventSponsor(
   _prevState: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -329,7 +329,7 @@ export async function removeEventSponsor(
     const hasPerm = await assertEventAdminOrOwnerWithId(
       orgId,
       eventId,
-      session.user.id
+      session.user.id,
     );
     if (hasPerm.status === "ERROR") return hasPerm as ActionState;
 

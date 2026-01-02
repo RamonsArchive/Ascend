@@ -25,7 +25,7 @@ export const createTeamJoinRequest = async (
   orgSlug: string,
   eventSlug: string,
   teamId: string,
-  message: string | null
+  message: string | null,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -236,7 +236,7 @@ export const createTeamEmailInvite = async (
   teamId: string,
   email: string,
   message: string | null,
-  minutesToExpire: string | null
+  minutesToExpire: string | null,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -371,7 +371,7 @@ export const createTeamEmailInvite = async (
 
     const expiresAt = parseOptionalDateFromMinutes(
       minutesToExpire?.toString() ??
-        new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString()
+        new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(),
     );
 
     const token = makeToken(24);

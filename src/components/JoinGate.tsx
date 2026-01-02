@@ -108,7 +108,7 @@ const JoinGate = (props: JoinGateProps) => {
             ? "Joining event…"
             : props.entityType === "ORG"
               ? "Joining organization…"
-              : "Joining…"
+              : "Joining…",
         );
 
         const result = await props.acceptAction(props.token);

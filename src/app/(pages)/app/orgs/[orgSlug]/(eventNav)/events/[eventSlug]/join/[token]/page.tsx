@@ -16,7 +16,7 @@ const EventJoinPage = async ({
   const pageData = await fetchEventJoinInvitePageData(
     orgSlug,
     eventSlug,
-    token
+    token,
   );
   if (pageData.status === "ERROR") {
     return (

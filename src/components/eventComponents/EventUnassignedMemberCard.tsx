@@ -32,7 +32,7 @@ const EventUnassignedMemberCard = ({
 
   const submitRemove = async (
     _state: ActionState,
-    _fd: FormData
+    _fd: FormData,
   ): Promise<ActionState> => {
     try {
       void _state;
@@ -40,7 +40,7 @@ const EventUnassignedMemberCard = ({
 
       setErrors({});
       const ok = window.confirm(
-        `Remove ${member.user.name ?? member.user.email} from this event?`
+        `Remove ${member.user.name ?? member.user.email} from this event?`,
       );
       if (!ok) return initialState;
 
@@ -92,7 +92,7 @@ const EventUnassignedMemberCard = ({
 
   const [, removeAction, removePending] = useActionState(
     submitRemove,
-    initialState
+    initialState,
   );
 
   return (

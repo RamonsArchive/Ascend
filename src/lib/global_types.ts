@@ -453,3 +453,44 @@ export type PrivateEventTeamCardData = {
     };
   }>;
 };
+
+export type EventInfoPageData = {
+  id: string;
+  orgId: string;
+  name: string;
+  slug: string;
+  status: string;
+
+  type: string;
+  visibility: string;
+  joinMode: string;
+
+  heroTitle: string | null;
+  heroSubtitle: string | null;
+
+  registrationOpensAt: string | null;
+  registrationClosesAt: string | null;
+  startAt: string | null;
+  endAt: string | null;
+  submitDueAt: string | null;
+
+  rulesMarkdown: string | null;
+  rubricMarkdown: string | null;
+
+  locationAddress: string | null;
+  locationName: string | null;
+  locationNotes: string | null;
+  locationMapUrl: string | null;
+
+  tracks: TrackDraft[];
+  awards: AwardDraft[];
+
+  _count: {
+    teams: number;
+    submissions: number;
+    staff: number;
+    members: number;
+  };
+
+  org: { id: string; name: string; slug: string; logoKey: string | null };
+};

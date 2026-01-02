@@ -14,6 +14,7 @@ import type {
   EventCompleteData,
   TrackDraft,
   AwardDraft,
+  EventInfoPageData,
 } from "../lib/global_types";
 import { checkRateLimit } from "../lib/rate-limiter";
 import { assertOrgOwnerSlug, isOrgOwner } from "./org_actions";
@@ -1297,6 +1298,154 @@ export const deleteEvent = async (
     return parseServerActionResponse({
       status: "ERROR",
       error: "Failed to delete event",
+      data: null,
+    }) as ActionState;
+  }
+};
+
+export const fetchEventInfoData = async (
+  orgId: string,
+  eventSlug: string
+): Promise<ActionState> => {
+  try {
+    const isRateLimited = await checkRateLimit("fetchEventInfoData");
+    if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
+
+    const event = await prisma.event.findUnique({
+      where: { orgId_slug: { orgId, slug: eventSlug } },
+      select: {
+        id: true,
+        orgId: true,
+        name: true,
+        slug: true,
+        status: true,
+
+        type: true,
+        visibility: true,
+        joinMode: true,
+
+        heroTitle: true,
+        heroSubtitle: true,
+
+        registrationOpensAt: true,
+        registrationClosesAt: true,
+        startAt: true,
+        endAt: true,
+        submitDueAt: true,
+
+        rulesRich: true,
+        rubricRich: true,
+
+        locationAddress: true,
+        locationName: true,
+        locationNotes: true,
+        locationMapUrl: true,
+
+        org: {
+          select: { id: true, name: true, slug: true, logoKey: true },
+        },
+
+        tracks: {
+          orderBy: { order: "asc" },
+          select: { id: true, name: true, blurb: true, order: true },
+        },
+        awards: {
+          orderBy: { order: "asc" },
+          select: {
+            id: true,
+            name: true,
+            blurb: true,
+            allowMultipleWinners: true,
+            order: true,
+          },
+        },
+
+        _count: {
+          select: {
+            teams: true,
+            submissions: true,
+            staffMemberships: true,
+            participants: true,
+          },
+        },
+      },
+    });
+
+    if (!event) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "Event not found",
+        data: null,
+      }) as ActionState;
+    }
+
+    const data: EventInfoPageData = {
+      id: event.id,
+      orgId: event.orgId,
+      name: event.name,
+      slug: event.slug,
+      status: event.status,
+
+      type: event.type,
+      visibility: event.visibility,
+      joinMode: event.joinMode,
+
+      heroTitle: event.heroTitle,
+      heroSubtitle: event.heroSubtitle,
+
+      registrationOpensAt: event.registrationOpensAt
+        ? event.registrationOpensAt.toISOString()
+        : null,
+      registrationClosesAt: event.registrationClosesAt
+        ? event.registrationClosesAt.toISOString()
+        : null,
+      startAt: event.startAt ? event.startAt.toISOString() : null,
+      endAt: event.endAt ? event.endAt.toISOString() : null,
+      submitDueAt: event.submitDueAt ? event.submitDueAt.toISOString() : null,
+
+      rulesMarkdown: getMarkdownFromRich(event.rulesRich),
+      rubricMarkdown: getMarkdownFromRich(event.rubricRich),
+
+      locationAddress: event.locationAddress,
+      locationName: event.locationName,
+      locationNotes: event.locationNotes,
+      locationMapUrl: event.locationMapUrl,
+
+      tracks: event.tracks.map((t) => ({
+        clientId: t.id,
+        name: t.name,
+        blurb: t.blurb ?? "",
+        order: String(t.order),
+      })),
+
+      awards: event.awards.map((a) => ({
+        clientId: a.id,
+        name: a.name,
+        blurb: a.blurb ?? "",
+        allowMultipleWinners: a.allowMultipleWinners,
+        order: String(a.order),
+      })),
+
+      _count: {
+        teams: event._count.teams,
+        submissions: event._count.submissions,
+        staff: event._count.staffMemberships,
+        members: event._count.participants,
+      },
+
+      org: event.org,
+    };
+
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data,
+    }) as ActionState;
+  } catch (error) {
+    console.error(error);
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to fetch event info data",
       data: null,
     }) as ActionState;
   }

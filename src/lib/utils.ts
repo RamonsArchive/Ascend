@@ -532,3 +532,20 @@ export const baseUrl =
   process.env.SITE_URL ??
   process.env.NEXT_PUBLIC_SITE_URL ??
   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
+
+export const pill =
+  "px-3 py-1 rounded-full border border-white/10 bg-white/5 text-white/70 text-[11px] font-semibold";
+
+export const formatMaybe = (iso: string | null) => {
+  if (!iso) return "Not set";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "Not set";
+  return d.toLocaleString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+};
