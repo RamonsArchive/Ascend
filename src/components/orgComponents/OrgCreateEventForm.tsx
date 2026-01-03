@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useRef, useState, useActionState } from "react";
+import React, { useRef, useState, useActionState } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -33,10 +33,11 @@ const initialState: ActionState = {
 
 const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
   const router = useRouter();
-  const allowedImageMimeTypes = useMemo(
-    () => new Set(["image/png", "image/jpeg", "image/webp"]),
-    [],
-  );
+  const ALLOWED_IMAGE_MIME_TYPES = new Set([
+    "image/png",
+    "image/jpeg",
+    "image/webp",
+  ]);
 
   const coverRef = useRef<HTMLInputElement>(null);
 
@@ -65,6 +66,15 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
     locationMapUrl: "",
     rulesMarkdown: "",
     rubricMarkdown: "",
+    rubricMode: "NONE" as "NONE" | "OPTIONAL" | "REQUIRED",
+    rubricScaleMax: "10", // "5" | "10"
+    rubricCategories: [] as Array<{
+      clientId: string;
+      name: string;
+      description?: string;
+      weight?: string; // string input
+      order?: string; // string input
+    }>,
     maxTeamSize: "5",
     allowSelfJoinRequests: true,
     lockTeamChangesAtStart: true,
@@ -93,6 +103,9 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
     locationMapUrl?: string;
     rulesMarkdown?: string;
     rubricMarkdown?: string;
+    rubricMode?: string;
+    rubricScaleMax?: string;
+    rubricCategories?: string;
     maxTeamSize?: string;
     tracks?: string;
     awards?: string;
@@ -122,6 +135,9 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
       locationMapUrl: "",
       rulesMarkdown: "",
       rubricMarkdown: "",
+      rubricMode: "NONE",
+      rubricScaleMax: "10",
+      rubricCategories: [],
       maxTeamSize: "5",
       allowSelfJoinRequests: true,
       lockTeamChangesAtStart: true,
@@ -145,7 +161,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
 
     const ok = validateImageFile({
       file,
-      options: { allowedMimeTypes: allowedImageMimeTypes, maxBytes: TEN_MB },
+      options: { allowedMimeTypes: ALLOWED_IMAGE_MIME_TYPES, maxBytes: TEN_MB },
     });
 
     if (!ok) {
@@ -162,7 +178,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
 
   const submitCreateEvent = async (
     _state: ActionState,
-    _fd: FormData,
+    _fd: FormData
   ): Promise<ActionState> => {
     try {
       void _state;
@@ -172,6 +188,15 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
 
       const coverFile = coverRef.current?.files?.[0] ?? null;
 
+      const rubricCategoriesPayload = formData.rubricCategories.map(
+        (c, idx) => ({
+          clientId: c.clientId,
+          name: c.name,
+          description: c.description || undefined,
+          weight: c.weight ?? "1",
+          order: c.order ?? "",
+        })
+      );
       const tracksPayload = formData.tracks.map((t, idx) => ({
         name: t.name,
         blurb: t.blurb || undefined,
@@ -203,6 +228,9 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
         locationMapUrl: formData.locationMapUrl || undefined,
         rulesMarkdown: formData.rulesMarkdown || undefined,
         rubricMarkdown: formData.rubricMarkdown || undefined,
+        rubricMode: formData.rubricMode,
+        rubricScaleMax: formData.rubricScaleMax,
+        rubricCategories: rubricCategoriesPayload,
         maxTeamSize: formData.maxTeamSize,
         allowSelfJoinRequests: formData.allowSelfJoinRequests,
         lockTeamChangesAtStart: formData.lockTeamChangesAtStart,
@@ -217,7 +245,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
         const ok = validateImageFile({
           file: coverFile,
           options: {
-            allowedMimeTypes: allowedImageMimeTypes,
+            allowedMimeTypes: ALLOWED_IMAGE_MIME_TYPES,
             maxBytes: TEN_MB,
           },
         });
@@ -281,11 +309,17 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
       if (parsed.rulesMarkdown) fd.set("rulesMarkdown", parsed.rulesMarkdown);
       if (parsed.rubricMarkdown)
         fd.set("rubricMarkdown", parsed.rubricMarkdown);
+      fd.set("rubricMode", parsed.rubricMode);
+      fd.set("rubricScaleMax", String(parsed.rubricScaleMax));
+      fd.set(
+        "rubricCategoriesJson",
+        JSON.stringify(parsed.rubricCategories ?? [])
+      );
 
       fd.set("allowSelfJoinRequests", parsed.allowSelfJoinRequests ? "1" : "0");
       fd.set(
         "lockTeamChangesAtStart",
-        parsed.lockTeamChangesAtStart ? "1" : "0",
+        parsed.lockTeamChangesAtStart ? "1" : "0"
       );
       fd.set("requireImages", parsed.requireImages ? "1" : "0");
       fd.set("requireVideoDemo", parsed.requireVideoDemo ? "1" : "0");
@@ -296,6 +330,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
 
       const result = await createOrgEvent(initialState, fd);
 
+      console.log("result", result);
       if (result.status === "ERROR") {
         setStatusMessage(result.error || "Failed to create event.");
         toast.error("ERROR", { description: result.error });
@@ -353,7 +388,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
 
   const [, formAction, isPending] = useActionState(
     submitCreateEvent,
-    initialState,
+    initialState
   );
 
   return (
@@ -877,6 +912,247 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
               </div>
             </div>
           </div>
+          {/* Strict rubric scoring */}
+          <div className="flex flex-col gap-3">
+            <div className="text-white/80 text-sm font-medium">
+              Judging criteria
+            </div>
+
+            <div className="text-white/60 text-xs">
+              Optional. If enabled, judges score each submission by category
+              (live totals + leaderboard).
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+              <div className="flex flex-col gap-2">
+                <label className="text-xs md:text-sm text-white/75">
+                  Rubric mode
+                </label>
+                <select
+                  value={formData.rubricMode}
+                  onChange={(e) =>
+                    setFormData((p) => ({
+                      ...p,
+                      rubricMode: e.target.value as
+                        | "NONE"
+                        | "OPTIONAL"
+                        | "REQUIRED",
+                    }))
+                  }
+                  className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                >
+                  <option value="NONE">None</option>
+                  <option value="OPTIONAL">Optional</option>
+                  <option value="REQUIRED">Required</option>
+                </select>
+                {errors.rubricMode ? (
+                  <p className="text-red-500 text-xs md:text-sm">
+                    {errors.rubricMode}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-xs md:text-sm text-white/75">
+                  Score scale
+                </label>
+                <select
+                  value={formData.rubricScaleMax}
+                  onChange={(e) =>
+                    setFormData((p) => ({
+                      ...p,
+                      rubricScaleMax: e.target.value,
+                    }))
+                  }
+                  disabled={formData.rubricMode === "NONE"}
+                  className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] disabled:opacity-60"
+                >
+                  <option value="10">1–10</option>
+                  <option value="5">1–5</option>
+                </select>
+                {errors.rubricScaleMax ? (
+                  <p className="text-red-500 text-xs md:text-sm">
+                    {errors.rubricScaleMax}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="flex items-end">
+                <button
+                  type="button"
+                  disabled={formData.rubricMode === "NONE"}
+                  onClick={() =>
+                    setFormData((p) => ({
+                      ...p,
+                      rubricCategories: [
+                        ...p.rubricCategories,
+                        {
+                          clientId: makeClientId(),
+                          name: "",
+                          description: "",
+                          weight: "1",
+                          order: "",
+                        },
+                      ],
+                    }))
+                  }
+                  className="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition-colors text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] disabled:opacity-60"
+                >
+                  + Add category
+                </button>
+              </div>
+            </div>
+
+            {formData.rubricMode !== "NONE" ? (
+              formData.rubricCategories.length === 0 ? (
+                <div className="text-white/60 text-sm rounded-2xl bg-white/5 border border-white/10 px-4 py-3">
+                  No rubric categories yet.
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {formData.rubricCategories.map((c, idx) => (
+                    <div
+                      key={c.clientId}
+                      className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="text-white/80 text-xs md:text-sm">
+                          Category {idx + 1}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setFormData((p) => ({
+                              ...p,
+                              rubricCategories: p.rubricCategories.filter(
+                                (x) => x.clientId !== c.clientId
+                              ),
+                            }))
+                          }
+                          className="text-xs text-white/70 hover:text-white underline"
+                        >
+                          Remove
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mt-3">
+                        <div className="flex flex-col gap-2 md:col-span-2">
+                          <label className="text-xs md:text-sm text-white/75">
+                            Name <span className="text-xs text-red-500">*</span>
+                          </label>
+                          <input
+                            value={c.name}
+                            onChange={(e) =>
+                              setFormData((p) => ({
+                                ...p,
+                                rubricCategories: p.rubricCategories.map((x) =>
+                                  x.clientId === c.clientId
+                                    ? { ...x, name: e.target.value }
+                                    : x
+                                ),
+                              }))
+                            }
+                            placeholder="Innovation"
+                            className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                          />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                          <label className="text-xs md:text-sm text-white/75">
+                            Weight
+                          </label>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            value={c.weight ?? "1"}
+                            onChange={(e) =>
+                              setFormData((p) => ({
+                                ...p,
+                                rubricCategories: p.rubricCategories.map((x) =>
+                                  x.clientId === c.clientId
+                                    ? {
+                                        ...x,
+                                        weight: e.target.value
+                                          .replace(/[^\d]/g, "")
+                                          .replace(/^0+(?=\d)/, ""),
+                                      }
+                                    : x
+                                ),
+                              }))
+                            }
+                            className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mt-3">
+                        <div className="flex flex-col gap-2 md:col-span-2">
+                          <label className="text-xs md:text-sm text-white/75">
+                            Description (optional)
+                          </label>
+                          <textarea
+                            value={c.description ?? ""}
+                            onChange={(e) =>
+                              setFormData((p) => ({
+                                ...p,
+                                rubricCategories: p.rubricCategories.map((x) =>
+                                  x.clientId === c.clientId
+                                    ? { ...x, description: e.target.value }
+                                    : x
+                                ),
+                              }))
+                            }
+                            placeholder="How novel is the idea? Is the approach creative?"
+                            className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors min-h-[110px] resize-none shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                          />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                          <label className="text-xs md:text-sm text-white/75">
+                            Order
+                          </label>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            value={c.order ?? ""}
+                            onChange={(e) =>
+                              setFormData((p) => ({
+                                ...p,
+                                rubricCategories: p.rubricCategories.map((x) =>
+                                  x.clientId === c.clientId
+                                    ? {
+                                        ...x,
+                                        order: e.target.value.replace(
+                                          /[^\d]/g,
+                                          ""
+                                        ),
+                                      }
+                                    : x
+                                ),
+                              }))
+                            }
+                            placeholder={`${idx}`}
+                            className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            ) : (
+              <div className="text-white/60 text-sm rounded-2xl bg-white/5 border border-white/10 px-4 py-3">
+                Rubric scoring is disabled.
+              </div>
+            )}
+
+            {errors.rubricCategories ? (
+              <p className="text-red-500 text-xs md:text-sm">
+                {errors.rubricCategories}
+              </p>
+            ) : null}
+          </div>
           {/* Tracks */}
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
@@ -931,7 +1207,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                           setFormData((p) => ({
                             ...p,
                             tracks: p.tracks.filter(
-                              (x) => x.clientId !== t.clientId,
+                              (x) => x.clientId !== t.clientId
                             ),
                           }))
                         }
@@ -954,7 +1230,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                               tracks: p.tracks.map((x) =>
                                 x.clientId === t.clientId
                                   ? { ...x, name: e.target.value }
-                                  : x,
+                                  : x
                               ),
                             }))
                           }
@@ -980,10 +1256,10 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                                       ...x,
                                       order: e.target.value.replace(
                                         /[^\d]/g,
-                                        "",
+                                        ""
                                       ),
                                     }
-                                  : x,
+                                  : x
                               ),
                             }))
                           }
@@ -1005,7 +1281,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                             tracks: p.tracks.map((x) =>
                               x.clientId === t.clientId
                                 ? { ...x, blurb: e.target.value }
-                                : x,
+                                : x
                             ),
                           }))
                         }
@@ -1078,7 +1354,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                           setFormData((p) => ({
                             ...p,
                             awards: p.awards.filter(
-                              (x) => x.clientId !== a.clientId,
+                              (x) => x.clientId !== a.clientId
                             ),
                           }))
                         }
@@ -1101,7 +1377,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                               awards: p.awards.map((x) =>
                                 x.clientId === a.clientId
                                   ? { ...x, name: e.target.value }
-                                  : x,
+                                  : x
                               ),
                             }))
                           }
@@ -1127,10 +1403,10 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                                       ...x,
                                       order: e.target.value.replace(
                                         /[^\d]/g,
-                                        "",
+                                        ""
                                       ),
                                     }
-                                  : x,
+                                  : x
                               ),
                             }))
                           }
@@ -1152,7 +1428,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                             awards: p.awards.map((x) =>
                               x.clientId === a.clientId
                                 ? { ...x, blurb: e.target.value }
-                                : x,
+                                : x
                             ),
                           }))
                         }
@@ -1174,7 +1450,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                                     ...x,
                                     allowMultipleWinners: e.target.checked,
                                   }
-                                : x,
+                                : x
                             ),
                           }))
                         }

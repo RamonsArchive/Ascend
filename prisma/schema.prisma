@@ -13,6 +13,20 @@ model User {
   email                  String                     @unique
   emailVerified          Boolean                    @default(false)
   image                  String?                    @db.Text
+  // ✅ PROFILE (user-editable)
+  username      String?  @unique
+  headline      String?  @db.Text         // short tagline
+  bioRich       Json?                    // markdown/rich editor output (TipTap/Plate/etc)
+  bioText       String?  @db.Text         // OPTIONAL: plain text fallback for search/snippets
+  profilePicKey String?                  // S3 key (like coverKey/logoKey)
+  bannerKey     String?                  // optional nice-to-have
+  location      String?  @db.Text         // optional
+  websiteUrl    String?  @db.Text
+  linkedinUrl   String?  @db.Text
+  discord       String?  @db.Text         // e.g. "ramon#1234" or "ramon" (new discord)
+  youtubeUrl    String?  @db.Text
+  githubUrl     String?  @db.Text
+
   createdAt              DateTime                   @default(now())
   updatedAt              DateTime                   @updatedAt
   eventParticipants      EventParticipant[]
@@ -42,6 +56,7 @@ model User {
   createdEvents          Event[]                    @relation("EventCreatedBy")
 
   @@map("user")
+  @@index([username])
 }
 
 model Session {
@@ -203,6 +218,8 @@ model Event {
   locationLng            Float?                     @default(0)
   rulesRich              Json?
   rubricRich             Json?
+  rubricMode             EventRubricMode            @default(NONE)
+  rubricScaleMax         Int                        @default(10) // 5 or 10
   startAt                DateTime?
   endAt                  DateTime?
   submitDueAt            DateTime?
@@ -242,7 +259,7 @@ model Event {
   awards                 EventAward[]
   awardAssignments       AwardAssignment[]
   tracks                 EventTrack[]
-
+  rubricCategories       EventRubricCategory[]
   @@unique([orgId, slug])
   @@index([orgId])
 }
@@ -596,6 +613,9 @@ model Submission {
   moderationStatus ModerationStatus @default(ACTIVE)
   imageKeys        Json?
   videoKey         String?
+  demoUrl          String?          @db.Text
+  repoUrl          String?          @db.Text
+  slidesUrl        String?           @db.Text
   scores           Score[]
   author           User?            @relation("SubmissionAuthor", fields: [authorId], references: [id])
   event            Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
@@ -624,17 +644,52 @@ model Score {
   id           String     @id @default(cuid())
   submissionId String
   judgeId      String
+
+  // derived totals (recompute whenever categories change)
   total        Float?
-  breakdown    Json?
   feedback     String?
+
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+
   judge        User       @relation("ScoreJudge", fields: [judgeId], references: [id], onDelete: Cascade)
   submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  categoryScores ScoreCategory[]
 
   @@unique([submissionId, judgeId])
   @@index([submissionId])
   @@index([judgeId])
+}
+
+model EventRubricCategory {
+  id        String   @id @default(cuid())
+  eventId   String
+  name      String
+  description String?
+  weight    Int      @default(1) // lets you weight categories later
+  order     Int      @default(0)
+
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  scoreCategories ScoreCategory[]
+  
+  @@index([eventId])
+  @@unique([eventId, name])
+}
+
+model ScoreCategory {
+  id           String  @id @default(cuid())
+  scoreId      String
+  categoryId   String
+  value        Int     // 1-10 (enforce in app)
+  comment      String? @db.Text
+
+  score        Score   @relation(fields: [scoreId], references: [id], onDelete: Cascade)
+  category     EventRubricCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([scoreId, categoryId])
+  @@index([scoreId])
+  @@index([categoryId])
 }
 
 model Announcement {
@@ -850,4 +905,10 @@ enum EventStaffRole {
   ADMIN
   JUDGE
   STAFF
+}
+
+enum EventRubricMode {
+  NONE
+  OPTIONAL
+  REQUIRED
 }

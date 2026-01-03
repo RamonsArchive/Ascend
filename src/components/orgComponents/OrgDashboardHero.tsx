@@ -51,6 +51,12 @@ const OrgDashboardHero = ({
 
         <div className="flex flex-col sm:flex-row gap-3">
           <Link
+            href={`/app/orgs/${orgSlug}/events/new`}
+            className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-white text-primary-950 font-semibold text-sm md:text-base transition-opacity hover:opacity-90 text-center"
+          >
+            Create an Event
+          </Link>
+          <Link
             href={`/app/orgs/${orgSlug}/settings`}
             className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-white text-primary-950 font-semibold text-sm md:text-base transition-opacity hover:opacity-90 text-center"
           >

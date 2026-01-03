@@ -636,6 +636,11 @@ export const createOrgEvent = async (
       rubricMarkdown: fd.get("rubricMarkdown")
         ? String(fd.get("rubricMarkdown"))
         : undefined,
+      rubricMode: String(fd.get("rubricMode") ?? "NONE"),
+      rubricScaleMax: String(fd.get("rubricScaleMax") ?? "10"),
+      rubricCategoriesJson: fd.get("rubricCategoriesJson")
+        ? String(fd.get("rubricCategoriesJson"))
+        : undefined,
       maxTeamSize: fd.get("maxTeamSize") ?? "5",
       allowSelfJoinRequests: String(fd.get("allowSelfJoinRequests") ?? "1"),
       lockTeamChangesAtStart: String(fd.get("lockTeamChangesAtStart") ?? "1"),
@@ -743,9 +748,7 @@ export const createOrgEvent = async (
 
     const tracks = parsed.tracks ?? [];
     const awards = parsed.awards ?? [];
-
-    console.log("tracks", tracks);
-    console.log("awards", awards);
+    const rubricCategories = parsed.rubricCategories ?? [];
 
     if (tracks.length && !uniqueNames(tracks)) {
       return parseServerActionResponse({
@@ -761,6 +764,24 @@ export const createOrgEvent = async (
         error: "Award names must be unique.",
         data: null,
       }) as ActionState;
+    }
+
+    if (parsed.rubricMode !== "NONE") {
+      if (rubricCategories.length === 0) {
+        return parseServerActionResponse({
+          status: "ERROR",
+          error: "Add at least one rubric category or set rubric mode to None.",
+          data: null,
+        }) as ActionState;
+      }
+
+      if (!uniqueNames(rubricCategories)) {
+        return parseServerActionResponse({
+          status: "ERROR",
+          error: "Rubric category names must be unique.",
+          data: null,
+        }) as ActionState;
+      }
     }
 
     const created = await prisma.$transaction(async (tx) => {
@@ -788,6 +809,9 @@ export const createOrgEvent = async (
 
           rulesRich: rulesRich ?? undefined,
           rubricRich: rubricRich ?? undefined,
+
+          rubricMode: parsed.rubricMode,
+          rubricScaleMax: parsed.rubricScaleMax,
 
           maxTeamSize: parsed.maxTeamSize,
           allowSelfJoinRequests: parsed.allowSelfJoinRequests === "1",
@@ -820,6 +844,18 @@ export const createOrgEvent = async (
             blurb: a.blurb ?? null,
             order: typeof a.order === "number" ? a.order : idx,
             allowMultipleWinners: Boolean(a.allowMultipleWinners),
+          })),
+        });
+      }
+
+      if (parsed.rubricMode !== "NONE" && rubricCategories.length > 0) {
+        await tx.eventRubricCategory.createMany({
+          data: rubricCategories.map((c, idx) => ({
+            eventId: event.id,
+            name: c.name.trim(),
+            description: c.description ?? null,
+            weight: typeof c.weight === "number" ? c.weight : 1,
+            order: typeof c.order === "number" ? c.order : idx,
           })),
         });
       }

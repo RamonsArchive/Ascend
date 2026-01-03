@@ -5,14 +5,78 @@ import {
   slugRegex,
   markdownRichSchema,
   optionalUrl,
-  awardDraftSchema,
-  trackDraftSchema,
   uniqueNames,
   jsonArrayFromString,
   optionalMapsShortUrl,
   optionalTrimmed,
 } from "./utils";
-import { EventStaffRole, OrgJoinMode, SponsorTier } from "@prisma/client";
+import {
+  EventRubricMode,
+  EventStaffRole,
+  OrgJoinMode,
+  SponsorTier,
+} from "@prisma/client";
+
+const rubricCategoryDraftSchema = z.object({
+  clientId: z.string().min(1),
+  name: z.string().min(2, "Category name is required.").max(64),
+  description: z.string().max(240, "Description is too long.").optional(),
+  weight: z
+    .string()
+    .optional()
+    .transform((v) => (v === undefined || v === "" ? "1" : v))
+    .transform((v) => Number(v))
+    .refine((v) => Number.isFinite(v), "Weight must be a number")
+    .refine((v) => Number.isInteger(v), "Weight must be an integer")
+    .refine((v) => v >= 1 && v <= 100, "Weight must be between 1 and 100"),
+  order: z
+    .string()
+    .optional()
+    .transform((v) => (v === undefined || v === "" ? undefined : Number(v)))
+    .refine(
+      (v) => v === undefined || Number.isInteger(v),
+      "Order must be an integer"
+    )
+    .refine(
+      (v) => v === undefined || (v >= 0 && v <= 999),
+      "Order must be between 0 and 999"
+    ),
+});
+
+const trackDraftSchema = z.object({
+  name: z.string().trim().min(1, "Track name is required.").max(80),
+  blurb: optionalTrimmed(400),
+  order: z.number().int().min(0).max(999).optional(),
+});
+
+const awardDraftSchema = z.object({
+  name: z.string().trim().min(1, "Award name is required.").max(80),
+  blurb: optionalTrimmed(400),
+  order: z.number().int().min(0).max(999).optional(),
+  allowMultipleWinners: z.boolean().optional(),
+});
+
+const rubricModeSchema = z.enum([
+  "NONE",
+  "OPTIONAL",
+  "REQUIRED",
+] as EventRubricMode[]);
+
+const rubricScaleMaxSchema = z
+  .string()
+  .transform((v) => Number(v))
+  .refine((v) => v === 5 || v === 10, "Scale must be 5 or 10");
+
+export const updateEventTeamSettingsClientSchema = z.object({
+  eventId: z.string().min(1),
+  maxTeamSize: z.coerce
+    .number()
+    .int("Max team size must be a whole number")
+    .min(1)
+    .max(50),
+  lockTeamChangesAtStart: z.coerce.boolean(),
+  allowSelfJoinRequests: z.coerce.boolean(),
+});
 
 const emptyToUndefined = (v: unknown) => {
   if (v == null) return undefined; // handles null + undefined
@@ -523,6 +587,13 @@ export const createOrgEventClientSchema = z
     locationMapUrl: optionalMapsShortUrl,
     rulesMarkdown: markdownRichSchema,
     rubricMarkdown: markdownRichSchema,
+    rubricMode: rubricModeSchema.default("NONE"),
+    rubricScaleMax: rubricScaleMaxSchema.default(10),
+    rubricCategories: z
+      .array(rubricCategoryDraftSchema)
+      .max(25)
+      .optional()
+      .default([]),
 
     maxTeamSize: z
       .string()
@@ -626,6 +697,24 @@ export const createOrgEventClientSchema = z
         message: "Award names must be unique.",
       });
     }
+    if (val.rubricMode !== "NONE") {
+      if (!val.rubricCategories || val.rubricCategories.length === 0) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["rubricCategories"],
+          message:
+            "Add at least one rubric category or set rubric mode to None.",
+        });
+      }
+
+      if (val.rubricCategories && !uniqueNames(val.rubricCategories)) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["rubricCategories"],
+          message: "Rubric category names must be unique.",
+        });
+      }
+    }
   });
 
 export const createOrgEventServerSchema = z.object({
@@ -654,6 +743,10 @@ export const createOrgEventServerSchema = z.object({
   locationMapUrl: z.preprocess(emptyToUndefined, optionalUrl),
   rulesRich: z.unknown().optional(), // we’ll build JSON server-side from markdown
   rubricRich: z.unknown().optional(),
+  rubricMode: rubricModeSchema.default("NONE"),
+  rubricScaleMax: z.coerce.number().refine((v) => v === 5 || v === 10),
+  rubricCategoriesJson: z.string().optional(),
+  rubricCategories: jsonArrayFromString(rubricCategoryDraftSchema).optional(),
   maxTeamSize: z.coerce.number().int().min(1).max(50),
   allowSelfJoinRequests: z.enum(["0", "1"]),
   lockTeamChangesAtStart: z.enum(["0", "1"]),
@@ -743,17 +836,6 @@ export const updateEventDetailsServerSchema = z.object({
   removeCover: z.boolean().optional(),
   tracks: z.array(trackDraftSchema).optional().default([]),
   awards: z.array(awardDraftSchema).optional().default([]),
-});
-
-export const updateEventTeamSettingsClientSchema = z.object({
-  eventId: z.string().min(1),
-  maxTeamSize: z.coerce
-    .number()
-    .int("Max team size must be a whole number")
-    .min(1)
-    .max(50),
-  lockTeamChangesAtStart: z.coerce.boolean(),
-  allowSelfJoinRequests: z.coerce.boolean(),
 });
 
 export const createEventInviteEmailClientSchema = z.object({
