@@ -50,7 +50,7 @@ const EventStaffInviteLinkForm = ({
 
   const submit = async (
     _state: ActionState,
-    _fd: FormData
+    _fd: FormData,
   ): Promise<ActionState> => {
     try {
       void _state;
@@ -122,7 +122,7 @@ const EventStaffInviteLinkForm = ({
         >;
         const formatted: Record<string, string> = {};
         Object.keys(fieldErrors).forEach(
-          (k) => (formatted[k] = fieldErrors[k]?.[0] || "")
+          (k) => (formatted[k] = fieldErrors[k]?.[0] || ""),
         );
         setErrors(formatted);
 

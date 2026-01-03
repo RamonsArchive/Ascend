@@ -52,7 +52,7 @@ const EventStaffEmailInviteForm = ({
 
   const submit = async (
     _state: ActionState,
-    _fd: FormData
+    _fd: FormData,
   ): Promise<ActionState> => {
     try {
       void _state;

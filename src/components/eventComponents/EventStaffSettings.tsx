@@ -20,7 +20,7 @@ const DEFAULT_ROLE: EventStaffRole = "STAFF";
 
 function normalizeRoleOptions(
   staffData: EventStaffData,
-  roleOptions?: EventStaffRole[]
+  roleOptions?: EventStaffRole[],
 ): EventStaffRole[] {
   if (roleOptions && roleOptions.length > 0) return roleOptions;
 
@@ -36,7 +36,7 @@ function normalizeRoleOptions(
 
 function buildCandidates(
   staffData: EventStaffData,
-  membersData: EventMembersData | null
+  membersData: EventMembersData | null,
 ) {
   const staffUserIds = new Set<string>();
   for (const s of staffData.staff) staffUserIds.add(s.userId);

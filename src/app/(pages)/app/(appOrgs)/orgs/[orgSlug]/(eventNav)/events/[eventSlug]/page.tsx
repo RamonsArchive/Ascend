@@ -16,7 +16,7 @@ import { fetchOrgId } from "@/src/actions/org_actions";
 import {
   EventCompleteData,
   EventMembersData,
-  EventStaffData,
+  EventStaffRow,
   RubricCategoryDraft,
 } from "@/src/lib/global_types";
 import PublicEventSponsorsSection from "@/src/components/eventComponents/PublicEventSponsorSection";
@@ -96,7 +96,8 @@ const PrivateEventHomePage = async ({
   }
 
   const eventData = eventDataRes.data as EventCompleteData;
-  const eventStaffData = eventStaffDataRes.data as EventStaffData; // event staff data implement this
+  const eventStaffData = eventStaffDataRes.data as EventStaffRow[]; // event staff data implement this
+  console.log("eventstaffdata", eventStaffData);
   const eventMembersData = eventMembersDataRes.data as EventMembersData;
   const eventRubricCategoriesData =
     eventRubricCategoriesDataRes.data as RubricCategoryDraft[];

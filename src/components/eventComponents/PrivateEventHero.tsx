@@ -41,7 +41,7 @@ const Pill = ({
     <div
       className={`px-3 py-1 rounded-full text-xs font-medium border backdrop-blur-sm ${eventPillClasses(
         kind,
-        value
+        value,
       )}`}
     >
       {label}

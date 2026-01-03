@@ -32,7 +32,7 @@ import { SendEventEmailInvite } from "@/src/emails/SendEventEmailInvite";
 
 export const createEventEmailInvite = async (
   _prev: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -71,7 +71,7 @@ export const createEventEmailInvite = async (
     const normalizedEmail = normalizeEmail(email);
     const expiresAt = parseOptionalDateFromMinutes(
       minutesToExpire?.toString() ??
-        new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString()
+        new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(),
     );
 
     const event = await prisma.event.findUnique({
@@ -95,7 +95,7 @@ export const createEventEmailInvite = async (
     const perms = await assertEventAdminOrOwnerWithId(
       event.orgId,
       event.id,
-      session.user.id
+      session.user.id,
     );
     if (perms.status === "ERROR") return perms as ActionState;
 
@@ -187,7 +187,7 @@ export const createEventEmailInvite = async (
  */
 export const createEventInviteLink = async (
   _prev: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -242,7 +242,7 @@ export const createEventInviteLink = async (
     const perms = await assertEventAdminOrOwnerWithId(
       event.orgId,
       event.id,
-      session.user.id
+      session.user.id,
     );
     if (perms.status === "ERROR") return perms as ActionState;
 
@@ -251,7 +251,7 @@ export const createEventInviteLink = async (
 
     const oneWeekFromNow = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
     const expiresAt = parseOptionalDateFromMinutes(
-      minutesToExpire?.toString() ?? oneWeekFromNow.toISOString()
+      minutesToExpire?.toString() ?? oneWeekFromNow.toISOString(),
     );
 
     const token = makeToken(24);
@@ -301,7 +301,7 @@ export const createEventInviteLink = async (
 export const fetchEventJoinInvitePageData = async (
   orgSlug: string,
   eventSlug: string,
-  token: string
+  token: string,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -406,7 +406,7 @@ export const fetchEventJoinInvitePageData = async (
 export const fetchEventJoinLinkPageData = async (
   orgSlug: string,
   eventSlug: string,
-  token: string
+  token: string,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -514,7 +514,7 @@ export const fetchEventJoinLinkPageData = async (
  * - mark invite ACCEPTED
  */
 export const acceptEventEmailInvite = async (
-  token: string
+  token: string,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -616,7 +616,7 @@ export const acceptEventEmailInvite = async (
  * - increment uses
  */
 export const acceptEventInviteLink = async (
-  token: string
+  token: string,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -720,7 +720,7 @@ export const acceptEventInviteLink = async (
  */
 export const createEventRegistrationRequest = async (
   _prev: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -733,7 +733,7 @@ export const createEventRegistrationRequest = async (
     }
 
     const isRateLimited = await checkRateLimit(
-      "createEventRegistrationRequest"
+      "createEventRegistrationRequest",
     );
     if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
 
@@ -835,7 +835,7 @@ export const createEventRegistrationRequest = async (
  */
 export const reviewEventRegistrationRequest = async (
   _prev: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -848,7 +848,7 @@ export const reviewEventRegistrationRequest = async (
     }
 
     const isRateLimited = await checkRateLimit(
-      "reviewEventRegistrationRequest"
+      "reviewEventRegistrationRequest",
     );
     if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
 
@@ -884,7 +884,7 @@ export const reviewEventRegistrationRequest = async (
     const perms = await assertEventAdminOrOwnerWithId(
       event.orgId,
       event.id,
-      session.user.id
+      session.user.id,
     );
     if (perms.status === "ERROR") return perms as ActionState;
 

@@ -46,7 +46,7 @@ export const addEventStaffMember = async (args: {
     const perms = await assertEventAdminOrOwnerWithId(
       args.orgId,
       args.eventId,
-      session.user.id
+      session.user.id,
     );
     if (perms.status === "ERROR") return perms as ActionState;
 
@@ -119,7 +119,7 @@ export const changeEventStaffRole = async (args: {
     const perms = await assertEventAdminOrOwnerWithId(
       args.orgId,
       args.eventId,
-      session.user.id
+      session.user.id,
     );
     if (perms.status === "ERROR") return perms as ActionState;
 
@@ -198,7 +198,7 @@ export const removeEventStaffMember = async (args: {
     const perms = await assertEventAdminOrOwnerWithId(
       args.orgId,
       args.eventId,
-      session.user.id
+      session.user.id,
     );
     if (perms.status === "ERROR") return perms as ActionState;
 

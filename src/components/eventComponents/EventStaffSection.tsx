@@ -1,14 +1,12 @@
 import React from "react";
-import type { EventStaffData } from "@/src/lib/global_types";
+import type { EventStaffRow } from "@/src/lib/global_types";
 import EventStaffCard from "./EventStaffCard";
-import { staffRolePillClasses } from "@/src/lib/utils";
+import { titleText, subtleText, card } from "@/src/lib/utils";
 
-const EventStaffSection = ({ staff }: { staff: EventStaffData }) => {
-  const rows = staff?.staff ?? [];
-  const hasStaff = rows.length > 0;
+const EventStaffSection = ({ staff }: { staff: EventStaffRow[] }) => {
+  const hasStaff = staff.length > 0;
 
-  // lightweight ordering: ADMIN first, then the rest (no heavy transforms)
-  const sorted = [...rows].sort((a, b) => {
+  const sorted = [...staff].sort((a, b) => {
     const ar = a.role === "ADMIN" ? 0 : 1;
     const br = b.role === "ADMIN" ? 0 : 1;
     if (ar !== br) return ar - br;
@@ -21,10 +19,8 @@ const EventStaffSection = ({ staff }: { staff: EventStaffData }) => {
     <section className="flex flex-col items-center justify-center w-full">
       <div className="flex flex-col w-full max-w-6xl px-5 sm:px-10 md:px-18 py-10 md:py-14 gap-6 md:gap-8">
         <div className="flex flex-col gap-3">
-          <h2 className="text-2xl md:text-3xl font-semibold text-white">
-            Judging panel & staff
-          </h2>
-          <div className="text-sm md:text-base text-white/70 leading-relaxed max-w-4xl">
+          <h2 className={titleText}>Judging panel & staff</h2>
+          <div className={subtleText}>
             The people reviewing submissions and helping run the event.
           </div>
         </div>
@@ -36,8 +32,11 @@ const EventStaffSection = ({ staff }: { staff: EventStaffData }) => {
             ))}
           </div>
         ) : (
-          <div className="w-full rounded-3xl border border-white/10 bg-white/4 p-6 md:p-8">
-            <div className="text-white/70">No staff has been added yet.</div>
+          <div className={`${card} p-6 md:p-8`}>
+            <div className="text-white/80 font-semibold">No staff yet</div>
+            <div className="text-white/60 text-sm mt-1">
+              Invite judges or staff to help run the event.
+            </div>
           </div>
         )}
       </div>
@@ -46,14 +45,3 @@ const EventStaffSection = ({ staff }: { staff: EventStaffData }) => {
 };
 
 export default EventStaffSection;
-export const RolePill = ({ role }: { role: string }) => {
-  return (
-    <div
-      className={`px-3 py-1 rounded-full text-[11px] font-semibold border ${staffRolePillClasses(
-        role
-      )}`}
-    >
-      {role}
-    </div>
-  );
-};

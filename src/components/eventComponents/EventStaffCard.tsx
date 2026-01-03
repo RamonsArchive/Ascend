@@ -1,55 +1,63 @@
-"use client";
-
 import React from "react";
-import Image from "next/image";
 import type { EventStaffRow } from "@/src/lib/global_types";
+import { card, inner, staffRolePillClasses } from "@/src/lib/utils";
+
+const staffRoleLabel = (role: string) => {
+  const r = (role || "").toUpperCase();
+  if (r === "OWNER") return "Owner";
+  if (r === "ADMIN") return "Admin";
+  if (r === "JUDGE") return "Judge";
+  return "Staff";
+};
+
+const initials = (nameOrEmail: string) => {
+  const s = (nameOrEmail || "").trim();
+  if (!s) return "?";
+
+  const parts = s.includes("@")
+    ? s.split("@")[0].split(/[.\s_-]+/)
+    : s.split(/\s+/);
+
+  const a = (parts[0]?.[0] ?? "").toUpperCase();
+  const b = (parts[1]?.[0] ?? "").toUpperCase();
+  return a + b || a || "?";
+};
 
 const EventStaffCard = ({ row }: { row: EventStaffRow }) => {
-  const name = row.user.name?.trim() || "Staff member";
+  const displayName = row.user.name?.trim() || row.user.email;
   const email = row.user.email;
-  const role = row.role;
-
-  const fallback = (name || email || "U").trim().slice(0, 1).toUpperCase();
 
   return (
-    <div className="group w-full rounded-3xl border border-white/10 bg-white/4 hover:bg-white/6 transition-colors duration-200 overflow-hidden hover:border-accent-100">
-      <div className="flex flex-col gap-4 p-6 md:p-8">
-        <div className="flex items-start gap-4">
-          <div className="relative w-14 h-14 rounded-2xl overflow-hidden border border-white/10 bg-white/5 shrink-0">
-            {row.user.image ? (
-              <Image
-                src={row.user.image}
-                alt={`${name} avatar`}
-                fill
-                sizes="56px"
-                className="object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-sm font-semibold text-white/70">
-                {fallback}
-              </div>
-            )}
-          </div>
+    <div className={`${card} p-5 md:p-6 hover:bg-white/6 transition-colors`}>
+      <div className="flex items-start gap-4">
+        <div
+          className={`${inner} h-11 w-11 md:h-12 md:w-12 flex items-center justify-center shrink-0 text-white/90 font-semibold`}
+          aria-hidden
+        >
+          {initials(displayName)}
+        </div>
 
-          <div className="flex flex-col gap-2 min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="text-white font-semibold leading-tight truncate">
-                {name}
-              </div>
-
-              <div className="px-3 py-1 rounded-full border border-white/10 bg-white/5 text-white/70 text-[11px] font-semibold">
-                {role}
+        <div className="flex-1 min-w-0 flex flex-col gap-2">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-white font-semibold leading-snug line-clamp-2">
+                {displayName}
               </div>
             </div>
 
-            <div className="text-white/60 text-sm break-all">{email}</div>
+            <div
+              className={`px-3 py-1 rounded-full border text-[11px] font-semibold tracking-wide whitespace-nowrap ${staffRolePillClasses(
+                row.role
+              )}`}
+              title={row.role}
+            >
+              {staffRoleLabel(row.role)}
+            </div>
           </div>
-        </div>
 
-        <div className="text-white/65 text-sm leading-relaxed">
-          {role === "ADMIN"
-            ? "Event staff with admin permissions."
-            : "Event staff member supporting the event."}
+          <div className="text-white/60 text-xs md:text-sm truncate">
+            {email}
+          </div>
         </div>
       </div>
     </div>

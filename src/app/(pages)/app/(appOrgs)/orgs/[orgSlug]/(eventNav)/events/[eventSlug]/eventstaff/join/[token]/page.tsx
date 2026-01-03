@@ -17,7 +17,7 @@ const EventStaffEmailInvitePage = async ({
   const pageData = await fetchEventStaffJoinInvitePageData(
     orgSlug,
     eventSlug,
-    token
+    token,
   );
 
   console.log(pageData);

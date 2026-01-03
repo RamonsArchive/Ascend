@@ -633,3 +633,5 @@ export type EventStaffMutations = {
     userId: string;
   }) => Promise<ActionState>;
 };
+
+export type EventLifecycleAction = "PUBLISHED" | "DRAFT" | "ARCHIVED";

@@ -178,7 +178,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
 
   const submitCreateEvent = async (
     _state: ActionState,
-    _fd: FormData
+    _fd: FormData,
   ): Promise<ActionState> => {
     try {
       void _state;
@@ -195,7 +195,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
           description: c.description || undefined,
           weight: c.weight ?? "1",
           order: c.order ?? "",
-        })
+        }),
       );
       const tracksPayload = formData.tracks.map((t, idx) => ({
         name: t.name,
@@ -313,13 +313,13 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
       fd.set("rubricScaleMax", String(parsed.rubricScaleMax));
       fd.set(
         "rubricCategoriesJson",
-        JSON.stringify(parsed.rubricCategories ?? [])
+        JSON.stringify(parsed.rubricCategories ?? []),
       );
 
       fd.set("allowSelfJoinRequests", parsed.allowSelfJoinRequests ? "1" : "0");
       fd.set(
         "lockTeamChangesAtStart",
-        parsed.lockTeamChangesAtStart ? "1" : "0"
+        parsed.lockTeamChangesAtStart ? "1" : "0",
       );
       fd.set("requireImages", parsed.requireImages ? "1" : "0");
       fd.set("requireVideoDemo", parsed.requireVideoDemo ? "1" : "0");
@@ -389,7 +389,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
 
   const [, formAction, isPending] = useActionState(
     submitCreateEvent,
-    initialState
+    initialState,
   );
 
   return (
@@ -1027,7 +1027,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                             setFormData((p) => ({
                               ...p,
                               rubricCategories: p.rubricCategories.filter(
-                                (x) => x.clientId !== c.clientId
+                                (x) => x.clientId !== c.clientId,
                               ),
                             }))
                           }
@@ -1050,7 +1050,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                                 rubricCategories: p.rubricCategories.map((x) =>
                                   x.clientId === c.clientId
                                     ? { ...x, name: e.target.value }
-                                    : x
+                                    : x,
                                 ),
                               }))
                             }
@@ -1078,7 +1078,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                                           .replace(/[^\d]/g, "")
                                           .replace(/^0+(?=\d)/, ""),
                                       }
-                                    : x
+                                    : x,
                                 ),
                               }))
                             }
@@ -1100,7 +1100,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                                 rubricCategories: p.rubricCategories.map((x) =>
                                   x.clientId === c.clientId
                                     ? { ...x, description: e.target.value }
-                                    : x
+                                    : x,
                                 ),
                               }))
                             }
@@ -1126,10 +1126,10 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                                         ...x,
                                         order: e.target.value.replace(
                                           /[^\d]/g,
-                                          ""
+                                          "",
                                         ),
                                       }
-                                    : x
+                                    : x,
                                 ),
                               }))
                             }
@@ -1232,7 +1232,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                           setFormData((p) => ({
                             ...p,
                             tracks: p.tracks.filter(
-                              (x) => x.clientId !== t.clientId
+                              (x) => x.clientId !== t.clientId,
                             ),
                           }))
                         }
@@ -1255,7 +1255,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                               tracks: p.tracks.map((x) =>
                                 x.clientId === t.clientId
                                   ? { ...x, name: e.target.value }
-                                  : x
+                                  : x,
                               ),
                             }))
                           }
@@ -1281,10 +1281,10 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                                       ...x,
                                       order: e.target.value.replace(
                                         /[^\d]/g,
-                                        ""
+                                        "",
                                       ),
                                     }
-                                  : x
+                                  : x,
                               ),
                             }))
                           }
@@ -1306,7 +1306,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                             tracks: p.tracks.map((x) =>
                               x.clientId === t.clientId
                                 ? { ...x, blurb: e.target.value }
-                                : x
+                                : x,
                             ),
                           }))
                         }
@@ -1401,7 +1401,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                           setFormData((p) => ({
                             ...p,
                             awards: p.awards.filter(
-                              (x) => x.clientId !== a.clientId
+                              (x) => x.clientId !== a.clientId,
                             ),
                           }))
                         }
@@ -1424,7 +1424,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                               awards: p.awards.map((x) =>
                                 x.clientId === a.clientId
                                   ? { ...x, name: e.target.value }
-                                  : x
+                                  : x,
                               ),
                             }))
                           }
@@ -1450,10 +1450,10 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                                       ...x,
                                       order: e.target.value.replace(
                                         /[^\d]/g,
-                                        ""
+                                        "",
                                       ),
                                     }
-                                  : x
+                                  : x,
                               ),
                             }))
                           }
@@ -1475,7 +1475,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                             awards: p.awards.map((x) =>
                               x.clientId === a.clientId
                                 ? { ...x, blurb: e.target.value }
-                                : x
+                                : x,
                             ),
                           }))
                         }
@@ -1497,7 +1497,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                                     ...x,
                                     allowMultipleWinners: e.target.checked,
                                   }
-                                : x
+                                : x,
                             ),
                           }))
                         }

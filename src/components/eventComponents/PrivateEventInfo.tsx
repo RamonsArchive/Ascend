@@ -5,9 +5,6 @@ import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 
-import type { EventCompleteData } from "@/src/lib/global_types";
-import { getMarkdownFromRich } from "@/src/lib/utils";
-
 const MarkdownCard = ({
   title,
   value,
@@ -47,8 +44,6 @@ const PrivateEventInfo = ({
   rulesMarkdown: string | null;
   rubricMarkdown: string | null;
 }) => {
-  console.log("event", event);
-
   return (
     <section className="flex flex-col items-center justify-center w-full">
       <div className="flex flex-col w-full max-w-6xl px-5 sm:px-10 md:px-18 py-10 md:py-14 gap-6 md:gap-8">

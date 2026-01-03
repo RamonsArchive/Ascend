@@ -41,7 +41,7 @@ function normalizeRole(role: unknown): EventStaffRole | null {
  */
 export const createEventStaffEmailInvite = async (
   _prev: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -91,7 +91,7 @@ export const createEventStaffEmailInvite = async (
 
     const oneWeekFromNow = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
     const expiresAt = parseOptionalDateFromMinutes(
-      minutesToExpire?.toString() ?? oneWeekFromNow.toISOString()
+      minutesToExpire?.toString() ?? oneWeekFromNow.toISOString(),
     );
 
     const event = await prisma.event.findUnique({
@@ -116,7 +116,7 @@ export const createEventStaffEmailInvite = async (
     const perms = await assertEventAdminOrOwnerWithId(
       event.orgId,
       event.id,
-      session.user.id
+      session.user.id,
     );
     if (perms.status === "ERROR") return perms as ActionState;
 
@@ -206,7 +206,7 @@ export const createEventStaffEmailInvite = async (
  */
 export const createEventStaffInviteLink = async (
   _prev: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -271,7 +271,7 @@ export const createEventStaffInviteLink = async (
     const perms = await assertEventAdminOrOwnerWithId(
       event.orgId,
       event.id,
-      session.user.id
+      session.user.id,
     );
     if (perms.status === "ERROR") return perms as ActionState;
 
@@ -279,7 +279,7 @@ export const createEventStaffInviteLink = async (
 
     const oneWeekFromNow = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
     const expiresAt = parseOptionalDateFromMinutes(
-      minutesToExpire?.toString() ?? oneWeekFromNow.toISOString()
+      minutesToExpire?.toString() ?? oneWeekFromNow.toISOString(),
     );
 
     const token = makeToken(24);
@@ -331,7 +331,7 @@ export const createEventStaffInviteLink = async (
 export const fetchEventStaffJoinInvitePageData = async (
   orgSlug: string,
   eventSlug: string,
-  token: string
+  token: string,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -437,7 +437,7 @@ export const fetchEventStaffJoinInvitePageData = async (
 export const fetchEventStaffJoinLinkPageData = async (
   orgSlug: string,
   eventSlug: string,
-  token: string
+  token: string,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -540,7 +540,7 @@ export const fetchEventStaffJoinLinkPageData = async (
  * Creates EventStaffMembership and marks invite ACCEPTED.
  */
 export const acceptEventStaffEmailInvite = async (
-  token: string
+  token: string,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -636,7 +636,7 @@ export const acceptEventStaffEmailInvite = async (
  * Creates EventStaffMembership, increments uses.
  */
 export const acceptEventStaffInviteLink = async (
-  token: string
+  token: string,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });

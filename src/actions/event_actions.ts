@@ -16,6 +16,7 @@ import type {
   AwardDraft,
   EventInfoPageData,
   RubricCategoryDraft,
+  EventLifecycleAction,
 } from "../lib/global_types";
 import { checkRateLimit } from "../lib/rate-limiter";
 import { assertOrgOwnerSlug, isOrgOwner } from "./org_actions";
@@ -1684,6 +1685,52 @@ export const updateEventRubricCategories = async (
     return parseServerActionResponse({
       status: "ERROR",
       error: "Failed to update event rubric categories",
+      data: null,
+    }) as ActionState;
+  }
+};
+
+export const updateEventLifecycle = async (
+  orgId: string,
+  eventId: string,
+  action: EventLifecycleAction
+): Promise<ActionState> => {
+  try {
+    const isRateLimited = await checkRateLimit("updateEventLifecycle");
+    if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
+
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user?.id) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "MUST BE LOGGED IN TO UPDATE EVENT LIFECYCLE",
+        data: null,
+      }) as ActionState;
+    }
+    const perms = await assertEventAdminOrOwnerWithId(
+      orgId,
+      eventId,
+      session.user.id
+    );
+    if (perms.status === "ERROR") return perms as ActionState;
+
+    await prisma.event.update({
+      where: { id: eventId },
+      data: { status: action },
+    });
+
+    updateTag(`event-${eventId}`);
+
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data: { eventId, status: action },
+    }) as ActionState;
+  } catch (error) {
+    console.error(error);
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to update event lifecycle",
       data: null,
     }) as ActionState;
   }

@@ -67,7 +67,7 @@ const EventEditRubricCategoriesSection = ({
             return updateEventRubricCategories(
               eventId,
               orgId,
-              payload as RubricCategoryDraft[]
+              payload as RubricCategoryDraft[],
             );
           }}
         />

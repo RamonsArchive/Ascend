@@ -16,7 +16,7 @@ const EventStaffLinkInvitePage = async ({
   const pageData = await fetchEventStaffJoinLinkPageData(
     orgSlug,
     eventSlug,
-    token
+    token,
   );
 
   if (pageData.status === "ERROR") {

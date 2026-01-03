@@ -1,6 +1,10 @@
 import React from "react";
 import EventEditDetailsForm from "./EventEditDetailsForm";
-import type { EventCompleteData } from "@/src/lib/global_types";
+import type {
+  EventCompleteData,
+  EventLifecycleAction,
+} from "@/src/lib/global_types";
+import EventLifecycleCard from "./EventLifecycleCard";
 
 const EventEditDetails = ({ event }: { event: EventCompleteData }) => {
   return (
@@ -14,6 +18,12 @@ const EventEditDetails = ({ event }: { event: EventCompleteData }) => {
             Control how your event appears publicly and how participants join.
           </div>
         </div>
+        {/* ✅ lifecycle card FIRST */}
+        <EventLifecycleCard
+          orgId={event.orgId}
+          eventId={event.id}
+          status={event.status as EventLifecycleAction}
+        />
         <EventEditDetailsForm event={event} />
       </div>
     </section>

@@ -36,7 +36,7 @@ const EventSettingsPage = async ({
   const hasPermissions = await assertEventAdminOrOwner(
     orgSlug,
     eventSlug,
-    userId
+    userId,
   );
   if (!hasPermissions.data || hasPermissions.status === "ERROR") {
     return (

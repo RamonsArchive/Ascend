@@ -11,7 +11,7 @@ import { updateTag } from "next/cache";
 export const setLookingForTeam = async (
   orgSlug: string,
   eventSlug: string,
-  lookingForTeam: boolean
+  lookingForTeam: boolean,
 ): Promise<ActionState> => {
   try {
     const session = await auth.api.getSession({ headers: await headers() });

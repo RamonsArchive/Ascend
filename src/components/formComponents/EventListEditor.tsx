@@ -60,7 +60,7 @@ export function EventListEditor<T extends BaseDraft>({
       order: asString(d.order),
       blurb: d.blurb ?? "",
       description: d.description ?? "",
-    }))
+    })),
   );
 
   const [errors, setErrors] = useState<CommonErrors>({});
@@ -88,7 +88,7 @@ export function EventListEditor<T extends BaseDraft>({
         order: asString(d.order),
         blurb: d.blurb ?? "",
         description: d.description ?? "",
-      }))
+      })),
     );
     setErrors({});
     setStatusMessage("");
@@ -207,8 +207,8 @@ export function EventListEditor<T extends BaseDraft>({
                 const setItem = (updater: (prev: T) => T) => {
                   setItems((p) =>
                     p.map((x) =>
-                      x.clientId === item.clientId ? updater(x) : x
-                    )
+                      x.clientId === item.clientId ? updater(x) : x,
+                    ),
                   );
                 };
 
@@ -227,7 +227,7 @@ export function EventListEditor<T extends BaseDraft>({
                         type="button"
                         onClick={() =>
                           setItems((p) =>
-                            p.filter((x) => x.clientId !== item.clientId)
+                            p.filter((x) => x.clientId !== item.clientId),
                           )
                         }
                         className="text-xs text-white/70 hover:text-white underline"
