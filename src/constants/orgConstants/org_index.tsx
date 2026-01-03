@@ -1,3 +1,4 @@
+import { NavLink } from "@/src/lib/global_types";
 import { OrgJoinMode } from "@prisma/client";
 
 export const new_org_data = {
@@ -166,14 +167,30 @@ export const org_members_data = {
   },
 };
 
-export const org_nav_links = (orgSlug: string, hasPermissions: boolean) => {
+export const org_nav_links = (
+  orgSlug: string,
+  hasPermissions: boolean
+): NavLink[] => {
   const links = [
-    { label: "Overview", href: `/app/orgs/${orgSlug}` },
-    { label: "Settings", href: `/app/orgs/${orgSlug}/settings` },
-  ] as const;
+    { label: "Overview", href: `/app/orgs/${orgSlug}`, alt: "Overview" },
+    {
+      label: "Settings",
+      href: `/app/orgs/${orgSlug}/settings`,
+      alt: "Settings",
+    },
+  ];
 
   return hasPermissions ? links : links.filter((l) => l.label !== "Settings");
 };
+
+export const org_mobile_menu_footer_links = (orgSlug: string): NavLink[] => [
+  {
+    href: `/app/orgs/${orgSlug}`,
+    label: "Back to Org",
+    alt: "Back to Org",
+  },
+  { href: "/app", label: "Back to App", alt: "Back to App" },
+];
 
 export const JOIN_MODE_OPTIONS: Array<{
   value: OrgJoinMode;

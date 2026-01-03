@@ -18,7 +18,7 @@ export const nav_links = [
   { label: "About", href: "/about", alt: "About" },
   { label: "Contact", href: "/contact", alt: "Contact" },
   { label: "Dashboard", href: "/app", alt: "Dashboard" },
-] as const;
+];
 
 export const nav_cta = {
   label: "Open App",

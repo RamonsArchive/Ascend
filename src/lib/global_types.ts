@@ -635,3 +635,26 @@ export type EventStaffMutations = {
 };
 
 export type EventLifecycleAction = "PUBLISHED" | "DRAFT" | "ARCHIVED";
+
+export type NavLink = {
+  href: string;
+  label: string;
+  alt: string;
+};
+
+export type SlidingMobileMenuProps = {
+  isOpen: boolean;
+  onClose: () => void;
+
+  links: NavLink[];
+  title?: string;
+
+  // optional footer area (like Back to Org/App)
+  footerLinks?: NavLink[];
+
+  // optional: where the panel slides from
+  side?: "right" | "left";
+
+  // optional: width like your 75%
+  widthClassName?: string; // ex: "w-[78%]" or "w-[75%]"
+};
