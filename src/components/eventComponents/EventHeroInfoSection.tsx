@@ -1,5 +1,8 @@
 import React from "react";
-import type { EventInfoPageData } from "@/src/lib/global_types";
+import type {
+  EventInfoPageData,
+  RubricCategoryDraft,
+} from "@/src/lib/global_types";
 import {
   eventJoinModeLabel,
   eventPillClasses,
@@ -29,7 +32,13 @@ const Pill = ({
   );
 };
 
-const EventHeroInfoSection = ({ event }: { event: EventInfoPageData }) => {
+const EventHeroInfoSection = ({
+  event,
+  rubricCategories,
+}: {
+  event: EventInfoPageData;
+  rubricCategories: RubricCategoryDraft[];
+}) => {
   const locationPrimary =
     event.locationName?.trim() || event.locationAddress?.trim() || null;
 
@@ -237,6 +246,19 @@ const EventHeroInfoSection = ({ event }: { event: EventInfoPageData }) => {
                     )}
 
                     <div className="flex flex-col gap-2">
+                      <div className="text-white/55 text-xs">
+                        Rubric categories
+                      </div>
+                      <div className="text-white/80 text-sm">
+                        {rubricCategories.length === 0
+                          ? "No rubric categories yet"
+                          : `${rubricCategories.length} rubric category${
+                              rubricCategories.length === 1 ? "" : "s"
+                            } • ${rubricCategories.map((c) => c.name).join(", ")}${
+                              rubricCategories.length > 3 ? "…" : ""
+                            }`}
+                      </div>
+
                       <div className="text-white/55 text-xs">Tracks</div>
                       <div className="text-white/80 text-sm">
                         {event.tracks.length === 0

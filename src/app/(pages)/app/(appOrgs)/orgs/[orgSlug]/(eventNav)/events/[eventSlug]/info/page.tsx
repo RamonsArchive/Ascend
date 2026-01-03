@@ -4,14 +4,21 @@ import { redirect } from "next/navigation";
 
 import { getCachedSession } from "@/src/lib/cached-auth";
 import { fetchOrgId } from "@/src/actions/org_actions";
-import { fetchEventInfoData } from "@/src/actions/event_actions";
+import {
+  fetchEventInfoData,
+  fetchEventRubricCategoriesData,
+} from "@/src/actions/event_actions";
 
-import type { EventInfoPageData } from "@/src/lib/global_types";
+import type {
+  EventInfoPageData,
+  RubricCategoryDraft,
+} from "@/src/lib/global_types";
 
 import EventHeroInfoSection from "@/src/components/eventComponents/EventHeroInfoSection";
 import PrivateEventInfo from "@/src/components/eventComponents/PrivateEventInfo";
 import PrivateEventTracks from "@/src/components/eventComponents/PrivateEventTracks";
 import PrivateEventAwards from "@/src/components/eventComponents/PrivateEventAwards";
+import PublicEventRubricCategoriesSection from "@/src/components/eventComponents/PublicEventRubricCategoriesSection";
 
 const PrivateEventInfoPage = async ({
   params,
@@ -49,7 +56,12 @@ const PrivateEventInfoPage = async ({
 
   const orgId = orgIdRes.data as string;
 
-  const infoRes = await fetchEventInfoData(orgId, eventSlug);
+  let infoRes = null;
+  let rubricCategoriesRes = null;
+  [infoRes, rubricCategoriesRes] = await Promise.all([
+    fetchEventInfoData(orgId, eventSlug),
+    fetchEventRubricCategoriesData(orgId, eventSlug),
+  ]);
   if (infoRes.status === "ERROR" || !infoRes.data) {
     return (
       <div className="relative w-full">
@@ -71,15 +83,22 @@ const PrivateEventInfoPage = async ({
   }
 
   const event = infoRes.data as EventInfoPageData;
-
+  const rubricCategories =
+    (rubricCategoriesRes.data as RubricCategoryDraft[]) ?? [];
   return (
     <div className="relative w-full">
       <div className="absolute inset-0 pointer-events-none marketing-bg" />
       <div className="relative flex flex-col items-center justify-center w-full gap-12 md:gap-16 lg:gap-20">
-        <EventHeroInfoSection event={event} />
+        <EventHeroInfoSection
+          event={event}
+          rubricCategories={rubricCategories}
+        />
         <PrivateEventInfo
           rulesMarkdown={event.rulesMarkdown}
           rubricMarkdown={event.rubricMarkdown}
+        />
+        <PublicEventRubricCategoriesSection
+          rubricCategories={rubricCategories}
         />
         <PrivateEventTracks tracks={event.tracks} />
         <PrivateEventAwards awards={event.awards} />

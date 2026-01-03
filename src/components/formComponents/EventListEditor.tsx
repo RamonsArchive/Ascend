@@ -1,31 +1,37 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { toast } from "sonner";
-import { z } from "zod";
-import type {
-  ActionState,
-  AwardDraft,
-  TrackDraft,
-} from "@/src/lib/global_types";
-import { parseServerActionResponse, makeClientId } from "@/src/lib/utils";
+import type { ActionState } from "@/src/lib/global_types";
+import { makeClientId } from "@/src/lib/utils";
 import { commonListEditorSchema } from "@/src/lib/validation";
 
-type TrackLikeDraft = TrackDraft;
+type DetailsKey = "blurb" | "description";
 
-type AwardLikeDraft = AwardDraft;
+type BaseDraft = {
+  clientId: string;
+  name: string;
+  order?: string | number;
+  blurb?: string;
+  description?: string;
+};
 
 type CommonErrors = Partial<Record<"items", string>>;
 
-const toKey = (s: string) => s.trim().toLowerCase();
+const toKey = (s: string) => (s ?? "").trim().toLowerCase();
 
-export function EventListEditor<T extends TrackLikeDraft | AwardLikeDraft>({
+const asString = (v: unknown) =>
+  v === null || v === undefined ? "" : String(v);
+
+export function EventListEditor<T extends BaseDraft>({
   title,
   subtitle,
   emptyText,
   addLabel,
   defaults,
-  renderRowExtras, // optional checkbox row etc.
+  detailsLabel,
+  detailsKey = "blurb",
+  renderRowExtras,
   onNormalize,
   onSave,
 }: {
@@ -35,38 +41,31 @@ export function EventListEditor<T extends TrackLikeDraft | AwardLikeDraft>({
   addLabel: string;
   defaults: T[];
 
-  // for awards: render checkbox etc. (gets item + setter)
+  // NEW: choose which field your textarea edits
+  detailsKey?: DetailsKey;
+  detailsLabel?: string;
+
   renderRowExtras?: (args: {
     item: T;
     setItem: (updater: (prev: T) => T) => void;
   }) => React.ReactNode;
 
-  // convert UI items => server payload items
   onNormalize: (items: T[]) => unknown;
-
-  // server action
   onSave: (payload: unknown) => Promise<ActionState>;
 }) {
   const [items, setItems] = useState<T[]>(() =>
     (defaults ?? []).map((d) => ({
       ...d,
       clientId: d.clientId || makeClientId(),
-      order: (d.order ?? "").toString(),
-    })),
+      order: asString(d.order),
+      blurb: d.blurb ?? "",
+      description: d.description ?? "",
+    }))
   );
 
   const [errors, setErrors] = useState<CommonErrors>({});
   const [statusMessage, setStatusMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-
-  const sortedPreview = useMemo(() => {
-    // purely for the "order preview" badge; actual save uses normalization
-    return [...items].sort((a, b) => {
-      const ao = Number((a.order ?? "").trim() || 0);
-      const bo = Number((b.order ?? "").trim() || 0);
-      return ao - bo;
-    });
-  }, [items]);
 
   const addItem = () => {
     setItems((p) => [
@@ -74,8 +73,9 @@ export function EventListEditor<T extends TrackLikeDraft | AwardLikeDraft>({
       {
         clientId: makeClientId(),
         name: "",
-        blurb: "",
         order: "",
+        blurb: "",
+        description: "",
       } as T,
     ]);
   };
@@ -85,8 +85,10 @@ export function EventListEditor<T extends TrackLikeDraft | AwardLikeDraft>({
       (defaults ?? []).map((d) => ({
         ...d,
         clientId: d.clientId || makeClientId(),
-        order: (d.order ?? "").toString(),
-      })),
+        order: asString(d.order),
+        blurb: d.blurb ?? "",
+        description: d.description ?? "",
+      }))
     );
     setErrors({});
     setStatusMessage("");
@@ -94,12 +96,12 @@ export function EventListEditor<T extends TrackLikeDraft | AwardLikeDraft>({
   };
 
   const validateClient = (drafts: T[]) => {
-    // base validation (name/blurb length)
+    // validate base fields: name + details + order
     const parsed = commonListEditorSchema.safeParse({
       items: drafts.map((x) => ({
         name: x.name,
-        blurb: x.blurb ?? "",
-        order: x.order ?? "",
+        blurb: asString(x[detailsKey] ?? ""),
+        order: asString(x.order ?? ""),
       })),
     });
     if (!parsed.success) {
@@ -155,6 +157,13 @@ export function EventListEditor<T extends TrackLikeDraft | AwardLikeDraft>({
     }
   };
 
+  // no useMemo: compute preview directly
+  const sortedPreview = [...items].sort((a, b) => {
+    const ao = Number(asString(a.order).replace(/[^\d]/g, "") || 0);
+    const bo = Number(asString(b.order).replace(/[^\d]/g, "") || 0);
+    return ao - bo;
+  });
+
   return (
     <div className="flex flex-col gap-6 md:gap-8">
       <div className="flex flex-col gap-3">
@@ -198,10 +207,12 @@ export function EventListEditor<T extends TrackLikeDraft | AwardLikeDraft>({
                 const setItem = (updater: (prev: T) => T) => {
                   setItems((p) =>
                     p.map((x) =>
-                      x.clientId === item.clientId ? updater(x) : x,
-                    ),
+                      x.clientId === item.clientId ? updater(x) : x
+                    )
                   );
                 };
+
+                const detailsText = asString(item[detailsKey] ?? "");
 
                 return (
                   <div
@@ -216,7 +227,7 @@ export function EventListEditor<T extends TrackLikeDraft | AwardLikeDraft>({
                         type="button"
                         onClick={() =>
                           setItems((p) =>
-                            p.filter((x) => x.clientId !== item.clientId),
+                            p.filter((x) => x.clientId !== item.clientId)
                           )
                         }
                         className="text-xs text-white/70 hover:text-white underline"
@@ -249,7 +260,7 @@ export function EventListEditor<T extends TrackLikeDraft | AwardLikeDraft>({
                         <input
                           type="text"
                           inputMode="numeric"
-                          value={item.order ?? ""}
+                          value={asString(item.order)}
                           onChange={(e) =>
                             setItem((prev) => ({
                               ...prev,
@@ -264,14 +275,14 @@ export function EventListEditor<T extends TrackLikeDraft | AwardLikeDraft>({
 
                     <div className="flex flex-col gap-2 mt-3">
                       <label className="text-xs md:text-sm text-white/75">
-                        Blurb (optional)
+                        {detailsLabel ?? "Blurb (optional)"}
                       </label>
                       <textarea
-                        value={item.blurb ?? ""}
+                        value={detailsText}
                         onChange={(e) =>
                           setItem((prev) => ({
                             ...prev,
-                            blurb: e.target.value,
+                            [detailsKey]: e.target.value,
                           }))
                         }
                         className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors min-h-[110px] resize-none shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
@@ -286,6 +297,16 @@ export function EventListEditor<T extends TrackLikeDraft | AwardLikeDraft>({
                   </div>
                 );
               })}
+
+              <div className="flex items-center justify-start">
+                <button
+                  type="button"
+                  onClick={addItem}
+                  className="px-4 py-2 rounded-2xl bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition-colors text-xs md:text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                >
+                  {addLabel}
+                </button>
+              </div>
             </div>
           )}
 

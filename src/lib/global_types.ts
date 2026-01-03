@@ -302,7 +302,8 @@ export type EventSettingsView =
   | "INVITES"
   | "MEMBERS"
   | "SPONSORS"
-  | "STAFF";
+  | "STAFF"
+  | "RUBRIC_CATEGORIES";
 
 export type OrgSettingsData = Prisma.OrganizationGetPayload<{
   select: {
@@ -573,4 +574,12 @@ export type JoinGateProps = {
   token: string;
   disabledReason: JoinGateDisabledReason;
   acceptAction: (token: string) => Promise<ActionState>;
+};
+
+export type RubricCategoryDraft = {
+  clientId: string; // stable key for UI
+  name: string;
+  description?: string; // use real name
+  weight: number;
+  order: number;
 };

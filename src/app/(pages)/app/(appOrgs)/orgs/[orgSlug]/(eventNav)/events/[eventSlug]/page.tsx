@@ -8,6 +8,7 @@ import { redirect } from "next/navigation";
 import {
   fetchEventCompleteData,
   fetchEventMembersData,
+  fetchEventRubricCategoriesData,
   fetchEventStaffData,
 } from "@/src/actions/event_actions";
 import Link from "next/link";
@@ -16,10 +17,12 @@ import {
   EventCompleteData,
   EventMembersData,
   EventStaffData,
+  RubricCategoryDraft,
 } from "@/src/lib/global_types";
 import PublicEventSponsorsSection from "@/src/components/eventComponents/PublicEventSponsorSection";
 import EventStaffSection from "@/src/components/eventComponents/EventStaffSection";
 import PublicEventMembersSection from "@/src/components/eventComponents/PublicEventMembersSection";
+import PublicEventRubricCategoriesSection from "@/src/components/eventComponents/PublicEventRubricCategoriesSection";
 
 const PrivateEventHomePage = async ({
   params,
@@ -58,11 +61,18 @@ const PrivateEventHomePage = async ({
   let eventDataRes = null;
   let eventStaffDataRes = null; // fetchEventStaffData
   let eventMembersDataRes = null; // fetchEventMembersData
+  let eventRubricCategoriesDataRes = null; // fetchEventRubricCategoriesData
 
-  [eventDataRes, eventStaffDataRes, eventMembersDataRes] = await Promise.all([
+  [
+    eventDataRes,
+    eventStaffDataRes,
+    eventMembersDataRes,
+    eventRubricCategoriesDataRes,
+  ] = await Promise.all([
     fetchEventCompleteData(orgId, eventSlug),
     fetchEventStaffData(orgId, eventSlug),
     fetchEventMembersData(orgId, eventSlug),
+    fetchEventRubricCategoriesData(orgId, eventSlug),
   ]);
 
   if (eventDataRes.status === "ERROR" || !eventDataRes.data) {
@@ -88,6 +98,8 @@ const PrivateEventHomePage = async ({
   const eventData = eventDataRes.data as EventCompleteData;
   const eventStaffData = eventStaffDataRes.data as EventStaffData; // event staff data implement this
   const eventMembersData = eventMembersDataRes.data as EventMembersData;
+  const eventRubricCategoriesData =
+    eventRubricCategoriesDataRes.data as RubricCategoryDraft[];
   return (
     <div className="relative w-full">
       <div className="absolute inset-0 pointer-events-none marketing-bg" />
@@ -98,6 +110,9 @@ const PrivateEventHomePage = async ({
         <PrivateEventInfo
           rulesMarkdown={eventData.rulesMarkdown}
           rubricMarkdown={eventData.rubricMarkdown}
+        />
+        <PublicEventRubricCategoriesSection
+          rubricCategories={eventRubricCategoriesData}
         />
         <PrivateEventTracks tracks={eventData.tracks} />
         <PrivateEventAwards awards={eventData.awards} />

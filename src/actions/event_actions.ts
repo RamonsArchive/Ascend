@@ -15,6 +15,7 @@ import type {
   TrackDraft,
   AwardDraft,
   EventInfoPageData,
+  RubricCategoryDraft,
 } from "../lib/global_types";
 import { checkRateLimit } from "../lib/rate-limiter";
 import { assertOrgOwnerSlug, isOrgOwner } from "./org_actions";
@@ -33,7 +34,6 @@ import {
   removeEventTeamMemberClientSchema,
   removeEventParticipantClientSchema,
 } from "@/src/lib/validation";
-import { EventEmitterAsyncResource } from "stream";
 
 export const fetchAllEvents = async (
   limit: number = 12
@@ -1572,6 +1572,118 @@ export const fetchEventInfoData = async (
     return parseServerActionResponse({
       status: "ERROR",
       error: "Failed to fetch event info data",
+      data: null,
+    }) as ActionState;
+  }
+};
+
+export const fetchEventRubricCategoriesData = async (
+  orgId: string,
+  eventSlug: string
+): Promise<ActionState> => {
+  try {
+    const isRateLimited = await checkRateLimit(
+      "fetchEventRubricCategoriesData"
+    );
+    if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
+
+    const rows = await prisma.eventRubricCategory.findMany({
+      where: { event: { orgId, slug: eventSlug } },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        weight: true,
+        order: true,
+      },
+      orderBy: { order: "asc" },
+    });
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data: rows,
+    }) as ActionState;
+  } catch (error) {
+    console.error(error);
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to fetch event rubric categories data",
+      data: null,
+    }) as ActionState;
+  }
+};
+export const updateEventRubricCategories = async (
+  eventId: string,
+  orgId: string,
+  rubricCategories: RubricCategoryDraft[]
+): Promise<ActionState> => {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user?.id) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "MUST BE LOGGED IN TO UPDATE EVENT RUBRIC CATEGORIES",
+        data: null,
+      }) as ActionState;
+    }
+
+    const isRateLimited = await checkRateLimit("updateEventRubricCategories");
+    if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
+
+    const perms = await assertEventAdminOrOwnerWithId(
+      orgId,
+      eventId,
+      session.user.id
+    );
+    if (perms.status === "ERROR") return perms as ActionState;
+
+    // Basic server-side sanity checks
+    const cleaned = (rubricCategories ?? []).map((c, idx) => ({
+      name: (c.name ?? "").trim(),
+      description: (c.description ?? "").trim(),
+      weight: Number.isFinite(c.weight) ? c.weight : 0,
+      order: Number.isFinite(c.order) ? c.order : idx,
+    }));
+
+    const nonEmpty = cleaned.filter((c) => c.name.length > 0);
+
+    // If rubric mode is OPTIONAL/REQUIRED, you may want to enforce at least 1.
+    // If you want that rule, keep this:
+    // if (nonEmpty.length === 0) { ... }
+
+    const sum = nonEmpty.reduce((a, x) => a + (x.weight ?? 0), 0);
+    if (nonEmpty.length > 0 && sum !== 100) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "Rubric category weights must sum to 100.",
+        data: null,
+      }) as ActionState;
+    }
+
+    await prisma.eventRubricCategory.deleteMany({ where: { eventId } });
+
+    if (nonEmpty.length > 0) {
+      await prisma.eventRubricCategory.createMany({
+        data: nonEmpty.map((c) => ({
+          eventId,
+          name: c.name,
+          description: c.description,
+          weight: Math.max(0, Math.min(100, Math.round(c.weight))),
+          order: Math.max(0, Math.min(999, Math.round(c.order))),
+        })),
+      });
+    }
+
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data: { rubricCategories: nonEmpty },
+    }) as ActionState;
+  } catch (error) {
+    console.error(error);
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to update event rubric categories",
       data: null,
     }) as ActionState;
   }

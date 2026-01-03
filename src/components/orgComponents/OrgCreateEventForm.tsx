@@ -343,6 +343,7 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
       // push to new event page settings
       const slug = (result.data as { slug: string }).slug;
       // router.push(`${slug}/settings`);
+      router.push(`/app/orgs/${orgSlug}/events/${slug}`);
       return result;
     } catch (error) {
       console.error(error);
@@ -1139,6 +1140,30 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                       </div>
                     </div>
                   ))}
+                  <div className="flex items-center justify-end ">
+                    <button
+                      type="button"
+                      disabled={formData.rubricMode !== "OPTIONAL"}
+                      onClick={() =>
+                        setFormData((p) => ({
+                          ...p,
+                          rubricCategories: [
+                            ...p.rubricCategories,
+                            {
+                              clientId: makeClientId(),
+                              name: "",
+                              description: "",
+                              weight: "1",
+                              order: "",
+                            },
+                          ],
+                        }))
+                      }
+                      className="max-w-fit px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition-colors text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] disabled:opacity-60"
+                    >
+                      + Add category
+                    </button>
+                  </div>
                 </div>
               )
             ) : (
@@ -1291,6 +1316,28 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                     </div>
                   </div>
                 ))}
+                <div className="flex items-center justify-end">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData((p) => ({
+                        ...p,
+                        tracks: [
+                          ...p.tracks,
+                          {
+                            clientId: makeClientId(),
+                            name: "",
+                            blurb: "",
+                            order: "",
+                          },
+                        ],
+                      }))
+                    }
+                    className="max-w-fit px-4 py-2 rounded-2xl bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition-colors text-xs md:text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                  >
+                    + Add track
+                  </button>
+                </div>
               </div>
             )}
 
@@ -1468,6 +1515,29 @@ const OrgCreateEventForm = ({ orgSlug }: { orgSlug: string }) => {
                     </label>
                   </div>
                 ))}
+                <div className="flex items-center justify-end">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData((p) => ({
+                        ...p,
+                        awards: [
+                          ...p.awards,
+                          {
+                            clientId: makeClientId(),
+                            name: "",
+                            blurb: "",
+                            order: "",
+                            allowMultipleWinners: false,
+                          },
+                        ],
+                      }))
+                    }
+                    className="max-w-fit px-4 py-2 rounded-2xl bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition-colors text-xs md:text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                  >
+                    + Add award
+                  </button>
+                </div>
               </div>
             )}
 

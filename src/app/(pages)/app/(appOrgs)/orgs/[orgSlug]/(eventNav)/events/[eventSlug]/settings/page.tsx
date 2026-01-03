@@ -5,6 +5,7 @@ import {
   assertEventAdminOrOwner,
   fetchEventCompleteData,
   fetchEventMembersData,
+  fetchEventRubricCategoriesData,
   fetchEventSettingsStaffData,
 } from "@/src/actions/event_actions";
 import Link from "next/link";
@@ -14,6 +15,7 @@ import {
   EventMembersData,
   EventStaffData,
   SponsorLibraryItem,
+  RubricCategoryDraft,
 } from "@/src/lib/global_types";
 import EventSettingsClient from "@/src/components/eventComponents/EventSettingsClient";
 import { fetchOrgId } from "@/src/actions/org_actions";
@@ -91,13 +93,16 @@ const EventSettingsPage = async ({
   let sponsorLibraryRes = null;
   let memberRes = null;
   let staffRes = null;
+  let rubricCategoriesRes = null;
 
-  [eventDataRes, sponsorLibraryRes, memberRes, staffRes] = await Promise.all([
-    fetchEventCompleteData(orgIdRes.data as string, eventSlug),
-    fetchSponsorLibrary(),
-    fetchEventMembersData(orgIdRes.data as string, eventSlug),
-    fetchEventSettingsStaffData(orgIdRes.data as string, eventSlug),
-  ]);
+  [eventDataRes, sponsorLibraryRes, memberRes, staffRes, rubricCategoriesRes] =
+    await Promise.all([
+      fetchEventCompleteData(orgIdRes.data as string, eventSlug),
+      fetchSponsorLibrary(),
+      fetchEventMembersData(orgIdRes.data as string, eventSlug),
+      fetchEventSettingsStaffData(orgIdRes.data as string, eventSlug),
+      fetchEventRubricCategoriesData(orgIdRes.data as string, eventSlug),
+    ]);
   if (eventDataRes.status === "ERROR" || !eventDataRes.data) {
     return (
       <div className="relative w-full min-h-[calc(100vh-48px)]">
@@ -126,7 +131,8 @@ const EventSettingsPage = async ({
   const membersData = (memberRes.data as EventMembersData) ?? [];
   const sponsorLibrary = (sponsorLibraryRes.data as SponsorLibraryItem[]) ?? [];
   const staffData = (staffRes.data as EventStaffData) ?? [];
-
+  const rubricCategories =
+    (rubricCategoriesRes.data as RubricCategoryDraft[]) ?? [];
   console.log("staffData", staffData);
   return (
     <div className="relative w-full min-h-[calc(100vh-48px)]">
@@ -140,6 +146,7 @@ const EventSettingsPage = async ({
           sponsorLibrary={sponsorLibrary}
           currentUserId={userId}
           staffData={staffData}
+          rubricCategories={rubricCategories}
         />
       </div>
     </div>

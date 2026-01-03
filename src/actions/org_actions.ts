@@ -653,9 +653,18 @@ export const createOrgEvent = async (
       awardsJson: fd.get("awardsJson")
         ? String(fd.get("awardsJson"))
         : undefined,
+
+      // ✅ THIS is what makes parsed.rubricCategories / parsed.tracks / parsed.awards exist
+      rubricCategories: fd.get("rubricCategoriesJson")
+        ? String(fd.get("rubricCategoriesJson"))
+        : undefined,
+      tracks: fd.get("tracksJson") ? String(fd.get("tracksJson")) : undefined,
+      awards: fd.get("awardsJson") ? String(fd.get("awardsJson")) : undefined,
     };
 
+    console.log("rubric categories json", fd.get("rubricCategoriesJson"));
     const parsed = createOrgEventServerSchema.parse(raw);
+    console.log("parsed", parsed);
 
     const org = await prisma.organization.findUnique({
       where: { slug: parsed.orgSlug },

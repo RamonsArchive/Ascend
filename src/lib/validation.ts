@@ -17,30 +17,22 @@ import {
   SponsorTier,
 } from "@prisma/client";
 
+const numFromString = z.union([z.string(), z.number()]).transform((v) => {
+  const n = typeof v === "number" ? v : Number(v);
+  return Number.isFinite(n) ? n : NaN;
+});
+
 const rubricCategoryDraftSchema = z.object({
   clientId: z.string().min(1),
-  name: z.string().min(2, "Category name is required.").max(64),
-  description: z.string().max(240, "Description is too long.").optional(),
-  weight: z
-    .string()
-    .optional()
-    .transform((v) => (v === undefined || v === "" ? "1" : v))
-    .transform((v) => Number(v))
-    .refine((v) => Number.isFinite(v), "Weight must be a number")
-    .refine((v) => Number.isInteger(v), "Weight must be an integer")
-    .refine((v) => v >= 1 && v <= 100, "Weight must be between 1 and 100"),
-  order: z
-    .string()
-    .optional()
-    .transform((v) => (v === undefined || v === "" ? undefined : Number(v)))
-    .refine(
-      (v) => v === undefined || Number.isInteger(v),
-      "Order must be an integer"
-    )
-    .refine(
-      (v) => v === undefined || (v >= 0 && v <= 999),
-      "Order must be between 0 and 999"
-    ),
+  name: z.string().min(1),
+  description: z.string().max(300).optional().or(z.literal("")),
+  weight: numFromString
+    .refine((n) => !Number.isNaN(n), "Weight must be a number")
+    .refine((n) => n >= 0 && n <= 100, "Weight must be between 0 and 100"),
+  order: numFromString
+    .refine((n) => !Number.isNaN(n), "Order must be a number")
+    .refine((n) => Number.isInteger(n), "Order must be an integer")
+    .refine((n) => n >= 0 && n <= 999, "Order out of range"),
 });
 
 const trackDraftSchema = z.object({

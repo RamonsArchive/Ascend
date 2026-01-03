@@ -67,15 +67,6 @@ const EventStaffInvitePanel = ({
                 </button>
               </div>
             </div>
-
-            <div className="text-white/50 text-xs">
-              Join routes:{" "}
-              <span className="text-white/70">/eventstaff/join/[token]</span>{" "}
-              and{" "}
-              <span className="text-white/70">
-                /eventstaff/join-link/[token]
-              </span>
-            </div>
           </div>
         ),
       },

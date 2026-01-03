@@ -67,19 +67,21 @@ const EventStaffSettingsSection = ({
               </p>
             </div>
 
-            <div className={tabsPill}>
-              <button
-                className={tabBtn(view === "INVITES")}
-                onClick={() => setView("INVITES")}
-              >
-                Invite staff
-              </button>
-              <button
-                className={tabBtn(view === "STAFF")}
-                onClick={() => setView("STAFF")}
-              >
-                Manage staff
-              </button>
+            <div className="flex items-center justify-start">
+              <div className={tabsPill}>
+                <button
+                  className={tabBtn(view === "INVITES")}
+                  onClick={() => setView("INVITES")}
+                >
+                  Invite staff
+                </button>
+                <button
+                  className={tabBtn(view === "STAFF")}
+                  onClick={() => setView("STAFF")}
+                >
+                  Manage staff
+                </button>
+              </div>
             </div>
           </div>
         ),
