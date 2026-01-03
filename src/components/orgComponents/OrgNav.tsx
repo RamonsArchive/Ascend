@@ -46,11 +46,15 @@ const NavbarContent = ({
   isMenuOpen,
   orgSlug,
   hasPermissions,
+  profileOpen,
+  setProfileOpen,
 }: {
   onMenuToggle: () => void;
   isMenuOpen: boolean;
   orgSlug: string;
   hasPermissions: boolean;
+  profileOpen: boolean;
+  setProfileOpen: (v: boolean) => void;
 }) => {
   const links = org_nav_links(orgSlug, hasPermissions);
 
@@ -88,11 +92,11 @@ const NavbarContent = ({
           </div>
 
           <div className="hidden lg:flex items-center">
-            <ProfileAvatar />
+            <ProfileAvatar open={profileOpen} setOpen={setProfileOpen} />
           </div>
 
           <div className="lg:hidden flex items-center gap-3">
-            <ProfileAvatar />
+            <ProfileAvatar open={profileOpen} setOpen={setProfileOpen} />
             <button
               onClick={onMenuToggle}
               className="flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity duration-300 ease-in-out"
@@ -116,11 +120,15 @@ const StaticNavbar = ({
   isMenuOpen,
   orgSlug,
   hasPermissions,
+  profileOpen,
+  setProfileOpen,
 }: {
   onMenuToggle: () => void;
   isMenuOpen: boolean;
   orgSlug: string;
   hasPermissions: boolean;
+  profileOpen: boolean;
+  setProfileOpen: (v: boolean) => void;
 }) => {
   return (
     <div className="relative z-10 w-full shrink-0">
@@ -129,6 +137,8 @@ const StaticNavbar = ({
         isMenuOpen={isMenuOpen}
         orgSlug={orgSlug}
         hasPermissions={hasPermissions}
+        profileOpen={profileOpen}
+        setProfileOpen={setProfileOpen}
       />
     </div>
   );
@@ -140,12 +150,16 @@ const FloatingNavbar = ({
   isMenuOpen,
   orgSlug,
   hasPermissions,
+  profileOpen,
+  setProfileOpen,
 }: {
   isVisible: boolean;
   onMenuToggle: () => void;
   isMenuOpen: boolean;
   orgSlug: string;
   hasPermissions: boolean;
+  profileOpen: boolean;
+  setProfileOpen: (v: boolean) => void;
 }) => {
   return (
     <div
@@ -160,6 +174,8 @@ const FloatingNavbar = ({
         isMenuOpen={isMenuOpen}
         orgSlug={orgSlug}
         hasPermissions={hasPermissions}
+        profileOpen={profileOpen}
+        setProfileOpen={setProfileOpen}
       />
     </div>
   );
@@ -175,7 +191,13 @@ const OrgNav = ({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showFloatingNavbar, setShowFloatingNavbar] = useState(false);
 
+  const [profileOpen, setProfileOpen] = useState(false);
+
   const toggleMenu = () => setIsMenuOpen((prev) => !prev);
+
+  useEffect(() => {
+    if (isMenuOpen) setProfileOpen(false);
+  }, [isMenuOpen]);
 
   useEffect(() => {
     let lastScrollY = window.scrollY || window.pageYOffset || 0;
@@ -184,7 +206,7 @@ const OrgNav = ({
     const updateNavbar = () => {
       const currentScrollY = Math.max(
         0,
-        window.scrollY || window.pageYOffset || 0,
+        window.scrollY || window.pageYOffset || 0
       );
       const navbarHeight = 48;
 
@@ -223,7 +245,9 @@ const OrgNav = ({
         onMenuToggle={toggleMenu}
         isMenuOpen={isMenuOpen}
         orgSlug={orgSlug}
-        hasPermissions={hasPermissions} // ✅ FIX
+        hasPermissions={hasPermissions}
+        profileOpen={profileOpen}
+        setProfileOpen={setProfileOpen}
       />
 
       <FloatingNavbar
@@ -232,6 +256,8 @@ const OrgNav = ({
         isMenuOpen={isMenuOpen}
         orgSlug={orgSlug}
         hasPermissions={hasPermissions}
+        profileOpen={profileOpen}
+        setProfileOpen={setProfileOpen}
       />
 
       <OrgMobileMenu

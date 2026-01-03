@@ -41,7 +41,7 @@ const Pill = ({
     <div
       className={`px-3 py-1 rounded-full text-xs font-medium border backdrop-blur-sm ${eventPillClasses(
         kind,
-        value,
+        value
       )}`}
     >
       {label}
@@ -101,7 +101,7 @@ const PrivateEventHero = ({
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_55%)]" />
 
             {/* ✅ ONE parent overlay that controls spacing */}
-            <div className="relative z-10 flex flex-col min-h-[210px] md:min-h-[280px] p-5 md:p-7 gap-6 md:gap-8">
+            <div className="relative flex flex-col min-h-[210px] md:min-h-[280px] p-5 md:p-7 gap-6 md:gap-8">
               {/* top row */}
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2 flex-wrap">

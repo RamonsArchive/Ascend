@@ -47,12 +47,16 @@ const NavbarContent = ({
   orgSlug,
   eventSlug,
   hasPermissions,
+  profileOpen,
+  setProfileOpen,
 }: {
   onMenuToggle: () => void;
   isMenuOpen: boolean;
   orgSlug: string;
   eventSlug: string;
   hasPermissions: boolean;
+  profileOpen: boolean;
+  setProfileOpen: (v: boolean) => void;
 }) => {
   const links = event_nav_links(orgSlug, eventSlug, hasPermissions);
 
@@ -90,11 +94,11 @@ const NavbarContent = ({
           </div>
 
           <div className="hidden lg:flex items-center">
-            <ProfileAvatar />
+            <ProfileAvatar open={profileOpen} setOpen={setProfileOpen} />
           </div>
 
           <div className="lg:hidden flex items-center gap-3">
-            <ProfileAvatar />
+            <ProfileAvatar open={profileOpen} setOpen={setProfileOpen} />
             <button
               onClick={onMenuToggle}
               className="flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity duration-300 ease-in-out"
@@ -119,6 +123,8 @@ const StaticNavbar = (props: {
   orgSlug: string;
   eventSlug: string;
   hasPermissions: boolean;
+  profileOpen: boolean;
+  setProfileOpen: (v: boolean) => void;
 }) => {
   return (
     <div className="relative z-10 w-full shrink-0">
@@ -129,6 +135,8 @@ const StaticNavbar = (props: {
 
 const FloatingNavbar = ({
   isVisible,
+  profileOpen,
+  setProfileOpen,
   ...props
 }: {
   isVisible: boolean;
@@ -137,6 +145,8 @@ const FloatingNavbar = ({
   orgSlug: string;
   eventSlug: string;
   hasPermissions: boolean;
+  profileOpen: boolean;
+  setProfileOpen: (v: boolean) => void;
 }) => {
   return (
     <div
@@ -146,7 +156,11 @@ const FloatingNavbar = ({
           : "-translate-y-full opacity-0 pointer-events-none"
       }`}
     >
-      <NavbarContent {...props} />
+      <NavbarContent
+        profileOpen={profileOpen}
+        setProfileOpen={setProfileOpen}
+        {...props}
+      />
     </div>
   );
 };
@@ -162,6 +176,13 @@ const EventNav = ({
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showFloatingNavbar, setShowFloatingNavbar] = useState(false);
+
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  // Close profile dropdown if mobile menu opens (optional but feels pro)
+  useEffect(() => {
+    if (isMenuOpen) setProfileOpen(false);
+  }, [isMenuOpen]);
 
   const toggleMenu = () => setIsMenuOpen((prev) => !prev);
 
@@ -205,7 +226,6 @@ const EventNav = ({
     };
   }, [isMenuOpen]);
 
-  console.log("showFloatingNavbar", showFloatingNavbar);
   return (
     <>
       <StaticNavbar
@@ -214,6 +234,8 @@ const EventNav = ({
         orgSlug={orgSlug}
         eventSlug={eventSlug}
         hasPermissions={hasPermissions}
+        profileOpen={profileOpen}
+        setProfileOpen={setProfileOpen}
       />
 
       <FloatingNavbar
@@ -223,6 +245,8 @@ const EventNav = ({
         orgSlug={orgSlug}
         eventSlug={eventSlug}
         hasPermissions={hasPermissions}
+        profileOpen={profileOpen}
+        setProfileOpen={setProfileOpen}
       />
 
       <EventMobileMenu

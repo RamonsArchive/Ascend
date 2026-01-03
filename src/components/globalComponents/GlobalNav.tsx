@@ -46,9 +46,13 @@ const XIcon = ({ className }: { className?: string }) => (
 const NavbarContent = ({
   onMenuToggle,
   isMenuOpen,
+  profileOpen,
+  setProfileOpen,
 }: {
   onMenuToggle: () => void;
   isMenuOpen: boolean;
+  profileOpen: boolean;
+  setProfileOpen: (v: boolean) => void;
 }) => {
   return (
     <div className="relative w-full bg-primary-950">
@@ -87,12 +91,12 @@ const NavbarContent = ({
 
           {/* Desktop: Profile Avatar on the right */}
           <div className="hidden lg:flex items-center">
-            <ProfileAvatar />
+            <ProfileAvatar open={profileOpen} setOpen={setProfileOpen} />
           </div>
 
           {/* Mobile: Profile Avatar and Menu button */}
           <div className="lg:hidden flex items-center gap-3">
-            <ProfileAvatar />
+            <ProfileAvatar open={profileOpen} setOpen={setProfileOpen} />
             <button
               onClick={onMenuToggle}
               className="flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity duration-300 ease-in-out"
@@ -115,13 +119,22 @@ const NavbarContent = ({
 const StaticNavbar = ({
   onMenuToggle,
   isMenuOpen,
+  profileOpen,
+  setProfileOpen,
 }: {
   onMenuToggle: () => void;
   isMenuOpen: boolean;
+  profileOpen: boolean;
+  setProfileOpen: (v: boolean) => void;
 }) => {
   return (
     <div className="relative z-10 w-full shrink-0">
-      <NavbarContent onMenuToggle={onMenuToggle} isMenuOpen={isMenuOpen} />
+      <NavbarContent
+        onMenuToggle={onMenuToggle}
+        isMenuOpen={isMenuOpen}
+        profileOpen={profileOpen}
+        setProfileOpen={setProfileOpen}
+      />
     </div>
   );
 };
@@ -131,10 +144,14 @@ const FloatingNavbar = ({
   isVisible,
   onMenuToggle,
   isMenuOpen,
+  profileOpen,
+  setProfileOpen,
 }: {
   isVisible: boolean;
   onMenuToggle: () => void;
   isMenuOpen: boolean;
+  profileOpen: boolean;
+  setProfileOpen: (v: boolean) => void;
 }) => {
   return (
     <div
@@ -144,7 +161,12 @@ const FloatingNavbar = ({
           : "-translate-y-full opacity-0 pointer-events-none"
       }`}
     >
-      <NavbarContent onMenuToggle={onMenuToggle} isMenuOpen={isMenuOpen} />
+      <NavbarContent
+        onMenuToggle={onMenuToggle}
+        isMenuOpen={isMenuOpen}
+        profileOpen={profileOpen}
+        setProfileOpen={setProfileOpen}
+      />
     </div>
   );
 };
@@ -153,6 +175,12 @@ const FloatingNavbar = ({
 const GlobalNav = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showFloatingNavbar, setShowFloatingNavbar] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  // Close profile dropdown if mobile menu opens (optional but feels pro)
+  useEffect(() => {
+    if (isMenuOpen) setProfileOpen(false);
+  }, [isMenuOpen]);
 
   const toggleMenu = () => {
     setIsMenuOpen((prev) => !prev);
@@ -219,13 +247,20 @@ const GlobalNav = () => {
   return (
     <>
       {/* Static navbar */}
-      <StaticNavbar onMenuToggle={toggleMenu} isMenuOpen={isMenuOpen} />
+      <StaticNavbar
+        onMenuToggle={toggleMenu}
+        isMenuOpen={isMenuOpen}
+        profileOpen={profileOpen}
+        setProfileOpen={setProfileOpen}
+      />
 
       {/* Floating navbar */}
       <FloatingNavbar
         isVisible={showFloatingNavbar}
         onMenuToggle={toggleMenu}
         isMenuOpen={isMenuOpen}
+        profileOpen={profileOpen}
+        setProfileOpen={setProfileOpen}
       />
 
       {/* Mobile Menu */}
