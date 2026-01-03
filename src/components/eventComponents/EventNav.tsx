@@ -13,7 +13,6 @@ const MenuIcon = ({ className }: { className?: string }) => (
     fill="none"
     stroke="currentColor"
     viewBox="0 0 24 24"
-    xmlns="http://www.w3.org/2000/svg"
   >
     <path
       strokeLinecap="round"
@@ -30,7 +29,6 @@ const XIcon = ({ className }: { className?: string }) => (
     fill="none"
     stroke="currentColor"
     viewBox="0 0 24 24"
-    xmlns="http://www.w3.org/2000/svg"
   >
     <path
       strokeLinecap="round"
@@ -49,15 +47,7 @@ const NavbarContent = ({
   hasPermissions,
   profileOpen,
   setProfileOpen,
-}: {
-  onMenuToggle: () => void;
-  isMenuOpen: boolean;
-  orgSlug: string;
-  eventSlug: string;
-  hasPermissions: boolean;
-  profileOpen: boolean;
-  setProfileOpen: (v: boolean) => void;
-}) => {
+}: any) => {
   const links = event_nav_links(orgSlug, eventSlug, hasPermissions);
 
   return (
@@ -67,7 +57,7 @@ const NavbarContent = ({
         <div className="flex items-center justify-between w-full h-full">
           <Link
             href={`/app/orgs/${orgSlug}`}
-            className="relative flex-center h-full w-[52px] md:w-[68px] cursor-pointer"
+            className="relative h-full w-[52px] md:w-[68px]"
           >
             <Image
               src="/Logos/Transparent/ascend_logo_white_t.svg"
@@ -75,35 +65,29 @@ const NavbarContent = ({
               fill
               priority
               sizes="68px"
-              className="object-cover w-full cursor-pointer"
+              className="object-cover"
             />
           </Link>
 
-          <div className="hidden lg:flex items-center justify-center flex-1">
-            <div className="flex-center flex-row text-white">
-              {links.map((link) => (
-                <Link
-                  href={link.href}
-                  key={link.href}
-                  className="text-white text-[16px] font-medium py-2 px-6 duration-300 ease-in-out hover:bg-primary-background-400/20 transition-colors text-center cursor-pointer rounded-sm"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
+          <div className="hidden lg:flex flex-1 justify-center">
+            {links.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-white text-[16px] font-medium py-2 px-6 hover:bg-primary-background-400/20 transition-colors rounded-sm"
+              >
+                {link.label}
+              </Link>
+            ))}
           </div>
 
-          <div className="hidden lg:flex items-center">
+          <div className="hidden lg:flex">
             <ProfileAvatar open={profileOpen} setOpen={setProfileOpen} />
           </div>
 
-          <div className="lg:hidden flex items-center gap-3">
+          <div className="lg:hidden flex gap-3">
             <ProfileAvatar open={profileOpen} setOpen={setProfileOpen} />
-            <button
-              onClick={onMenuToggle}
-              className="flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity duration-300 ease-in-out"
-              aria-label="Toggle menu"
-            >
+            <button onClick={onMenuToggle}>
               {isMenuOpen ? (
                 <XIcon className="w-6 h-6 text-white" />
               ) : (
@@ -117,106 +101,29 @@ const NavbarContent = ({
   );
 };
 
-const StaticNavbar = (props: {
-  onMenuToggle: () => void;
-  isMenuOpen: boolean;
-  orgSlug: string;
-  eventSlug: string;
-  hasPermissions: boolean;
-  profileOpen: boolean;
-  setProfileOpen: (v: boolean) => void;
-}) => {
-  return (
-    <div className="relative z-10 w-full shrink-0">
-      <NavbarContent {...props} />
-    </div>
-  );
-};
-
-const FloatingNavbar = ({
-  isVisible,
-  profileOpen,
-  setProfileOpen,
-  ...props
-}: {
-  isVisible: boolean;
-  onMenuToggle: () => void;
-  isMenuOpen: boolean;
-  orgSlug: string;
-  eventSlug: string;
-  hasPermissions: boolean;
-  profileOpen: boolean;
-  setProfileOpen: (v: boolean) => void;
-}) => {
-  return (
-    <div
-      className={`fixed top-0 left-0 right-0 z-50 transform transition-all duration-300 ease-in-out ${
-        isVisible
-          ? "translate-y-0 opacity-100"
-          : "-translate-y-full opacity-0 pointer-events-none"
-      }`}
-    >
-      <NavbarContent
-        profileOpen={profileOpen}
-        setProfileOpen={setProfileOpen}
-        {...props}
-      />
-    </div>
-  );
-};
-
-const EventNav = ({
-  orgSlug,
-  eventSlug,
-  hasPermissions,
-}: {
-  orgSlug: string;
-  eventSlug: string;
-  hasPermissions: boolean;
-}) => {
+const EventNav = ({ orgSlug, eventSlug, hasPermissions }: any) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [showFloatingNavbar, setShowFloatingNavbar] = useState(false);
-
   const [profileOpen, setProfileOpen] = useState(false);
+  const [showNavbar, setShowNavbar] = useState(true); // ✅ default visible
 
-  // Close profile dropdown if mobile menu opens (optional but feels pro)
   useEffect(() => {
     if (isMenuOpen) setProfileOpen(false);
   }, [isMenuOpen]);
 
-  const toggleMenu = () => setIsMenuOpen((prev) => !prev);
-
   useEffect(() => {
-    let lastScrollY = window.scrollY || window.pageYOffset || 0;
-    let ticking = false;
-
-    const updateNavbar = () => {
-      const currentScrollY = Math.max(
-        0,
-        window.scrollY || window.pageYOffset || 0
-      );
-      const navbarHeight = 48;
-
-      if (currentScrollY > navbarHeight) {
-        if (currentScrollY > lastScrollY) setShowFloatingNavbar(true);
-        else if (currentScrollY < lastScrollY) setShowFloatingNavbar(false);
+    let lastY = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      if (y > 48) {
+        if (y > lastY) setShowNavbar(false);
+        else setShowNavbar(true);
       } else {
-        setShowFloatingNavbar(false);
+        setShowNavbar(true);
       }
-
-      lastScrollY = currentScrollY;
-      ticking = false;
+      lastY = y;
     };
-
-    const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(updateNavbar);
-        ticking = true;
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   useEffect(() => {
@@ -228,26 +135,25 @@ const EventNav = ({
 
   return (
     <>
-      <StaticNavbar
-        onMenuToggle={toggleMenu}
-        isMenuOpen={isMenuOpen}
-        orgSlug={orgSlug}
-        eventSlug={eventSlug}
-        hasPermissions={hasPermissions}
-        profileOpen={profileOpen}
-        setProfileOpen={setProfileOpen}
-      />
+      <div className="h-[48px] marketing-nav-bg" />
 
-      <FloatingNavbar
-        isVisible={showFloatingNavbar}
-        onMenuToggle={toggleMenu}
-        isMenuOpen={isMenuOpen}
-        orgSlug={orgSlug}
-        eventSlug={eventSlug}
-        hasPermissions={hasPermissions}
-        profileOpen={profileOpen}
-        setProfileOpen={setProfileOpen}
-      />
+      <div
+        className={`fixed top-0 left-0 right-0 z-100 transition-all duration-300 ${
+          showNavbar
+            ? "translate-y-0 opacity-100"
+            : "-translate-y-full opacity-0 pointer-events-none"
+        }`}
+      >
+        <NavbarContent
+          onMenuToggle={() => setIsMenuOpen((p) => !p)}
+          isMenuOpen={isMenuOpen}
+          orgSlug={orgSlug}
+          eventSlug={eventSlug}
+          hasPermissions={hasPermissions}
+          profileOpen={profileOpen}
+          setProfileOpen={setProfileOpen}
+        />
+      </div>
 
       <EventMobileMenu
         isOpen={isMenuOpen}

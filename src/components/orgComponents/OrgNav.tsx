@@ -115,72 +115,6 @@ const NavbarContent = ({
   );
 };
 
-const StaticNavbar = ({
-  onMenuToggle,
-  isMenuOpen,
-  orgSlug,
-  hasPermissions,
-  profileOpen,
-  setProfileOpen,
-}: {
-  onMenuToggle: () => void;
-  isMenuOpen: boolean;
-  orgSlug: string;
-  hasPermissions: boolean;
-  profileOpen: boolean;
-  setProfileOpen: (v: boolean) => void;
-}) => {
-  return (
-    <div className="relative z-10 w-full shrink-0">
-      <NavbarContent
-        onMenuToggle={onMenuToggle}
-        isMenuOpen={isMenuOpen}
-        orgSlug={orgSlug}
-        hasPermissions={hasPermissions}
-        profileOpen={profileOpen}
-        setProfileOpen={setProfileOpen}
-      />
-    </div>
-  );
-};
-
-const FloatingNavbar = ({
-  isVisible,
-  onMenuToggle,
-  isMenuOpen,
-  orgSlug,
-  hasPermissions,
-  profileOpen,
-  setProfileOpen,
-}: {
-  isVisible: boolean;
-  onMenuToggle: () => void;
-  isMenuOpen: boolean;
-  orgSlug: string;
-  hasPermissions: boolean;
-  profileOpen: boolean;
-  setProfileOpen: (v: boolean) => void;
-}) => {
-  return (
-    <div
-      className={`fixed top-0 left-0 right-0 z-50 transform transition-all duration-300 ease-in-out ${
-        isVisible
-          ? "translate-y-0 opacity-100"
-          : "-translate-y-full opacity-0 pointer-events-none"
-      }`}
-    >
-      <NavbarContent
-        onMenuToggle={onMenuToggle}
-        isMenuOpen={isMenuOpen}
-        orgSlug={orgSlug}
-        hasPermissions={hasPermissions}
-        profileOpen={profileOpen}
-        setProfileOpen={setProfileOpen}
-      />
-    </div>
-  );
-};
-
 const OrgNav = ({
   orgSlug,
   hasPermissions,
@@ -189,47 +123,50 @@ const OrgNav = ({
   hasPermissions: boolean;
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [showFloatingNavbar, setShowFloatingNavbar] = useState(false);
-
   const [profileOpen, setProfileOpen] = useState(false);
 
-  const toggleMenu = () => setIsMenuOpen((prev) => !prev);
+  // IMPORTANT: start visible so the top isn't "blank spacer only"
+  const [showNavbar, setShowNavbar] = useState(true);
 
   useEffect(() => {
     if (isMenuOpen) setProfileOpen(false);
   }, [isMenuOpen]);
 
   useEffect(() => {
-    let lastScrollY = window.scrollY || window.pageYOffset || 0;
+    let lastScrollY = window.scrollY || 0;
     let ticking = false;
 
-    const updateNavbar = () => {
-      const currentScrollY = Math.max(
-        0,
-        window.scrollY || window.pageYOffset || 0
-      );
+    const update = () => {
+      const y = Math.max(0, window.scrollY || 0);
       const navbarHeight = 48;
 
-      if (currentScrollY > navbarHeight) {
-        if (currentScrollY > lastScrollY) setShowFloatingNavbar(true);
-        else if (currentScrollY < lastScrollY) setShowFloatingNavbar(false);
-      } else {
-        setShowFloatingNavbar(false);
+      // At/near top: always show navbar
+      if (y <= navbarHeight) {
+        setShowNavbar(true);
+        lastScrollY = y;
+        ticking = false;
+        return;
       }
 
-      lastScrollY = currentScrollY;
+      // Standard behavior:
+      // scrolling DOWN -> hide
+      // scrolling UP   -> show
+      if (y > lastScrollY) setShowNavbar(false);
+      else if (y < lastScrollY) setShowNavbar(true);
+
+      lastScrollY = y;
       ticking = false;
     };
 
-    const handleScroll = () => {
+    const onScroll = () => {
       if (!ticking) {
-        window.requestAnimationFrame(updateNavbar);
+        requestAnimationFrame(update);
         ticking = true;
       }
     };
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   useEffect(() => {
@@ -241,30 +178,32 @@ const OrgNav = ({
 
   return (
     <>
-      <StaticNavbar
-        onMenuToggle={toggleMenu}
-        isMenuOpen={isMenuOpen}
-        orgSlug={orgSlug}
-        hasPermissions={hasPermissions}
-        profileOpen={profileOpen}
-        setProfileOpen={setProfileOpen}
-      />
+      {/* Spacer keeps page content from sitting under fixed navbar */}
+      <div className="h-[48px] marketing-nav-bg" />
 
-      <FloatingNavbar
-        isVisible={showFloatingNavbar}
-        onMenuToggle={toggleMenu}
-        isMenuOpen={isMenuOpen}
-        orgSlug={orgSlug}
-        hasPermissions={hasPermissions}
-        profileOpen={profileOpen}
-        setProfileOpen={setProfileOpen}
-      />
+      {/* ONE navbar, z-100 */}
+      <div
+        className={`fixed top-0 left-0 right-0 z-100 transform transition-all duration-300 ease-in-out ${
+          showNavbar
+            ? "translate-y-0 opacity-100"
+            : "-translate-y-full opacity-0 pointer-events-none"
+        }`}
+      >
+        <NavbarContent
+          onMenuToggle={() => setIsMenuOpen((p) => !p)}
+          isMenuOpen={isMenuOpen}
+          orgSlug={orgSlug}
+          hasPermissions={hasPermissions}
+          profileOpen={profileOpen}
+          setProfileOpen={setProfileOpen}
+        />
+      </div>
 
       <OrgMobileMenu
         isOpen={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
         orgSlug={orgSlug}
-        hasPermissions={hasPermissions} // ✅ FIX
+        hasPermissions={hasPermissions}
       />
     </>
   );

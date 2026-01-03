@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -6,14 +7,12 @@ import ProfileAvatar from "../ProfileAvatar";
 import { nav_links } from "@/src/constants/globalConstants/global_index";
 import GlobalMobileMenu from "./GlobalMobileMenu";
 
-// Menu icon component
 const MenuIcon = ({ className }: { className?: string }) => (
   <svg
     className={className}
     fill="none"
     stroke="currentColor"
     viewBox="0 0 24 24"
-    xmlns="http://www.w3.org/2000/svg"
   >
     <path
       strokeLinecap="round"
@@ -24,14 +23,12 @@ const MenuIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-// Close icon component
 const XIcon = ({ className }: { className?: string }) => (
   <svg
     className={className}
     fill="none"
     stroke="currentColor"
     viewBox="0 0 24 24"
-    xmlns="http://www.w3.org/2000/svg"
   >
     <path
       strokeLinecap="round"
@@ -42,7 +39,6 @@ const XIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-// Base Navbar content component (reusable for both static and floating)
 const NavbarContent = ({
   onMenuToggle,
   isMenuOpen,
@@ -59,7 +55,6 @@ const NavbarContent = ({
       <div className="marketing-nav-bg" />
       <div className="relative flex justify-between items-center w-full h-[48px] px-5 md:px-10">
         <div className="flex items-center justify-between w-full h-full">
-          {/* Logo */}
           <Link
             href="/"
             className="relative flex-center h-full w-[52px] md:w-[68px] cursor-pointer"
@@ -70,18 +65,17 @@ const NavbarContent = ({
               fill
               priority
               sizes="68px"
-              className="object-cover w-full cursor-pointer"
+              className="object-cover"
             />
           </Link>
 
-          {/* Desktop: Nav links in center */}
-          <div className="hidden lg:flex items-center justify-center flex-1 gap-0">
-            <div className="flex-center flex-row text-white">
+          <div className="hidden lg:flex items-center justify-center flex-1">
+            <div className="flex flex-row text-white">
               {nav_links.map((link) => (
                 <Link
-                  href={link.href}
                   key={link.href}
-                  className="text-white text-[16px] font-medium py-2 px-6 duration-300 ease-in-out hover:bg-primary-background-400/20 transition-colors text-center cursor-pointer rounded-sm"
+                  href={link.href}
+                  className="text-white text-[16px] font-medium py-2 px-6 hover:bg-primary-background-400/20 transition-colors rounded-sm"
                 >
                   {link.label}
                 </Link>
@@ -89,19 +83,13 @@ const NavbarContent = ({
             </div>
           </div>
 
-          {/* Desktop: Profile Avatar on the right */}
           <div className="hidden lg:flex items-center">
             <ProfileAvatar open={profileOpen} setOpen={setProfileOpen} />
           </div>
 
-          {/* Mobile: Profile Avatar and Menu button */}
           <div className="lg:hidden flex items-center gap-3">
             <ProfileAvatar open={profileOpen} setOpen={setProfileOpen} />
-            <button
-              onClick={onMenuToggle}
-              className="flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity duration-300 ease-in-out"
-              aria-label="Toggle menu"
-            >
+            <button onClick={onMenuToggle} aria-label="Toggle menu">
               {isMenuOpen ? (
                 <XIcon className="w-6 h-6 text-white" />
               ) : (
@@ -115,130 +103,35 @@ const NavbarContent = ({
   );
 };
 
-// Static Navbar (default, always visible)
-const StaticNavbar = ({
-  onMenuToggle,
-  isMenuOpen,
-  profileOpen,
-  setProfileOpen,
-}: {
-  onMenuToggle: () => void;
-  isMenuOpen: boolean;
-  profileOpen: boolean;
-  setProfileOpen: (v: boolean) => void;
-}) => {
-  return (
-    <div className="relative z-10 w-full shrink-0">
-      <NavbarContent
-        onMenuToggle={onMenuToggle}
-        isMenuOpen={isMenuOpen}
-        profileOpen={profileOpen}
-        setProfileOpen={setProfileOpen}
-      />
-    </div>
-  );
-};
-
-// Floating Navbar (appears when scrolling down past static navbar)
-const FloatingNavbar = ({
-  isVisible,
-  onMenuToggle,
-  isMenuOpen,
-  profileOpen,
-  setProfileOpen,
-}: {
-  isVisible: boolean;
-  onMenuToggle: () => void;
-  isMenuOpen: boolean;
-  profileOpen: boolean;
-  setProfileOpen: (v: boolean) => void;
-}) => {
-  return (
-    <div
-      className={`fixed top-0 left-0 right-0 z-50 transform transition-all duration-300 ease-in-out ${
-        isVisible
-          ? "translate-y-0 opacity-100"
-          : "-translate-y-full opacity-0 pointer-events-none"
-      }`}
-    >
-      <NavbarContent
-        onMenuToggle={onMenuToggle}
-        isMenuOpen={isMenuOpen}
-        profileOpen={profileOpen}
-        setProfileOpen={setProfileOpen}
-      />
-    </div>
-  );
-};
-
-// Main Navbar component with scroll detection and throttling
 const GlobalNav = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [showFloatingNavbar, setShowFloatingNavbar] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [showNavbar, setShowNavbar] = useState(true); // ✅ default visible
 
-  // Close profile dropdown if mobile menu opens (optional but feels pro)
   useEffect(() => {
     if (isMenuOpen) setProfileOpen(false);
   }, [isMenuOpen]);
 
-  const toggleMenu = () => {
-    setIsMenuOpen((prev) => !prev);
-  };
-
   useEffect(() => {
-    let lastScrollY = window.scrollY || window.pageYOffset || 0;
-    let ticking = false;
+    let lastY = window.scrollY;
 
-    const updateNavbar = () => {
-      const currentScrollY = Math.max(
-        0,
-        window.scrollY || window.pageYOffset || 0
-      );
-
-      const navbarHeight = 48; // Height of the navbar
-
-      // Only show floating navbar when we've scrolled past navbar
-      if (currentScrollY > navbarHeight) {
-        // Scrolling down
-        if (currentScrollY > lastScrollY) {
-          setShowFloatingNavbar(true);
-        }
-        // Scrolling up - hide floating navbar
-        else if (currentScrollY < lastScrollY) {
-          setShowFloatingNavbar(false);
-        }
+    const onScroll = () => {
+      const y = window.scrollY;
+      if (y > 48) {
+        if (y > lastY) setShowNavbar(false);
+        else setShowNavbar(true);
       } else {
-        // At top, hide floating navbar
-        setShowFloatingNavbar(false);
+        setShowNavbar(true);
       }
-
-      lastScrollY = currentScrollY;
-      ticking = false;
+      lastY = y;
     };
 
-    const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(updateNavbar);
-        ticking = true;
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Close menu when clicking outside (optional enhancement)
   useEffect(() => {
-    if (isMenuOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-
+    document.body.style.overflow = isMenuOpen ? "hidden" : "unset";
     return () => {
       document.body.style.overflow = "unset";
     };
@@ -246,24 +139,24 @@ const GlobalNav = () => {
 
   return (
     <>
-      {/* Static navbar */}
-      <StaticNavbar
-        onMenuToggle={toggleMenu}
-        isMenuOpen={isMenuOpen}
-        profileOpen={profileOpen}
-        setProfileOpen={setProfileOpen}
-      />
+      {/* Spacer with GRID ONLY */}
+      <div className="h-[48px] marketing-nav-bg" />
 
-      {/* Floating navbar */}
-      <FloatingNavbar
-        isVisible={showFloatingNavbar}
-        onMenuToggle={toggleMenu}
-        isMenuOpen={isMenuOpen}
-        profileOpen={profileOpen}
-        setProfileOpen={setProfileOpen}
-      />
+      <div
+        className={`fixed top-0 left-0 right-0 z-100 transition-all duration-300 ${
+          showNavbar
+            ? "translate-y-0 opacity-100"
+            : "-translate-y-full opacity-0 pointer-events-none"
+        }`}
+      >
+        <NavbarContent
+          onMenuToggle={() => setIsMenuOpen((p) => !p)}
+          isMenuOpen={isMenuOpen}
+          profileOpen={profileOpen}
+          setProfileOpen={setProfileOpen}
+        />
+      </div>
 
-      {/* Mobile Menu */}
       <GlobalMobileMenu
         isOpen={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
