@@ -10,24 +10,28 @@ function escapeHtml(input: string) {
     .replaceAll("'", "&#039;");
 }
 
-function buildEventInviteEmailHtml(params: {
+function buildEventStaffInviteEmailHtml(params: {
   baseUrl: string;
+  orgName: string;
   eventName: string;
-  eventSlug: string;
-  orgSlug: string;
   inviterName?: string | null;
   invitedEmail: string;
-  acceptUrl: string;
+  role: string;
+  joinUrl: string;
   message?: string | null;
   expiresAtLabel?: string | null;
 }) {
+  const orgName = escapeHtml(params.orgName);
   const eventName = escapeHtml(params.eventName);
   const inviter = escapeHtml(params.inviterName ?? "An admin");
   const invitedEmail = escapeHtml(params.invitedEmail);
-  const acceptUrl = params.acceptUrl;
+  const role = escapeHtml(params.role);
+  const joinUrl = params.joinUrl;
+
   const safeMsg = params.message
     ? escapeHtml(params.message).replaceAll("\n", "<br />")
     : "";
+
   const expires = params.expiresAtLabel
     ? escapeHtml(params.expiresAtLabel)
     : "";
@@ -42,11 +46,11 @@ function buildEventInviteEmailHtml(params: {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="x-apple-disable-message-reformatting" />
-  <title>You're invited to join ${eventName}</title>
+  <title>You're invited to join ${eventName} staff</title>
 </head>
 <body style="margin:0;padding:0;background:#070A12;">
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">
-    Invitation to join ${eventName} on Ascend
+    Staff invitation for ${eventName} on Ascend
   </div>
 
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#070A12;">
@@ -67,10 +71,13 @@ function buildEventInviteEmailHtml(params: {
           <tr>
             <td style="padding:24px 22px 26px 22px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Inter,system-ui,sans-serif;color:#E9EEF9;">
               <h2 style="margin:0 0 10px 0;font-size:18px;line-height:1.3;font-weight:700;">
-                You’re invited to join <span style="color:#FF3D8A;">${eventName}</span>
+                You’re invited to join <span style="color:#FF3D8A;">${eventName}</span> as staff
               </h2>
+
               <p style="margin:0 0 18px 0;color:rgba(233,238,249,0.75);font-size:14px;line-height:1.6;">
-                ${inviter} invited <strong>${invitedEmail}</strong> to join this event on Ascend.
+                ${inviter} invited <strong>${invitedEmail}</strong> to join
+                <strong>${orgName}</strong> • <strong>${eventName}</strong> as
+                <span style="color:rgba(233,238,249,0.90);font-weight:700;">${role}</span>.
               </p>
 
               ${
@@ -87,16 +94,17 @@ function buildEventInviteEmailHtml(params: {
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 10px 0;">
                 <tr>
                   <td align="center" style="border-radius:14px;background:#FFFFFF;">
-                    <a href="${acceptUrl}" target="_blank"
+                    <a href="${joinUrl}" target="_blank"
                       style="display:inline-block;padding:12px 18px;font-weight:700;font-size:14px;text-decoration:none;color:#0B1020;border-radius:14px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Inter,system-ui,sans-serif;">
-                      Join event
+                      Join staff
                     </a>
                   </td>
                 </tr>
               </table>
 
               <p style="margin:0 0 18px 0;color:rgba(233,238,249,0.60);font-size:12px;line-height:1.5;">
-                Or copy and paste: <span style="color:rgba(233,238,249,0.85);word-break:break-all;">${acceptUrl}</span>
+                Or copy and paste:
+                <span style="color:rgba(233,238,249,0.85);word-break:break-all;">${joinUrl}</span>
               </p>
 
               ${
@@ -113,6 +121,7 @@ function buildEventInviteEmailHtml(params: {
               </p>
             </td>
           </tr>
+
         </table>
       </td>
     </tr>
@@ -121,32 +130,30 @@ function buildEventInviteEmailHtml(params: {
 </html>`;
 }
 
-export async function SendEventEmailInvite(params: {
+export async function SendEventStaffEmailInvite(params: {
   toEmail: string;
-  eventName: string;
-  eventSlug: string;
-  orgSlug: string;
   inviterName?: string | null;
-  token: string;
+  orgName: string;
+  eventName: string;
+  role: string;
+  joinUrl: string;
   message?: string | null;
   expiresAt?: Date | null;
 }) {
   const baseUrl = getBaseUrl();
 
-  const acceptUrl = `${baseUrl}/app/orgs/${params.orgSlug}/events/${params.eventSlug}/join/${params.token}`;
-
   const expiresAtLabel = params.expiresAt
     ? params.expiresAt.toLocaleString("en-US")
     : null;
 
-  const html = buildEventInviteEmailHtml({
+  const html = buildEventStaffInviteEmailHtml({
     baseUrl,
+    orgName: params.orgName,
     eventName: params.eventName,
-    eventSlug: params.eventSlug,
-    orgSlug: params.orgSlug,
     inviterName: params.inviterName,
     invitedEmail: params.toEmail,
-    acceptUrl,
+    role: params.role,
+    joinUrl: params.joinUrl,
     message: params.message ?? null,
     expiresAtLabel,
   });
@@ -158,9 +165,9 @@ export async function SendEventEmailInvite(params: {
     const result = await resend.emails.send({
       from,
       to: [params.toEmail],
-      subject: `Invite to join ${params.eventName} on Ascend`,
+      subject: `Staff invite: ${params.eventName} (${params.role}) on Ascend`,
       html,
-      text: `Join ${params.eventName}: ${acceptUrl}`,
+      text: `You were invited to join ${params.eventName} as ${params.role}. Join: ${params.joinUrl}`,
     });
 
     if (result.error) {
@@ -177,7 +184,7 @@ export async function SendEventEmailInvite(params: {
     console.error(e);
     return parseServerActionResponse({
       status: "ERROR",
-      error: "Failed to send invite email",
+      error: "Failed to send staff invite email",
       data: null,
     });
   }

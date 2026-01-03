@@ -1,6 +1,7 @@
 import React from "react";
 import type { EventStaffData } from "@/src/lib/global_types";
 import EventStaffCard from "./EventStaffCard";
+import { staffRolePillClasses } from "@/src/lib/utils";
 
 const EventStaffSection = ({ staff }: { staff: EventStaffData }) => {
   const rows = staff?.staff ?? [];
@@ -45,3 +46,14 @@ const EventStaffSection = ({ staff }: { staff: EventStaffData }) => {
 };
 
 export default EventStaffSection;
+export const RolePill = ({ role }: { role: string }) => {
+  return (
+    <div
+      className={`px-3 py-1 rounded-full text-[11px] font-semibold border ${staffRolePillClasses(
+        role
+      )}`}
+    >
+      {role}
+    </div>
+  );
+};

@@ -1,36 +1,45 @@
 "use server";
 
 import { headers } from "next/headers";
+import { updateTag } from "next/cache";
 import { auth } from "@/src/lib/auth";
 import { prisma } from "@/src/lib/prisma";
 import { checkRateLimit } from "@/src/lib/rate-limiter";
 import { getBaseUrl, parseServerActionResponse } from "@/src/lib/utils";
 import type { ActionState } from "@/src/lib/global_types";
-import {
-  InviteStatus,
-  EventJoinMode,
-  ParticipantStatus,
-  RegistrationRequestStatus,
-} from "@prisma/client";
+import { InviteStatus, EventStaffRole } from "@prisma/client";
 import {
   normalizeEmail,
   makeToken,
   parseOptionalInt,
   parseOptionalDateFromMinutes,
 } from "@/src/lib/utils";
-import { updateTag } from "next/cache";
 import { assertEventAdminOrOwnerWithId } from "@/src/actions/event_actions";
+
+// validation (you’ll want staff-specific schemas; names below match your pattern)
 import {
-  createEventInviteEmailServerSchema,
-  createEventInviteLinkServerSchema,
-  EventRegistrationRequestSchema,
-  ReviewRegistrationRequestSchema,
+  createEventStaffInviteEmailServerSchema,
+  createEventStaffInviteLinkServerSchema,
 } from "@/src/lib/validation";
 
-// TODO: create this email template (same style as SendOrgEmailInvite)
-import { SendEventEmailInvite } from "@/src/emails/SendEventEmailInvite";
+// email template (create later, same style as org invite)
+import { SendEventStaffEmailInvite } from "@/src/emails/SendEventStaffEmailInvite";
 
-export const createEventEmailInvite = async (
+const STAFF_ROLES: EventStaffRole[] = ["ADMIN", "JUDGE", "STAFF"];
+
+function normalizeRole(role: unknown): EventStaffRole | null {
+  const r = String(role ?? "")
+    .trim()
+    .toUpperCase();
+  if (STAFF_ROLES.includes(r as EventStaffRole)) return r as EventStaffRole;
+  return null;
+}
+
+/**
+ * 1) Create EVENT STAFF email invite
+ * Creates EventStaffInvite, emails a join URL.
+ */
+export const createEventStaffEmailInvite = async (
   _prev: ActionState,
   formData: FormData
 ): Promise<ActionState> => {
@@ -44,12 +53,13 @@ export const createEventEmailInvite = async (
       }) as ActionState;
     }
 
-    const isRateLimited = await checkRateLimit("createEventEmailInvite");
+    const isRateLimited = await checkRateLimit("createEventStaffEmailInvite");
     if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
 
     const payload = {
       eventId: (formData.get("eventId")?.toString() ?? "").trim(),
       email: (formData.get("email")?.toString() ?? "").trim(),
+      role: (formData.get("role")?.toString() ?? "").trim(),
       message: (formData.get("message")?.toString() ?? "").trim() || null,
       minutesToExpire: (
         formData.get("minutesToExpire")?.toString() ?? ""
@@ -58,7 +68,7 @@ export const createEventEmailInvite = async (
         : null,
     };
 
-    const parsed = createEventInviteEmailServerSchema.safeParse(payload);
+    const parsed = createEventStaffInviteEmailServerSchema.safeParse(payload);
     if (!parsed.success) {
       return parseServerActionResponse({
         status: "ERROR",
@@ -67,11 +77,21 @@ export const createEventEmailInvite = async (
       }) as ActionState;
     }
 
-    const { eventId, email, message, minutesToExpire } = parsed.data;
-    const normalizedEmail = normalizeEmail(email);
+    const { eventId, email, role, message, minutesToExpire } = parsed.data;
+
+    const normalized = normalizeEmail(email);
+    const normalizedRole = normalizeRole(role);
+    if (!normalizedRole) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "ROLE_NOT_ALLOWED",
+        data: null,
+      }) as ActionState;
+    }
+
+    const oneWeekFromNow = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
     const expiresAt = parseOptionalDateFromMinutes(
-      minutesToExpire?.toString() ??
-        new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString()
+      minutesToExpire?.toString() ?? oneWeekFromNow.toISOString()
     );
 
     const event = await prisma.event.findUnique({
@@ -81,9 +101,10 @@ export const createEventEmailInvite = async (
         name: true,
         slug: true,
         orgId: true,
-        org: { select: { id: true, slug: true, name: true } },
+        org: { select: { slug: true, name: true } },
       },
     });
+
     if (!event) {
       return parseServerActionResponse({
         status: "ERROR",
@@ -99,29 +120,29 @@ export const createEventEmailInvite = async (
     );
     if (perms.status === "ERROR") return perms as ActionState;
 
-    // If user exists, block if already participant
+    // If user exists, block if already staff member
     const existingUser = await prisma.user.findUnique({
-      where: { email: normalizedEmail },
+      where: { email: normalized },
       select: { id: true },
     });
 
     if (existingUser) {
-      const alreadyParticipant = await prisma.eventParticipant.findUnique({
+      const alreadyStaff = await prisma.eventStaffMembership.findUnique({
         where: { eventId_userId: { eventId, userId: existingUser.id } },
         select: { id: true },
       });
-      if (alreadyParticipant) {
+      if (alreadyStaff) {
         return parseServerActionResponse({
           status: "ERROR",
-          error: "User is already registered for this event",
+          error: "User is already staff for this event",
           data: null,
         }) as ActionState;
       }
     }
 
     // Existing pending invite?
-    const pending = await prisma.eventEmailInvite.findFirst({
-      where: { eventId, email: normalizedEmail, status: InviteStatus.PENDING },
+    const pending = await prisma.eventStaffInvite.findFirst({
+      where: { eventId, email: normalized, status: InviteStatus.PENDING },
       select: { id: true },
     });
     if (pending) {
@@ -134,10 +155,11 @@ export const createEventEmailInvite = async (
 
     const token = makeToken(24);
 
-    const invite = await prisma.eventEmailInvite.create({
+    const invite = await prisma.eventStaffInvite.create({
       data: {
         eventId,
-        email: normalizedEmail,
+        email: normalized,
+        role: normalizedRole,
         token,
         status: InviteStatus.PENDING,
         message,
@@ -147,19 +169,20 @@ export const createEventEmailInvite = async (
       select: { id: true, token: true, expiresAt: true },
     });
 
-    // send email
-    await SendEventEmailInvite({
-      toEmail: normalizedEmail,
+    const baseUrl = getBaseUrl();
+    const joinUrl = `${baseUrl}/app/orgs/${event.org.slug}/events/${event.slug}/eventstaff/join/${invite.token}`;
+
+    await SendEventStaffEmailInvite({
+      toEmail: normalized,
       inviterName: session.user.name ?? null,
+      orgName: event.org.name,
       eventName: event.name,
-      eventSlug: event.slug,
-      orgSlug: event.org.slug,
-      token: invite.token,
+      role: normalizedRole,
+      joinUrl,
       message,
       expiresAt: invite.expiresAt ?? null,
     });
-
-    updateTag(`event-email-invites-${eventId}`);
+    updateTag(`event-staff-email-invites-${eventId}`);
 
     return parseServerActionResponse({
       status: "SUCCESS",
@@ -170,22 +193,18 @@ export const createEventEmailInvite = async (
     console.error(e);
     return parseServerActionResponse({
       status: "ERROR",
-      error: "Failed to create event invite",
+      error: "Failed to create staff email invite",
       data: null,
     }) as ActionState;
   }
 };
 
 /**
- * 2) Create SHAREABLE EVENT invite link (participant)
- *
- * FormData:
- * - eventId (required)
- * - maxUses (optional) int
- * - expiresInMinutes (optional) defaults to 7 days
- * - note (optional)
+ * 2) Create SHAREABLE EVENT STAFF invite link
+ * NOTE: This assumes your EventStaffInviteLink has fields similar to EventInviteLink:
+ * token, status, maxUses, uses, expiresAt, note, createdByUserId, eventId
  */
-export const createEventInviteLink = async (
+export const createEventStaffInviteLink = async (
   _prev: ActionState,
   formData: FormData
 ): Promise<ActionState> => {
@@ -199,20 +218,20 @@ export const createEventInviteLink = async (
       }) as ActionState;
     }
 
-    const isRateLimited = await checkRateLimit("createEventInviteLink");
+    const isRateLimited = await checkRateLimit("createEventStaffInviteLink");
     if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
 
     const payload = {
       eventId: (formData.get("eventId")?.toString() ?? "").trim(),
+      role: (formData.get("role")?.toString() ?? "").trim(),
       maxUses: (formData.get("maxUses")?.toString() ?? "").trim() || undefined,
       minutesToExpire:
         (formData.get("minutesToExpire")?.toString() ?? "").trim() || undefined,
       note: (formData.get("note")?.toString() ?? "").trim() || undefined,
     };
-    console.log("payload", payload);
 
-    const parsed = createEventInviteLinkServerSchema.safeParse(payload);
-    if (!parsed.success || !parsed.data) {
+    const parsed = createEventStaffInviteLinkServerSchema.safeParse(payload);
+    if (!parsed.success) {
       return parseServerActionResponse({
         status: "ERROR",
         error: parsed.error.issues[0]?.message ?? "Invalid fields",
@@ -220,7 +239,16 @@ export const createEventInviteLink = async (
       }) as ActionState;
     }
 
-    const { eventId, maxUses, minutesToExpire, note } = parsed.data;
+    const { eventId, role, maxUses, minutesToExpire, note } = parsed.data;
+
+    const normalizedRole = normalizeRole(role);
+    if (!normalizedRole) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "ROLE_NOT_ALLOWED",
+        data: null,
+      }) as ActionState;
+    }
 
     const event = await prisma.event.findUnique({
       where: { id: eventId },
@@ -231,6 +259,7 @@ export const createEventInviteLink = async (
         org: { select: { slug: true } },
       },
     });
+
     if (!event) {
       return parseServerActionResponse({
         status: "ERROR",
@@ -247,7 +276,6 @@ export const createEventInviteLink = async (
     if (perms.status === "ERROR") return perms as ActionState;
 
     const maxUsesInt = parseOptionalInt(maxUses?.toString() ?? null);
-    console.log("maxUsesInt", maxUsesInt);
 
     const oneWeekFromNow = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
     const expiresAt = parseOptionalDateFromMinutes(
@@ -256,10 +284,11 @@ export const createEventInviteLink = async (
 
     const token = makeToken(24);
 
-    const created = await prisma.eventInviteLink.create({
+    const created = await prisma.eventStaffInviteLink.create({
       data: {
         eventId,
         token,
+        role: normalizedRole,
         status: InviteStatus.PENDING,
         maxUses: maxUsesInt ?? undefined,
         expiresAt: expiresAt ?? oneWeekFromNow,
@@ -272,13 +301,14 @@ export const createEventInviteLink = async (
         maxUses: true,
         uses: true,
         expiresAt: true,
+        role: true,
       },
     });
 
     const baseUrl = getBaseUrl();
-    const shareUrl = `${baseUrl}/app/orgs/${event.org.slug}/events/${event.slug}/join-link/${created.token}`;
+    const shareUrl = `${baseUrl}/app/orgs/${event.org.slug}/events/${event.slug}/eventstaff/join-link/${created.token}`;
 
-    updateTag(`event-invite-links-${eventId}`);
+    updateTag(`event-staff-invite-links-${eventId}`);
 
     return parseServerActionResponse({
       status: "SUCCESS",
@@ -289,16 +319,16 @@ export const createEventInviteLink = async (
     console.error(e);
     return parseServerActionResponse({
       status: "ERROR",
-      error: "Failed to create event invite link",
+      error: "Failed to create staff invite link",
       data: null,
     }) as ActionState;
   }
 };
 
 /**
- * EMAIL invite join page data
+ * 3) Join page data (email invite)
  */
-export const fetchEventJoinInvitePageData = async (
+export const fetchEventStaffJoinInvitePageData = async (
   orgSlug: string,
   eventSlug: string,
   token: string
@@ -324,12 +354,13 @@ export const fetchEventJoinInvitePageData = async (
       }) as ActionState;
     }
 
-    const invite = await prisma.eventEmailInvite.findUnique({
+    const invite = await prisma.eventStaffInvite.findUnique({
       where: { token },
       select: {
         id: true,
         eventId: true,
         email: true,
+        role: true,
         status: true,
         expiresAt: true,
       },
@@ -356,9 +387,9 @@ export const fetchEventJoinInvitePageData = async (
 
     const userId = session?.user?.id ?? null;
 
-    const isParticipant =
+    const isStaff =
       !!userId &&
-      !!(await prisma.eventParticipant.findUnique({
+      !!(await prisma.eventStaffMembership.findUnique({
         where: { eventId_userId: { eventId: event.id, userId } },
         select: { id: true },
       }));
@@ -372,17 +403,17 @@ export const fetchEventJoinInvitePageData = async (
           name: event.name,
           slug: event.slug,
           orgSlug: event.org.slug,
-          description: null,
         },
         invite: {
           email: invite.email,
+          role: invite.role,
           status: invite.status,
           expiresAt: invite.expiresAt,
           isExpired,
           isPending,
           emailMismatch,
         },
-        isParticipant,
+        isStaff,
         session: {
           userId,
           email: session?.user?.email ?? null,
@@ -394,16 +425,16 @@ export const fetchEventJoinInvitePageData = async (
     console.error(e);
     return parseServerActionResponse({
       status: "ERROR",
-      error: "Failed to load invite page",
+      error: "Failed to load staff invite page",
       data: null,
     }) as ActionState;
   }
 };
 
 /**
- * SHAREABLE link join page data
+ * 4) Join page data (shareable link)
  */
-export const fetchEventJoinLinkPageData = async (
+export const fetchEventStaffJoinLinkPageData = async (
   orgSlug: string,
   eventSlug: string,
   token: string
@@ -429,11 +460,12 @@ export const fetchEventJoinLinkPageData = async (
       }) as ActionState;
     }
 
-    const link = await prisma.eventInviteLink.findUnique({
+    const link = await prisma.eventStaffInviteLink.findUnique({
       where: { token },
       select: {
         id: true,
         eventId: true,
+        role: true,
         status: true,
         expiresAt: true,
         maxUses: true,
@@ -454,15 +486,13 @@ export const fetchEventJoinLinkPageData = async (
     );
     const isPending = link.status === InviteStatus.PENDING;
     const maxUsesReached =
-      link.maxUses !== null && link.maxUses !== undefined
-        ? link.uses >= link.maxUses
-        : false;
+      link.maxUses != null ? link.uses >= link.maxUses : false;
 
     const userId = session?.user?.id ?? null;
 
-    const isParticipant =
+    const isStaff =
       !!userId &&
-      !!(await prisma.eventParticipant.findUnique({
+      !!(await prisma.eventStaffMembership.findUnique({
         where: { eventId_userId: { eventId: event.id, userId } },
         select: { id: true },
       }));
@@ -476,9 +506,9 @@ export const fetchEventJoinLinkPageData = async (
           name: event.name,
           slug: event.slug,
           orgSlug: event.org.slug,
-          description: null,
         },
         link: {
+          role: link.role,
           status: link.status,
           expiresAt: link.expiresAt,
           maxUses: link.maxUses,
@@ -487,7 +517,7 @@ export const fetchEventJoinLinkPageData = async (
           isPending,
           maxUsesReached,
         },
-        isParticipant,
+        isStaff,
         session: {
           userId,
           email: session?.user?.email ?? null,
@@ -499,21 +529,17 @@ export const fetchEventJoinLinkPageData = async (
     console.error(e);
     return parseServerActionResponse({
       status: "ERROR",
-      error: "Failed to load link page",
+      error: "Failed to load staff link page",
       data: null,
     }) as ActionState;
   }
 };
 
 /**
- * Accept EVENT EMAIL invite:
- * - must be logged in
- * - token must be PENDING + not expired
- * - session.user.email must match invite.email
- * - create EventParticipant (if not already)
- * - mark invite ACCEPTED
+ * 5) Accept STAFF email invite
+ * Creates EventStaffMembership and marks invite ACCEPTED.
  */
-export const acceptEventEmailInvite = async (
+export const acceptEventStaffEmailInvite = async (
   token: string
 ): Promise<ActionState> => {
   try {
@@ -526,19 +552,21 @@ export const acceptEventEmailInvite = async (
       }) as ActionState;
     }
 
-    const isRateLimited = await checkRateLimit("acceptEventEmailInvite");
+    const isRateLimited = await checkRateLimit("acceptEventStaffEmailInvite");
     if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
 
-    const invite = await prisma.eventEmailInvite.findUnique({
+    const invite = await prisma.eventStaffInvite.findUnique({
       where: { token },
       select: {
         id: true,
         eventId: true,
         email: true,
+        role: true,
         status: true,
         expiresAt: true,
       },
     });
+
     if (!invite || invite.status !== InviteStatus.PENDING) {
       return parseServerActionResponse({
         status: "ERROR",
@@ -565,32 +593,28 @@ export const acceptEventEmailInvite = async (
     }
 
     const out = await prisma.$transaction(async (tx) => {
-      const existing = await tx.eventParticipant.findUnique({
+      await tx.eventStaffMembership.upsert({
         where: {
           eventId_userId: { eventId: invite.eventId, userId: session.user.id },
+        },
+        update: { role: invite.role },
+        create: {
+          eventId: invite.eventId,
+          userId: session.user.id,
+          role: invite.role,
         },
         select: { id: true },
       });
 
-      if (!existing) {
-        await tx.eventParticipant.create({
-          data: {
-            eventId: invite.eventId,
-            userId: session.user.id,
-            status: ParticipantStatus.REGISTERED,
-          },
-        });
-      }
-
-      await tx.eventEmailInvite.update({
+      await tx.eventStaffInvite.update({
         where: { id: invite.id },
         data: { status: InviteStatus.ACCEPTED },
       });
 
-      return { eventId: invite.eventId };
+      return { eventId: invite.eventId, role: invite.role };
     });
 
-    updateTag(`event-accept-email-invites-${invite.eventId}`);
+    updateTag(`event-staff-accept-email-invites-${invite.eventId}`);
 
     return parseServerActionResponse({
       status: "SUCCESS",
@@ -601,21 +625,17 @@ export const acceptEventEmailInvite = async (
     console.error(e);
     return parseServerActionResponse({
       status: "ERROR",
-      error: "Failed to accept email invite",
+      error: "Failed to accept staff email invite",
       data: null,
     }) as ActionState;
   }
 };
 
 /**
- * Accept EVENT SHAREABLE link:
- * - must be logged in
- * - token must be PENDING + not expired
- * - must not exceed maxUses
- * - create EventParticipant
- * - increment uses
+ * 6) Accept STAFF invite link
+ * Creates EventStaffMembership, increments uses.
  */
-export const acceptEventInviteLink = async (
+export const acceptEventStaffInviteLink = async (
   token: string
 ): Promise<ActionState> => {
   try {
@@ -628,14 +648,15 @@ export const acceptEventInviteLink = async (
       }) as ActionState;
     }
 
-    const isRateLimited = await checkRateLimit("acceptEventInviteLink");
+    const isRateLimited = await checkRateLimit("acceptEventStaffInviteLink");
     if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
 
-    const link = await prisma.eventInviteLink.findUnique({
+    const link = await prisma.eventStaffInviteLink.findUnique({
       where: { token },
       select: {
         id: true,
         eventId: true,
+        role: true,
         status: true,
         expiresAt: true,
         maxUses: true,
@@ -668,32 +689,28 @@ export const acceptEventInviteLink = async (
     }
 
     const out = await prisma.$transaction(async (tx) => {
-      const existing = await tx.eventParticipant.findUnique({
+      await tx.eventStaffMembership.upsert({
         where: {
           eventId_userId: { eventId: link.eventId, userId: session.user.id },
+        },
+        update: { role: link.role },
+        create: {
+          eventId: link.eventId,
+          userId: session.user.id,
+          role: link.role,
         },
         select: { id: true },
       });
 
-      if (!existing) {
-        await tx.eventParticipant.create({
-          data: {
-            eventId: link.eventId,
-            userId: session.user.id,
-            status: ParticipantStatus.REGISTERED,
-          },
-        });
-      }
-
-      await tx.eventInviteLink.update({
+      await tx.eventStaffInviteLink.update({
         where: { id: link.id },
         data: { uses: { increment: 1 } },
       });
 
-      return { eventId: link.eventId };
+      return { eventId: link.eventId, role: link.role };
     });
 
-    updateTag(`event-accept-invite-links-${link.eventId}`);
+    updateTag(`event-staff-accept-invite-links-${link.eventId}`);
 
     return parseServerActionResponse({
       status: "SUCCESS",
@@ -704,270 +721,7 @@ export const acceptEventInviteLink = async (
     console.error(e);
     return parseServerActionResponse({
       status: "ERROR",
-      error: "Failed to accept link",
-      data: null,
-    }) as ActionState;
-  }
-};
-
-/**
- * 3) Create EVENT registration request (for joinMode=REQUEST)
- *
- * FormData:
- * - orgSlug (required)
- * - eventSlug (required)
- * - message (optional)
- */
-export const createEventRegistrationRequest = async (
-  _prev: ActionState,
-  formData: FormData
-): Promise<ActionState> => {
-  try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user?.id) {
-      return parseServerActionResponse({
-        status: "ERROR",
-        error: "MUST BE LOGGED IN",
-        data: null,
-      }) as ActionState;
-    }
-
-    const isRateLimited = await checkRateLimit(
-      "createEventRegistrationRequest"
-    );
-    if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
-
-    const payload = {
-      orgSlug: (formData.get("orgSlug")?.toString() ?? "").trim(),
-      eventSlug: (formData.get("eventSlug")?.toString() ?? "").trim(),
-      message: (formData.get("message")?.toString() ?? "").trim() || null,
-    };
-
-    const parsed = EventRegistrationRequestSchema.safeParse(payload);
-    if (!parsed.success) {
-      return parseServerActionResponse({
-        status: "ERROR",
-        error: parsed.error.issues[0]?.message ?? "Invalid fields",
-        data: null,
-      }) as ActionState;
-    }
-
-    const { orgSlug, eventSlug, message } = parsed.data;
-
-    const event = await prisma.event.findFirst({
-      where: { slug: eventSlug, org: { slug: orgSlug } },
-      select: {
-        id: true,
-        joinMode: true,
-      },
-    });
-    if (!event) {
-      return parseServerActionResponse({
-        status: "ERROR",
-        error: "EVENT_NOT_FOUND",
-        data: null,
-      }) as ActionState;
-    }
-
-    if (event.joinMode !== EventJoinMode.REQUEST) {
-      return parseServerActionResponse({
-        status: "ERROR",
-        error: "REGISTRATION_REQUESTS_DISABLED",
-        data: null,
-      }) as ActionState;
-    }
-
-    // already participant?
-    const existing = await prisma.eventParticipant.findUnique({
-      where: { eventId_userId: { eventId: event.id, userId: session.user.id } },
-      select: { id: true },
-    });
-    if (existing) {
-      return parseServerActionResponse({
-        status: "ERROR",
-        error: "ALREADY_REGISTERED",
-        data: null,
-      }) as ActionState;
-    }
-
-    try {
-      const req = await prisma.eventRegistrationRequest.create({
-        data: {
-          eventId: event.id,
-          userId: session.user.id,
-          message,
-        },
-        select: { id: true },
-      });
-
-      updateTag(`event-registration-requests-${event.id}`);
-
-      return parseServerActionResponse({
-        status: "SUCCESS",
-        error: "",
-        data: req,
-      }) as ActionState;
-    } catch {
-      // @@unique(eventId,userId)
-      return parseServerActionResponse({
-        status: "ERROR",
-        error: "REQUEST_ALREADY_EXISTS",
-        data: null,
-      }) as ActionState;
-    }
-  } catch (e) {
-    console.error(e);
-    return parseServerActionResponse({
-      status: "ERROR",
-      error: "Failed to create registration request",
-      data: null,
-    }) as ActionState;
-  }
-};
-
-/**
- * 4) Admin reviews registration request (approve/deny)
- *
- * FormData:
- * - eventId
- * - requestId
- * - decision: "APPROVE" | "DENY"
- */
-export const reviewEventRegistrationRequest = async (
-  _prev: ActionState,
-  formData: FormData
-): Promise<ActionState> => {
-  try {
-    const session = await auth.api.getSession({ headers: await headers() });
-    if (!session?.user?.id) {
-      return parseServerActionResponse({
-        status: "ERROR",
-        error: "MUST BE LOGGED IN",
-        data: null,
-      }) as ActionState;
-    }
-
-    const isRateLimited = await checkRateLimit(
-      "reviewEventRegistrationRequest"
-    );
-    if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
-
-    const payload = {
-      eventId: (formData.get("eventId")?.toString() ?? "").trim(),
-      requestId: (formData.get("requestId")?.toString() ?? "").trim(),
-      decision: (formData.get("decision")?.toString() ?? "").trim(),
-    };
-
-    const parsed = ReviewRegistrationRequestSchema.safeParse(payload);
-    if (!parsed.success) {
-      return parseServerActionResponse({
-        status: "ERROR",
-        error: parsed.error.issues[0]?.message ?? "Invalid fields",
-        data: null,
-      }) as ActionState;
-    }
-
-    const { eventId, requestId, decision } = parsed.data;
-
-    const event = await prisma.event.findUnique({
-      where: { id: eventId },
-      select: { id: true, orgId: true },
-    });
-    if (!event) {
-      return parseServerActionResponse({
-        status: "ERROR",
-        error: "EVENT_NOT_FOUND",
-        data: null,
-      }) as ActionState;
-    }
-
-    const perms = await assertEventAdminOrOwnerWithId(
-      event.orgId,
-      event.id,
-      session.user.id
-    );
-    if (perms.status === "ERROR") return perms as ActionState;
-
-    const req = await prisma.eventRegistrationRequest.findUnique({
-      where: { id: requestId },
-      select: { id: true, eventId: true, userId: true, status: true },
-    });
-
-    if (!req || req.eventId !== eventId) {
-      return parseServerActionResponse({
-        status: "ERROR",
-        error: "REQUEST_NOT_FOUND",
-        data: null,
-      }) as ActionState;
-    }
-
-    if (req.status !== "PENDING") {
-      return parseServerActionResponse({
-        status: "ERROR",
-        error: "REQUEST_ALREADY_REVIEWED",
-        data: null,
-      }) as ActionState;
-    }
-
-    if (decision === "DENY") {
-      const updated = await prisma.eventRegistrationRequest.update({
-        where: { id: requestId },
-        data: {
-          status: RegistrationRequestStatus.REJECTED,
-          reviewedAt: new Date(),
-          reviewedByUserId: session.user.id,
-        },
-      });
-
-      updateTag(`event-registration-requests-${eventId}`);
-
-      return parseServerActionResponse({
-        status: "SUCCESS",
-        error: "",
-        data: updated,
-      }) as ActionState;
-    }
-
-    const result = await prisma.$transaction(async (tx) => {
-      const existing = await tx.eventParticipant.findUnique({
-        where: { eventId_userId: { eventId, userId: req.userId } },
-        select: { id: true },
-      });
-
-      if (!existing) {
-        await tx.eventParticipant.create({
-          data: {
-            eventId,
-            userId: req.userId,
-            status: ParticipantStatus.REGISTERED,
-          },
-        });
-      }
-
-      const updatedReq = await tx.eventRegistrationRequest.update({
-        where: { id: requestId },
-        data: {
-          status: RegistrationRequestStatus.APPROVED,
-          reviewedAt: new Date(),
-          reviewedByUserId: session.user.id,
-        },
-      });
-
-      return updatedReq;
-    });
-
-    updateTag(`event-registration-requests-${eventId}`);
-
-    return parseServerActionResponse({
-      status: "SUCCESS",
-      error: "",
-      data: result,
-    }) as ActionState;
-  } catch (e) {
-    console.error(e);
-    return parseServerActionResponse({
-      status: "ERROR",
-      error: "Failed to review registration request",
+      error: "Failed to accept staff link",
       data: null,
     }) as ActionState;
   }

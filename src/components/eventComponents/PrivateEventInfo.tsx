@@ -23,9 +23,6 @@ const MarkdownCard = ({
         <div className="text-white font-semibold text-lg md:text-xl">
           {title}
         </div>
-        <div className="text-white/55 text-xs md:text-sm">
-          Markdown supported
-        </div>
       </div>
 
       <div className="rounded-2xl bg-white/5 border border-white/10 px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">

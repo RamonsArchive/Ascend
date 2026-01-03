@@ -39,6 +39,7 @@ model User {
   accounts               Account[]
   sessions               Session[]
   awardAssignments       AwardAssignment[]          @relation("AwardAssignmentCreatedBy")
+  createdEvents          Event[]                    @relation("EventCreatedBy")
 
   @@map("user")
 }
@@ -186,6 +187,8 @@ model OrgJoinRequest {
 model Event {
   id                     String                     @id @default(cuid())
   orgId                  String
+  createdByUserId String
+  createdByUser   User   @relation("EventCreatedBy", fields: [createdByUserId], references: [id], onDelete: Cascade)
   name                   String
   slug                   String
   type                   EventType
@@ -845,8 +848,6 @@ enum EventStaffJoinMode {
 
 enum EventStaffRole {
   ADMIN
-  REVIEWER
-  MENTOR
-  VOLUNTEER
+  JUDGE
   STAFF
 }

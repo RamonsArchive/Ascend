@@ -301,7 +301,8 @@ export type EventSettingsView =
   | "AWARDS"
   | "INVITES"
   | "MEMBERS"
-  | "SPONSORS";
+  | "SPONSORS"
+  | "STAFF";
 
 export type OrgSettingsData = Prisma.OrganizationGetPayload<{
   select: {
@@ -493,4 +494,83 @@ export type EventInfoPageData = {
   };
 
   org: { id: string; name: string; slug: string; logoKey: string | null };
+};
+
+export type Candidate = {
+  userId: string;
+  name: string | null;
+  email: string;
+  image: string | null;
+  source: "TEAM" | "UNASSIGNED";
+};
+
+/* join gate */
+
+export type JoinGateDisabledReason =
+  | "INVITE_INVALID"
+  | "INVITE_EXPIRED"
+  | "INVITE_NOT_PENDING"
+  | "LINK_INVALID"
+  | "LINK_EXPIRED"
+  | "LINK_NOT_PENDING"
+  | "LINK_MAX_USES_REACHED"
+  | "EMAIL_MISMATCH"
+  | null;
+
+export type JoinGateSessionShape = {
+  userId: string | null;
+  email: string | null;
+  name: string | null;
+};
+
+export type JoinGateKind = "EMAIL_INVITE" | "INVITE_LINK";
+export type JoinGateEntityType = "ORG" | "EVENT" | "STAFF" | "TEAM";
+
+// Minimal entity shapes per gate
+export type JoinGateOrgEntity = {
+  name: string;
+  slug: string; // orgSlug
+  description?: string | null;
+};
+
+export type JoinGateEventEntity = {
+  name: string;
+  slug: string; // eventSlug
+  orgSlug: string;
+  description?: string | null;
+};
+
+export type JoinGateStaffEntity = {
+  name: string;
+  slug: string; // eventSlug (staff is scoped to event)
+  orgSlug: string;
+  description?: string | null;
+  role?: string | null; // optional if you want to show it
+};
+
+export type JoinGateTeamEntity = {
+  name: string;
+  slug: string; // teamSlug
+  orgSlug: string;
+  eventSlug: string;
+  description?: string | null;
+};
+
+export type JoinGateEntity =
+  | JoinGateOrgEntity
+  | JoinGateEventEntity
+  | JoinGateStaffEntity
+  | JoinGateTeamEntity;
+
+export type JoinGateProps = {
+  baseUrl: string;
+  kind: JoinGateKind;
+  entityType: JoinGateEntityType;
+  entity: JoinGateEntity;
+  inviteEmail?: string | null;
+  session: JoinGateSessionShape;
+  isMember: boolean;
+  token: string;
+  disabledReason: JoinGateDisabledReason;
+  acceptAction: (token: string) => Promise<ActionState>;
 };

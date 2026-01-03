@@ -1,45 +1,10 @@
 "use client";
 
-import React, { useEffect, useMemo, useState, useTransition } from "react";
+import React, { useEffect, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { signInWithGoogle } from "@/src/lib/auth-client";
-import type { ActionState } from "@/src/lib/global_types";
-
-type DisabledReason =
-  | "INVITE_INVALID"
-  | "INVITE_EXPIRED"
-  | "INVITE_NOT_PENDING"
-  | "LINK_INVALID"
-  | "LINK_EXPIRED"
-  | "LINK_NOT_PENDING"
-  | "LINK_MAX_USES_REACHED"
-  | "EMAIL_MISMATCH"
-  | null;
-
-type SessionShape = {
-  userId: string | null;
-  email: string | null;
-  name: string | null;
-};
-
-type JoinGateProps = {
-  baseUrl: string;
-  kind: "EMAIL_INVITE" | "INVITE_LINK";
-  entityType: "ORG" | "EVENT" | "TEAM";
-  entity: {
-    name: string;
-    slug: string;
-    description?: string | null;
-    orgSlug?: string;
-  }; // minimal
-  inviteEmail?: string | null;
-  session: SessionShape;
-  isMember: boolean;
-  token: string;
-  disabledReason: DisabledReason;
-  acceptAction: (token: string) => Promise<ActionState>;
-};
+import type { JoinGateProps } from "@/src/lib/global_types";
 
 const JoinGate = (props: JoinGateProps) => {
   const searchParams = useSearchParams();
@@ -50,16 +15,7 @@ const JoinGate = (props: JoinGateProps) => {
 
   const isLoggedIn = !!props.session.userId;
 
-  const joinPath = useMemo(() => {
-    if (props.entityType === "EVENT") {
-      // entity.slug is eventSlug, entity.orgSlug must be provided
-      const orgSlug = props.entity.orgSlug!;
-      const eventSlug = props.entity.slug;
-      return props.kind === "EMAIL_INVITE"
-        ? `/app/orgs/${orgSlug}/events/${eventSlug}/join/${props.token}`
-        : `/app/orgs/${orgSlug}/events/${eventSlug}/join-link/${props.token}`;
-    }
-
+  const getJoinPath = () => {
     if (props.entityType === "ORG") {
       const orgSlug = props.entity.slug;
       return props.kind === "EMAIL_INVITE"
@@ -67,24 +23,77 @@ const JoinGate = (props: JoinGateProps) => {
         : `/app/orgs/${orgSlug}/join-link/${props.token}`;
     }
 
-    // TEAM: later
-    return "/";
-  }, [props.entityType, props.kind, props.entity, props.token]);
+    if (props.entityType === "EVENT") {
+      const orgSlug = (props.entity as any).orgSlug as string;
+      const eventSlug = props.entity.slug;
+      return props.kind === "EMAIL_INVITE"
+        ? `/app/orgs/${orgSlug}/events/${eventSlug}/join/${props.token}`
+        : `/app/orgs/${orgSlug}/events/${eventSlug}/join-link/${props.token}`;
+    }
 
-  const callbackURL = useMemo(() => {
-    return `${props.baseUrl}${joinPath}?autojoin=1`;
-  }, [props.baseUrl, joinPath]);
+    if (props.entityType === "STAFF") {
+      const orgSlug = (props.entity as any).orgSlug as string;
+      const eventSlug = props.entity.slug;
+      return props.kind === "EMAIL_INVITE"
+        ? `/app/orgs/${orgSlug}/events/${eventSlug}/eventstaff/join/${props.token}`
+        : `/app/orgs/${orgSlug}/events/${eventSlug}/eventstaff/join-link/${props.token}`;
+    }
+
+    // TEAM scaffold (future) — adjust routes when you finalize
+    if (props.entityType === "TEAM") {
+      const orgSlug = (props.entity as any).orgSlug as string;
+      const eventSlug = (props.entity as any).eventSlug as string;
+      const teamSlug = props.entity.slug;
+
+      return props.kind === "EMAIL_INVITE"
+        ? `/app/orgs/${orgSlug}/events/${eventSlug}/teams/${teamSlug}/join/${props.token}`
+        : `/app/orgs/${orgSlug}/events/${eventSlug}/teams/${teamSlug}/join-link/${props.token}`;
+    }
+
+    return "/";
+  };
+
+  const joinPath = getJoinPath();
+  const callbackURL = `${props.baseUrl}${joinPath}?autojoin=1`;
+
+  const getStaffRoleLabel = () => {
+    if (props.entityType !== "STAFF") return null;
+
+    const role = (props.entity as any).role as string | null | undefined;
+    if (!role) return null;
+
+    const pretty = role
+      .toString()
+      .replaceAll("_", " ")
+      .toLowerCase()
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+
+    return pretty;
+  };
+
+  const staffRoleLabel = getStaffRoleLabel();
 
   const goToEntity = () => {
-    if (props.entityType === "EVENT") {
-      const orgSlug = props.entity.orgSlug!;
-      router.push(`/app/orgs/${orgSlug}/events/${props.entity.slug}`);
-      return;
-    }
     if (props.entityType === "ORG") {
       router.push(`/app/orgs/${props.entity.slug}`);
       return;
     }
+
+    if (props.entityType === "EVENT" || props.entityType === "STAFF") {
+      const orgSlug = (props.entity as any).orgSlug as string;
+      const eventSlug = props.entity.slug;
+      router.push(`/app/orgs/${orgSlug}/events/${eventSlug}`);
+      return;
+    }
+
+    if (props.entityType === "TEAM") {
+      const orgSlug = (props.entity as any).orgSlug as string;
+      const eventSlug = (props.entity as any).eventSlug as string;
+      const teamSlug = props.entity.slug;
+      router.push(`/app/orgs/${orgSlug}/events/${eventSlug}/teams/${teamSlug}`);
+      return;
+    }
+
     router.push("/app");
   };
 
@@ -104,11 +113,15 @@ const JoinGate = (props: JoinGateProps) => {
     startTransition(async () => {
       try {
         setStatusMessage(
-          props.entityType === "EVENT"
-            ? "Joining event…"
-            : props.entityType === "ORG"
-              ? "Joining organization…"
-              : "Joining…",
+          props.entityType === "STAFF"
+            ? "Joining staff…"
+            : props.entityType === "TEAM"
+              ? "Joining team…"
+              : props.entityType === "EVENT"
+                ? "Joining event…"
+                : props.entityType === "ORG"
+                  ? "Joining organization…"
+                  : "Joining…"
         );
 
         const result = await props.acceptAction(props.token);
@@ -138,9 +151,10 @@ const JoinGate = (props: JoinGateProps) => {
     if (autojoin && isLoggedIn && !props.disabledReason && !props.isMember) {
       onAccept();
     }
-  }, [isLoggedIn, searchParams, props.disabledReason, props.isMember]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoggedIn, props.disabledReason, props.isMember]);
 
-  const errorCopy = useMemo(() => {
+  const getErrorCopy = () => {
     switch (props.disabledReason) {
       case "INVITE_INVALID":
       case "LINK_INVALID":
@@ -158,21 +172,25 @@ const JoinGate = (props: JoinGateProps) => {
       default:
         return "";
     }
-  }, [props.disabledReason, props.inviteEmail, props.session.email]);
+  };
 
   const headline =
-    props.entityType === "EVENT"
-      ? `Join ${props.entity.name}`
-      : props.entityType === "ORG"
-        ? `Join ${props.entity.name}`
-        : `Join`;
+    props.entityType === "STAFF"
+      ? `Join staff for ${props.entity.name}`
+      : props.entityType === "TEAM"
+        ? `Join team: ${props.entity.name}`
+        : `Join ${props.entity.name}`;
 
   const joinButtonLabel =
-    props.entityType === "EVENT"
-      ? "Join event"
-      : props.entityType === "ORG"
-        ? "Join organization"
-        : "Join";
+    props.entityType === "STAFF"
+      ? "Join staff"
+      : props.entityType === "TEAM"
+        ? "Join team"
+        : props.entityType === "EVENT"
+          ? "Join event"
+          : props.entityType === "ORG"
+            ? "Join organization"
+            : "Join";
 
   if (props.isMember && isLoggedIn) {
     return (
@@ -181,6 +199,7 @@ const JoinGate = (props: JoinGateProps) => {
           <div className="text-white text-xl md:text-2xl font-semibold">
             You’re already in
           </div>
+
           <div className="text-white/70 text-sm md:text-base leading-relaxed">
             You already have access to{" "}
             <span className="text-white font-semibold">
@@ -188,6 +207,13 @@ const JoinGate = (props: JoinGateProps) => {
             </span>
             .
           </div>
+
+          {props.entityType === "STAFF" && staffRoleLabel ? (
+            <div className="rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-white/80 text-sm">
+              Role:{" "}
+              <span className="text-white font-semibold">{staffRoleLabel}</span>
+            </div>
+          ) : null}
 
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <button
@@ -211,6 +237,8 @@ const JoinGate = (props: JoinGateProps) => {
     );
   }
 
+  const errorCopy = getErrorCopy();
+
   return (
     <div className="marketing-card relative w-full max-w-xl rounded-3xl px-6 py-6 md:px-8 md:py-8 bg-white/4 border border-white/10 z-10">
       <div className="flex flex-col gap-5">
@@ -219,7 +247,7 @@ const JoinGate = (props: JoinGateProps) => {
             {headline}
           </div>
 
-          {props.entity.description ? (
+          {"description" in props.entity && props.entity.description ? (
             <div className="text-white/70 text-sm md:text-base leading-relaxed">
               {props.entity.description}
             </div>
@@ -229,6 +257,13 @@ const JoinGate = (props: JoinGateProps) => {
             </div>
           )}
         </div>
+
+        {props.entityType === "STAFF" && staffRoleLabel ? (
+          <div className="rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-white/80 text-sm">
+            You’re being invited as{" "}
+            <span className="text-white font-semibold">{staffRoleLabel}</span>.
+          </div>
+        ) : null}
 
         {props.disabledReason ? (
           <div className="rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-white/80 text-sm">

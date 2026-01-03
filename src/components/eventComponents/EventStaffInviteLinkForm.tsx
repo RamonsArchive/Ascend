@@ -1,21 +1,28 @@
 "use client";
 
-import React, { useRef, useState, useActionState } from "react";
+import React, { useState, useActionState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 
 import type { ActionState } from "@/src/lib/global_types";
+import type { EventStaffRole } from "@/src/lib/global_types";
 import { parseServerActionResponse } from "@/src/lib/utils";
-import { createEventInviteLinkClientSchema } from "@/src/lib/validation";
-import { createEventInviteLink } from "@/src/actions/event_invites_actions";
+import { createEventStaffInviteLinkClientSchema } from "@/src/lib/validation";
+import { createEventStaffInviteLink } from "@/src/actions/event_staff_invites_actions";
 
 const initialState: ActionState = { status: "INITIAL", error: "", data: null };
 
-const DEFAULT_EXPIRE_MINUTES = 60 * 24 * 7; // 1 week
-const MAX_EXPIRE_MINUTES = 60 * 24 * 7 * 4; // 4 weeks
-const MIN_EXPIRE_MINUTES = 60; // 1 hour
+const DEFAULT_EXPIRE_MINUTES = 60 * 24 * 7;
 
-const EventInviteLinkForm = ({ eventId }: { eventId: string }) => {
+const EventStaffInviteLinkForm = ({
+  eventId,
+  roleOptions,
+}: {
+  orgSlug: string; // kept for parity, not required because server returns shareUrl
+  eventSlug: string; // same
+  eventId: string;
+  roleOptions: EventStaffRole[];
+}) => {
   const [statusMessage, setStatusMessage] = useState("");
   const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
 
@@ -23,12 +30,14 @@ const EventInviteLinkForm = ({ eventId }: { eventId: string }) => {
     note: "",
     maxUses: "",
     minutesToExpire: String(DEFAULT_EXPIRE_MINUTES),
+    role: (roleOptions?.[0] ?? "STAFF") as EventStaffRole,
   }));
 
   const [errors, setErrors] = useState<{
     note?: string;
     maxUses?: string;
     minutesToExpire?: string;
+    role?: string;
   }>({});
 
   const copyUrl = async () => {
@@ -55,14 +64,14 @@ const EventInviteLinkForm = ({ eventId }: { eventId: string }) => {
 
       const maxUsesNum =
         formData.maxUses.trim() === "" ? undefined : Number(formData.maxUses);
-
       const minutesToExpireNum =
         formData.minutesToExpire.trim() === ""
           ? undefined
           : Number(formData.minutesToExpire);
 
-      const parsed = await createEventInviteLinkClientSchema.parseAsync({
+      const parsed = await createEventStaffInviteLinkClientSchema.parseAsync({
         eventId,
+        role: formData.role,
         note: formData.note || undefined,
         maxUses: maxUsesNum,
         minutesToExpire: minutesToExpireNum,
@@ -72,13 +81,14 @@ const EventInviteLinkForm = ({ eventId }: { eventId: string }) => {
 
       const fd = new FormData();
       fd.set("eventId", parsed.eventId);
+      fd.set("role", parsed.role);
       if (parsed.note) fd.set("note", parsed.note);
-      fd.set("maxUses", parsed.maxUses?.toString() ?? "1");
-      if (typeof parsed.minutesToExpire === "number") {
+      if (typeof parsed.maxUses === "number")
+        fd.set("maxUses", String(parsed.maxUses));
+      if (typeof parsed.minutesToExpire === "number")
         fd.set("minutesToExpire", String(parsed.minutesToExpire));
-      }
 
-      const result = await createEventInviteLink(initialState, fd);
+      const result = await createEventStaffInviteLink(initialState, fd);
 
       if (result.status === "ERROR") {
         setStatusMessage(result.error || "Failed to generate link.");
@@ -112,13 +122,13 @@ const EventInviteLinkForm = ({ eventId }: { eventId: string }) => {
           string,
           string[]
         >;
-        const formattedErrors: Record<string, string> = {};
-        Object.keys(fieldErrors).forEach((key) => {
-          formattedErrors[key] = fieldErrors[key]?.[0] || "";
-        });
-        setErrors(formattedErrors);
+        const formatted: Record<string, string> = {};
+        Object.keys(fieldErrors).forEach(
+          (k) => (formatted[k] = fieldErrors[k]?.[0] || "")
+        );
+        setErrors(formatted);
 
-        const msg = Object.values(formattedErrors).filter(Boolean).join(", ");
+        const msg = Object.values(formatted).filter(Boolean).join(", ");
         toast.error("ERROR", { description: msg });
 
         return parseServerActionResponse({
@@ -142,13 +152,32 @@ const EventInviteLinkForm = ({ eventId }: { eventId: string }) => {
   const [, formAction, isPending] = useActionState(submit, initialState);
 
   return (
-    <div className="marketing-card w-full rounded-3xl px-6 py-6 md:px-8 md:py-8 bg-white/4">
-      <form
-        id="event-invite-link-form"
-        action={formAction}
-        className="flex flex-col gap-6 md:gap-8"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+    <div className="marketing-card w-full rounded-3xl px-6 py-6 md:px-8 md:py-8 bg-white/4 border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+      <form action={formAction} className="flex flex-col gap-6 md:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+          <div className="flex flex-col gap-2">
+            <label className="text-xs md:text-sm text-white/75">Role</label>
+            <select
+              value={formData.role}
+              onChange={(e) =>
+                setFormData((p) => ({
+                  ...p,
+                  role: e.target.value as EventStaffRole,
+                }))
+              }
+              className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm text-white/80 outline-none"
+            >
+              {roleOptions.map((r) => (
+                <option key={r} value={r} className="bg-primary-950">
+                  Invite as {r}
+                </option>
+              ))}
+            </select>
+            {errors.role ? (
+              <p className="text-red-500 text-xs">{errors.role}</p>
+            ) : null}
+          </div>
+
           <div className="flex flex-col gap-2">
             <label className="text-xs md:text-sm text-white/75">
               Max uses (optional)
@@ -160,12 +189,10 @@ const EventInviteLinkForm = ({ eventId }: { eventId: string }) => {
               }
               placeholder="e.g. 25"
               inputMode="numeric"
-              className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+              className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm text-white placeholder:text-white/40 outline-none"
             />
             {errors.maxUses ? (
-              <p className="text-red-500 text-xs md:text-sm">
-                {errors.maxUses}
-              </p>
+              <p className="text-red-500 text-xs">{errors.maxUses}</p>
             ) : null}
           </div>
 
@@ -178,11 +205,11 @@ const EventInviteLinkForm = ({ eventId }: { eventId: string }) => {
               onChange={(e) =>
                 setFormData((p) => ({ ...p, note: e.target.value }))
               }
-              placeholder="Used for tracking (internal)"
-              className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+              placeholder="Internal tracking"
+              className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm text-white placeholder:text-white/40 outline-none"
             />
             {errors.note ? (
-              <p className="text-red-500 text-xs md:text-sm">{errors.note}</p>
+              <p className="text-red-500 text-xs">{errors.note}</p>
             ) : null}
           </div>
         </div>
@@ -191,31 +218,16 @@ const EventInviteLinkForm = ({ eventId }: { eventId: string }) => {
           <label className="text-xs md:text-sm text-white/75">
             Minutes to expire (optional)
           </label>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            <input
-              value={formData.minutesToExpire}
-              onChange={(e) =>
-                setFormData((p) => ({ ...p, minutesToExpire: e.target.value }))
-              }
-              placeholder={`Default ${DEFAULT_EXPIRE_MINUTES} (1 week)`}
-              inputMode="numeric"
-              className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
-            />
-
-            <div className="rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-xs text-white/65 leading-relaxed">
-              Min: {MIN_EXPIRE_MINUTES} (1 hour) • Max: {MAX_EXPIRE_MINUTES} (4
-              weeks)
-              <div className="text-white/50">
-                Tip: 1440 = 1 day • 10080 = 1 week • 43200 = 30 days
-              </div>
-            </div>
-          </div>
-
+          <input
+            value={formData.minutesToExpire}
+            onChange={(e) =>
+              setFormData((p) => ({ ...p, minutesToExpire: e.target.value }))
+            }
+            inputMode="numeric"
+            className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm text-white placeholder:text-white/40 outline-none"
+          />
           {errors.minutesToExpire ? (
-            <p className="text-red-500 text-xs md:text-sm">
-              {errors.minutesToExpire}
-            </p>
+            <p className="text-red-500 text-xs">{errors.minutesToExpire}</p>
           ) : null}
         </div>
 
@@ -223,9 +235,9 @@ const EventInviteLinkForm = ({ eventId }: { eventId: string }) => {
           <button
             type="submit"
             disabled={isPending}
-            className="w-full max-w-sm px-5 py-3 rounded-2xl cursor-pointer bg-white text-primary-950 font-semibold text-sm md:text-base transition-opacity hover:opacity-90 disabled:opacity-60"
+            className="w-full max-w-sm px-5 py-3 rounded-2xl bg-white text-primary-950 font-semibold text-sm transition-opacity hover:opacity-90 disabled:opacity-60"
           >
-            {isPending ? "Generating..." : "Generate invite link"}
+            {isPending ? "Generating..." : "Generate staff invite link"}
           </button>
         </div>
       </form>
@@ -259,4 +271,4 @@ const EventInviteLinkForm = ({ eventId }: { eventId: string }) => {
   );
 };
 
-export default EventInviteLinkForm;
+export default EventStaffInviteLinkForm;

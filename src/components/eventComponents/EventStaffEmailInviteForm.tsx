@@ -1,33 +1,53 @@
 "use client";
 
-import React, { useRef, useState, useActionState } from "react";
+import React, { useState, useActionState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 
 import type { ActionState } from "@/src/lib/global_types";
+import type { EventStaffRole } from "@/src/lib/global_types";
 import { parseServerActionResponse } from "@/src/lib/utils";
-import { createEventInviteEmailClientSchema } from "@/src/lib/validation";
-import { createEventEmailInvite } from "@/src/actions/event_invites_actions";
+
+import { createEventStaffInviteEmailClientSchema } from "@/src/lib/validation";
+
+import { createEventStaffEmailInvite } from "@/src/actions/event_staff_invites_actions";
 
 const initialState: ActionState = { status: "INITIAL", error: "", data: null };
 
-const EventEmailInviteForm = ({ eventId }: { eventId: string }) => {
+const DEFAULT_EXPIRE_MINUTES = 10080; // 1 week
+
+const EventStaffEmailInviteForm = ({
+  eventId,
+  roleOptions,
+}: {
+  orgSlug: string; // kept for parity; not required by server action
+  eventSlug: string; // kept for parity; not required by server action
+  eventId: string;
+  roleOptions: EventStaffRole[];
+}) => {
   const [statusMessage, setStatusMessage] = useState("");
 
   const [formData, setFormData] = useState(() => ({
     email: "",
+    role: (roleOptions?.[0] ?? "STAFF") as EventStaffRole,
     message: "",
-    minutesToExpire: "10080", // 1 week
+    minutesToExpire: String(DEFAULT_EXPIRE_MINUTES),
   }));
 
   const [errors, setErrors] = useState<{
     email?: string;
+    role?: string;
     message?: string;
     minutesToExpire?: string;
   }>({});
 
   const clearForm = () => {
-    setFormData({ email: "", message: "", minutesToExpire: "10080" });
+    setFormData({
+      email: "",
+      role: (roleOptions?.[0] ?? "STAFF") as EventStaffRole,
+      message: "",
+      minutesToExpire: String(DEFAULT_EXPIRE_MINUTES),
+    });
     setErrors({});
     setStatusMessage("");
   };
@@ -43,9 +63,10 @@ const EventEmailInviteForm = ({ eventId }: { eventId: string }) => {
       setErrors({});
       setStatusMessage("");
 
-      const parsed = await createEventInviteEmailClientSchema.parseAsync({
+      const parsed = await createEventStaffInviteEmailClientSchema.parseAsync({
         eventId,
         email: formData.email,
+        role: formData.role,
         message: formData.message || undefined,
         minutesToExpire:
           formData.minutesToExpire.trim() === ""
@@ -53,28 +74,29 @@ const EventEmailInviteForm = ({ eventId }: { eventId: string }) => {
             : Number(formData.minutesToExpire),
       });
 
-      setStatusMessage("Sending invite…");
+      setStatusMessage("Sending staff invite…");
 
       const fd = new FormData();
       fd.set("eventId", parsed.eventId);
       fd.set("email", parsed.email);
+      fd.set("role", parsed.role);
       if (parsed.message) fd.set("message", parsed.message);
       if (typeof parsed.minutesToExpire === "number") {
         fd.set("minutesToExpire", String(parsed.minutesToExpire));
       }
 
-      const result = await createEventEmailInvite(initialState, fd);
+      const result = await createEventStaffEmailInvite(initialState, fd);
 
       if (result.status === "ERROR") {
-        setStatusMessage(result.error || "Failed to send invite.");
+        setStatusMessage(result.error || "Failed to send staff invite.");
         toast.error("ERROR", {
-          description: result.error || "Failed to send invite.",
+          description: result.error || "Failed to send staff invite.",
         });
         return result;
       }
 
-      setStatusMessage("Invite sent.");
-      toast.success("SUCCESS", { description: "Invite sent." });
+      setStatusMessage("Staff invite sent.");
+      toast.success("SUCCESS", { description: "Staff invite sent." });
 
       clearForm();
       return result;
@@ -91,6 +113,7 @@ const EventEmailInviteForm = ({ eventId }: { eventId: string }) => {
         Object.keys(fieldErrors).forEach((key) => {
           formattedErrors[key] = fieldErrors[key]?.[0] || "";
         });
+
         setErrors(formattedErrors);
 
         const msg = Object.values(formattedErrors).filter(Boolean).join(", ");
@@ -106,9 +129,10 @@ const EventEmailInviteForm = ({ eventId }: { eventId: string }) => {
       toast.error("ERROR", {
         description: "An error occurred. Please try again.",
       });
+
       return parseServerActionResponse({
         status: "ERROR",
-        error: "An error occurred while sending invite",
+        error: "An error occurred while sending staff invite",
         data: null,
       }) as ActionState;
     }
@@ -117,28 +141,54 @@ const EventEmailInviteForm = ({ eventId }: { eventId: string }) => {
   const [, formAction, isPending] = useActionState(submit, initialState);
 
   return (
-    <div className="marketing-card w-full rounded-3xl px-6 py-6 md:px-8 md:py-8 bg-white/4">
-      <form
-        id="event-email-invite-form"
-        action={formAction}
-        className="flex flex-col gap-6 md:gap-8"
-      >
-        <div className="flex flex-col gap-2">
-          <label className="text-xs md:text-sm text-white/75 flex items-center gap-1">
-            Invite by email
-            <span className="text-xs text-red-500">*</span>
-          </label>
-          <input
-            value={formData.email}
-            onChange={(e) =>
-              setFormData((p) => ({ ...p, email: e.target.value }))
-            }
-            placeholder="person@domain.com"
-            className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
-          />
-          {errors.email ? (
-            <p className="text-red-500 text-xs md:text-sm">{errors.email}</p>
-          ) : null}
+    <div className="marketing-card w-full rounded-3xl px-6 py-6 md:px-8 md:py-8 bg-white/4 border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+      <form action={formAction} className="flex flex-col gap-6 md:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+          <div className="flex flex-col gap-2">
+            <label className="text-xs md:text-sm text-white/75 flex items-center gap-1">
+              Invite staff by email
+              <span className="text-xs text-red-500">*</span>
+            </label>
+            <input
+              value={formData.email}
+              onChange={(e) =>
+                setFormData((p) => ({ ...p, email: e.target.value }))
+              }
+              placeholder="person@domain.com"
+              className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+            />
+            {errors.email ? (
+              <p className="text-red-500 text-xs md:text-sm">{errors.email}</p>
+            ) : null}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-xs md:text-sm text-white/75 flex items-center gap-1">
+              Role
+              <span className="text-xs text-red-500">*</span>
+            </label>
+
+            <select
+              value={formData.role}
+              onChange={(e) =>
+                setFormData((p) => ({
+                  ...p,
+                  role: e.target.value as EventStaffRole,
+                }))
+              }
+              className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white/80 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+            >
+              {roleOptions.map((r) => (
+                <option key={r} value={r} className="bg-primary-950">
+                  Invite as {r}
+                </option>
+              ))}
+            </select>
+
+            {errors.role ? (
+              <p className="text-red-500 text-xs md:text-sm">{errors.role}</p>
+            ) : null}
+          </div>
         </div>
 
         <div className="flex flex-col gap-2">
@@ -152,7 +202,7 @@ const EventEmailInviteForm = ({ eventId }: { eventId: string }) => {
               onChange={(e) =>
                 setFormData((p) => ({ ...p, minutesToExpire: e.target.value }))
               }
-              placeholder="Default 10080 (1 week)"
+              placeholder={`Default ${DEFAULT_EXPIRE_MINUTES} (1 week)`}
               inputMode="numeric"
               className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm md:text-base text-white placeholder:text-white/40 outline-none focus:border-accent-100 focus:ring-2 focus:ring-accent-500/20 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
             />
@@ -192,7 +242,7 @@ const EventEmailInviteForm = ({ eventId }: { eventId: string }) => {
             disabled={isPending}
             className="w-full max-w-sm px-5 py-3 rounded-2xl cursor-pointer bg-white text-primary-950 font-semibold text-sm md:text-base transition-opacity hover:opacity-90 disabled:opacity-60"
           >
-            {isPending ? "Sending..." : "Send invite"}
+            {isPending ? "Sending..." : "Send staff invite"}
           </button>
         </div>
       </form>
@@ -208,4 +258,4 @@ const EventEmailInviteForm = ({ eventId }: { eventId: string }) => {
   );
 };
 
-export default EventEmailInviteForm;
+export default EventStaffEmailInviteForm;

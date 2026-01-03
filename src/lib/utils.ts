@@ -549,3 +549,25 @@ export const formatMaybe = (iso: string | null) => {
     minute: "2-digit",
   });
 };
+
+export const staffRolePillClasses = (role: string) => {
+  const r = (role || "").toUpperCase();
+  if (r === "OWNER")
+    return "bg-amber-400/15 text-amber-200 border-amber-400/20";
+  if (r === "ADMIN") return "bg-sky-400/15 text-sky-200 border-sky-400/20";
+  if (r === "JUDGE")
+    return "bg-emerald-400/15 text-emerald-200 border-emerald-400/20";
+  return "bg-white/5 text-white/70 border-white/10";
+};
+
+export const uniqBy = <T>(arr: T[], keyFn: (t: T) => string) => {
+  const seen = new Set<string>();
+  const out: T[] = [];
+  for (const x of arr) {
+    const k = keyFn(x);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(x);
+  }
+  return out;
+};

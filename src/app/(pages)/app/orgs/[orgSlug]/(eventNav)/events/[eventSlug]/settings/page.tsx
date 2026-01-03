@@ -5,12 +5,14 @@ import {
   assertEventAdminOrOwner,
   fetchEventCompleteData,
   fetchEventMembersData,
+  fetchEventSettingsStaffData,
 } from "@/src/actions/event_actions";
 import Link from "next/link";
 import EventSettingsHero from "@/src/components/eventComponents/EventSettingsHero";
 import {
   EventCompleteData,
   EventMembersData,
+  EventStaffData,
   SponsorLibraryItem,
 } from "@/src/lib/global_types";
 import EventSettingsClient from "@/src/components/eventComponents/EventSettingsClient";
@@ -32,7 +34,7 @@ const EventSettingsPage = async ({
   const hasPermissions = await assertEventAdminOrOwner(
     orgSlug,
     eventSlug,
-    userId,
+    userId
   );
   if (!hasPermissions.data || hasPermissions.status === "ERROR") {
     return (
@@ -88,11 +90,13 @@ const EventSettingsPage = async ({
   let eventDataRes = null;
   let sponsorLibraryRes = null;
   let memberRes = null;
+  let staffRes = null;
 
-  [eventDataRes, sponsorLibraryRes, memberRes] = await Promise.all([
+  [eventDataRes, sponsorLibraryRes, memberRes, staffRes] = await Promise.all([
     fetchEventCompleteData(orgIdRes.data as string, eventSlug),
     fetchSponsorLibrary(),
     fetchEventMembersData(orgIdRes.data as string, eventSlug),
+    fetchEventSettingsStaffData(orgIdRes.data as string, eventSlug),
   ]);
   if (eventDataRes.status === "ERROR" || !eventDataRes.data) {
     return (
@@ -121,7 +125,9 @@ const EventSettingsPage = async ({
   const event = eventDataRes.data as EventCompleteData;
   const membersData = (memberRes.data as EventMembersData) ?? [];
   const sponsorLibrary = (sponsorLibraryRes.data as SponsorLibraryItem[]) ?? [];
+  const staffData = (staffRes.data as EventStaffData) ?? [];
 
+  console.log("staffData", staffData);
   return (
     <div className="relative w-full min-h-[calc(100vh-48px)]">
       <div className="absolute inset-0 pointer-events-none marketing-bg" />
@@ -133,6 +139,7 @@ const EventSettingsPage = async ({
           membersData={membersData}
           sponsorLibrary={sponsorLibrary}
           currentUserId={userId}
+          staffData={staffData}
         />
       </div>
     </div>

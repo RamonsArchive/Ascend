@@ -18,7 +18,11 @@ import EventEditTracks from "@/src/components/eventComponents/EventEditTracks";
 import EventEditAwards from "@/src/components/eventComponents/EventEditAwards";
 import EventEditSponsorsSection from "@/src/components/eventComponents/EventEditSponsorsSection";
 import InitialEventSponsorsSection from "@/src/components/eventComponents/InitialEventSponsorsSection";
-import type { SponsorLibraryItem } from "@/src/lib/global_types";
+import type {
+  EventStaffData,
+  SponsorLibraryItem,
+} from "@/src/lib/global_types";
+import EventStaffSettingsSection from "./EventStaffSettingsSection";
 
 const eventTabs: Array<SettingsTab<EventSettingsView>> = [
   {
@@ -48,6 +52,11 @@ const eventTabs: Array<SettingsTab<EventSettingsView>> = [
     label: "Sponsors",
     description: "Attach global sponsors and manage ordering.",
   },
+  {
+    key: "STAFF",
+    label: "Staff",
+    description: "Manage event staff.",
+  },
 ];
 
 const EventSettingsClient = ({
@@ -56,12 +65,14 @@ const EventSettingsClient = ({
   membersData,
   sponsorLibrary, // ✅ new
   currentUserId, // optional if you want to gate stuff
+  staffData,
 }: {
   orgSlug: string;
   event: EventCompleteData;
   membersData: EventMembersData | null;
   sponsorLibrary: SponsorLibraryItem[];
   currentUserId: string;
+  staffData: EventStaffData;
 }) => {
   const sections = useMemo(
     () => [
@@ -141,8 +152,20 @@ const EventSettingsClient = ({
           </React.Fragment>
         ),
       },
+      {
+        key: "STAFF" as const,
+        render: () => (
+          <EventStaffSettingsSection
+            orgSlug={orgSlug}
+            eventSlug={event.slug}
+            eventId={event.id}
+            staffData={staffData}
+            membersData={membersData}
+          />
+        ),
+      },
     ],
-    [event, orgSlug, membersData, sponsorLibrary, currentUserId],
+    [event, orgSlug, membersData, sponsorLibrary, currentUserId]
   );
 
   return (

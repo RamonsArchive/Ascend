@@ -33,6 +33,7 @@ import {
   removeEventTeamMemberClientSchema,
   removeEventParticipantClientSchema,
 } from "@/src/lib/validation";
+import { EventEmitterAsyncResource } from "stream";
 
 export const fetchAllEvents = async (
   limit: number = 12
@@ -150,10 +151,18 @@ export const assertEventAdminOrOwner = async (
     const isRateLimited = await checkRateLimit("assertEventAdminOrOwner");
     if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
 
-    const eventRes = await fetchEventData(orgSlug, eventSlug);
-    if (eventRes.status === "ERROR" || !eventRes.data) return eventRes;
+    const event = await prisma.event.findFirst({
+      where: { slug: eventSlug, org: { slug: orgSlug } },
+      select: { id: true, orgId: true, createdByUserId: true },
+    });
 
-    const event = eventRes.data as EventNavData;
+    if (!event) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "EVENT_NOT_FOUND",
+        data: null,
+      }) as ActionState;
+    }
 
     // ✅ Org OWNER override
     const orgOwnerResult = await isOrgOwner(event.orgId, userId);
@@ -165,22 +174,22 @@ export const assertEventAdminOrOwner = async (
       }) as ActionState;
     }
 
+    // ✅ Event OWNER
+    if (event.createdByUserId === userId) {
+      return parseServerActionResponse({
+        status: "SUCCESS",
+        error: "",
+        data: { orgId: event.orgId, eventId: event.id, source: "EVENT_OWNER" },
+      }) as ActionState;
+    }
+
+    // ✅ Event ADMIN (staff membership)
     const staffMembership = await prisma.eventStaffMembership.findUnique({
       where: { eventId_userId: { eventId: event.id, userId } },
       select: { role: true },
     });
 
-    if (!staffMembership) {
-      return parseServerActionResponse({
-        status: "ERROR",
-        error: "NOT_AUTHORIZED",
-        data: null,
-      }) as ActionState;
-    }
-
-    // EventStaffRole.ADMIN is the only “event owner/admin” role in your schema.
-    // (Org OWNER does not automatically imply event ADMIN unless you model that separately.)
-    if (staffMembership.role !== "ADMIN") {
+    if (!staffMembership || staffMembership.role !== "ADMIN") {
       return parseServerActionResponse({
         status: "ERROR",
         error: "NOT_AUTHORIZED",
@@ -216,6 +225,19 @@ export const assertEventAdminOrOwnerWithIdAndSlug = async (
     const isRateLimited = await checkRateLimit("assertEventAdminOrOwnerWithId");
     if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
 
+    const event = await prisma.event.findFirst({
+      where: { orgId: orgId, slug: eventSlug },
+      select: { id: true, orgId: true, createdByUserId: true },
+    });
+
+    if (!event) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "EVENT_NOT_FOUND",
+        data: null,
+      }) as ActionState;
+    }
+
     // ✅ Org OWNER override
     const orgOwnerResult = await isOrgOwner(orgId, userId);
     if (orgOwnerResult.status === "SUCCESS" && orgOwnerResult.data) {
@@ -223,6 +245,15 @@ export const assertEventAdminOrOwnerWithIdAndSlug = async (
         status: "SUCCESS",
         error: "",
         data: { orgId, eventSlug, source: "ORG_OWNER" },
+      }) as ActionState;
+    }
+
+    // ✅ Event OWNER
+    if (event.createdByUserId === userId) {
+      return parseServerActionResponse({
+        status: "SUCCESS",
+        error: "",
+        data: { orgId, eventSlug, source: "EVENT_OWNER" },
       }) as ActionState;
     }
     const staffMembership = await prisma.eventStaffMembership.findFirst({
@@ -265,6 +296,19 @@ export const assertEventAdminOrOwnerWithId = async (
     const isRateLimited = await checkRateLimit("assertEventAdminOrOwnerWithId");
     if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
 
+    const event = await prisma.event.findFirst({
+      where: { orgId: orgId, id: eventId },
+      select: { id: true, orgId: true, createdByUserId: true },
+    });
+
+    if (!event) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "EVENT_NOT_FOUND",
+        data: null,
+      }) as ActionState;
+    }
+
     // ✅ Org OWNER override
     const orgOwnerResult = await isOrgOwner(orgId, userId);
     if (orgOwnerResult.status === "SUCCESS" && orgOwnerResult.data) {
@@ -272,6 +316,15 @@ export const assertEventAdminOrOwnerWithId = async (
         status: "SUCCESS",
         error: "",
         data: { orgId, eventId, source: "ORG_OWNER" },
+      }) as ActionState;
+    }
+
+    // ✅ Event OWNER
+    if (event.createdByUserId === userId) {
+      return parseServerActionResponse({
+        status: "SUCCESS",
+        error: "",
+        data: { orgId, eventId, source: "EVENT_OWNER" },
       }) as ActionState;
     }
     const staffMembership = await prisma.eventStaffMembership.findUnique({
@@ -301,6 +354,16 @@ export const assertEventAdminOrOwnerWithId = async (
     }) as ActionState;
   }
 };
+
+export async function getEventOwnerUserId(
+  eventId: string
+): Promise<string | null> {
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
+    select: { createdByUserId: true },
+  });
+  return event?.createdByUserId ?? null;
+}
 
 export const fetchAllOrgEvents = async (orgSlug: string) => {
   try {
@@ -523,6 +586,69 @@ export const fetchEventStaffData = async (orgId: string, eventSlug: string) => {
       status: "SUCCESS",
       error: "",
       data: staff,
+    }) as ActionState;
+  } catch (error) {
+    console.error(error);
+    return parseServerActionResponse({
+      status: "ERROR",
+      error: "Failed to fetch event staff data",
+      data: null,
+    }) as ActionState;
+  }
+};
+
+export const fetchEventSettingsStaffData = async (
+  orgId: string,
+  eventSlug: string
+): Promise<ActionState> => {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user?.id) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "MUST BE LOGGED IN",
+        data: null,
+      }) as ActionState;
+    }
+
+    const event = await prisma.event.findUnique({
+      where: { orgId_slug: { orgId, slug: eventSlug } },
+      select: { id: true },
+    });
+
+    if (!event) {
+      return parseServerActionResponse({
+        status: "ERROR",
+        error: "Event not found",
+        data: null,
+      }) as ActionState;
+    }
+
+    const eventId = event.id;
+    const perms = await assertEventAdminOrOwnerWithId(
+      orgId,
+      eventId,
+      session.user.id
+    );
+    if (perms.status === "ERROR") return perms as ActionState;
+
+    const isRateLimited = await checkRateLimit("fetchEventStaffData");
+    if (isRateLimited.status === "ERROR") return isRateLimited as ActionState;
+
+    const staff = await prisma.eventStaffMembership.findMany({
+      where: { event: { orgId, slug: eventSlug } },
+      select: {
+        eventId: true,
+        userId: true,
+        role: true,
+        user: { select: { id: true, name: true, email: true, image: true } },
+      },
+      orderBy: [{ role: "asc" }, { userId: "asc" }],
+    });
+    return parseServerActionResponse({
+      status: "SUCCESS",
+      error: "",
+      data: { eventId, staff },
     }) as ActionState;
   } catch (error) {
     console.error(error);
