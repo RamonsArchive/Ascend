@@ -174,8 +174,7 @@ const EventSettingsClient = ({
       key: "STAFF" as const,
       render: () => (
         <EventStaffSettingsSection
-          orgSlug={orgSlug}
-          eventSlug={event.slug}
+          orgId={event.orgId ?? ""}
           eventId={event.id}
           staffData={staffData}
           membersData={membersData}

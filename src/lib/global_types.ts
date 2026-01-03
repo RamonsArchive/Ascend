@@ -1,5 +1,6 @@
 import type {
   EventType,
+  InviteStatus,
   OrgJoinMode,
   OrgMembership,
   Prisma,
@@ -582,4 +583,53 @@ export type RubricCategoryDraft = {
   description?: string; // use real name
   weight: number;
   order: number;
+};
+
+// ✅ Minimal event shape returned by fetchEventStaffJoinInvitePageData
+export type EventStaffJoinInviteEvent = {
+  id: string;
+  name: string;
+  slug: string;
+  orgSlug: string;
+};
+
+// ✅ Invite shape returned by fetchEventStaffJoinInvitePageData
+export type EventStaffJoinInvite = {
+  email: string;
+  role: EventStaffRole; // from Prisma enum union via your existing type
+  status: InviteStatus; // Prisma enum
+  expiresAt: Date | null;
+
+  // computed flags (server-derived)
+  isExpired: boolean;
+  isPending: boolean;
+  emailMismatch: boolean;
+};
+
+// ✅ Full SUCCESS payload returned by fetchEventStaffJoinInvitePageData
+export type EventStaffJoinInvitePageData = {
+  event: EventStaffJoinInviteEvent;
+  invite: EventStaffJoinInvite;
+  isStaff: boolean;
+  session: JoinGateSessionShape; // ✅ you already have this
+};
+
+export type EventStaffMutations = {
+  add: (args: {
+    orgId: string;
+    eventId: string;
+    userId: string;
+    role: EventStaffRole;
+  }) => Promise<ActionState>;
+  changeRole: (args: {
+    orgId: string;
+    eventId: string;
+    userId: string;
+    role: EventStaffRole;
+  }) => Promise<ActionState>;
+  remove: (args: {
+    orgId: string;
+    eventId: string;
+    userId: string;
+  }) => Promise<ActionState>;
 };

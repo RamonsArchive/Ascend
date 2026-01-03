@@ -154,20 +154,6 @@ export const changeEventStaffRole = async (args: {
       }) as ActionState;
     }
 
-    // ✅ don’t allow “no admins left”
-    if (existing.role === "ADMIN" && roleStr !== "ADMIN") {
-      const adminCount = await prisma.eventStaffMembership.count({
-        where: { eventId: args.eventId, role: "ADMIN" },
-      });
-      if (adminCount <= 1) {
-        return parseServerActionResponse({
-          status: "ERROR",
-          error: "MUST_HAVE_AT_LEAST_ONE_ADMIN",
-          data: null,
-        }) as ActionState;
-      }
-    }
-
     const updated = await prisma.eventStaffMembership.update({
       where: { eventId_userId: { eventId: args.eventId, userId: args.userId } },
       data: { role: roleStr as EventStaffRole },
@@ -236,19 +222,6 @@ export const removeEventStaffMember = async (args: {
         error: "",
         data: { removed: false },
       }) as ActionState;
-    }
-
-    if (existing.role === "ADMIN") {
-      const adminCount = await prisma.eventStaffMembership.count({
-        where: { eventId: args.eventId, role: "ADMIN" },
-      });
-      if (adminCount <= 1) {
-        return parseServerActionResponse({
-          status: "ERROR",
-          error: "MUST_HAVE_AT_LEAST_ONE_ADMIN",
-          data: null,
-        }) as ActionState;
-      }
     }
 
     await prisma.eventStaffMembership.delete({

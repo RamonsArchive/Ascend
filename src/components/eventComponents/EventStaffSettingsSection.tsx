@@ -9,6 +9,11 @@ import type {
 
 import EventStaffSettings from "./EventStaffSettings"; // your existing staff manage UI (we’ll tweak role options)
 import EventStaffInvitePanel from "./EventStaffInvitePanel";
+import {
+  addEventStaffMember,
+  changeEventStaffRole,
+  removeEventStaffMember,
+} from "@/src/actions/event_staff_actions";
 
 const card =
   "rounded-3xl bg-white/4 border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]";
@@ -30,15 +35,13 @@ const DEFAULT_STAFF_ROLES: EventStaffRole[] = [
 ] as EventStaffRole[];
 
 const EventStaffSettingsSection = ({
-  orgSlug,
-  eventSlug,
+  orgId,
   eventId,
   staffData,
   membersData,
   roleOptions,
 }: {
-  orgSlug: string;
-  eventSlug: string;
+  orgId: string;
   eventId: string;
   staffData: EventStaffData;
   membersData: EventMembersData | null;
@@ -51,63 +54,60 @@ const EventStaffSettingsSection = ({
     return DEFAULT_STAFF_ROLES;
   }, [roleOptions]);
 
-  const cards = useMemo(
-    () => [
-      {
-        key: "header",
-        render: () => (
-          <div className={`${card} p-6 md:p-8 flex flex-col gap-4`}>
-            <div className="flex flex-col gap-2">
-              <h2 className="text-2xl md:text-3xl font-semibold text-white">
-                Event staff
-              </h2>
-              <p className="text-white/60 text-sm leading-relaxed max-w-3xl">
-                Manage judges & staff for this event. Staff access is separate
-                from participants.
-              </p>
-            </div>
+  const cards = [
+    {
+      key: "header",
+      render: () => (
+        <div className={`${card} p-6 md:p-8 flex flex-col gap-4`}>
+          <div className="flex flex-col gap-2">
+            <h2 className="text-2xl md:text-3xl font-semibold text-white">
+              Event staff
+            </h2>
+            <p className="text-white/60 text-sm leading-relaxed max-w-3xl">
+              Manage judges & staff for this event. Staff access is separate
+              from participants.
+            </p>
+          </div>
 
-            <div className="flex items-center justify-start">
-              <div className={tabsPill}>
-                <button
-                  className={tabBtn(view === "INVITES")}
-                  onClick={() => setView("INVITES")}
-                >
-                  Invite staff
-                </button>
-                <button
-                  className={tabBtn(view === "STAFF")}
-                  onClick={() => setView("STAFF")}
-                >
-                  Manage staff
-                </button>
-              </div>
+          <div className="flex items-center justify-start">
+            <div className={tabsPill}>
+              <button
+                className={tabBtn(view === "INVITES")}
+                onClick={() => setView("INVITES")}
+              >
+                Invite staff
+              </button>
+              <button
+                className={tabBtn(view === "STAFF")}
+                onClick={() => setView("STAFF")}
+              >
+                Manage staff
+              </button>
             </div>
           </div>
+        </div>
+      ),
+    },
+    {
+      key: "body",
+      render: () =>
+        view === "INVITES" ? (
+          <EventStaffInvitePanel eventId={eventId} roleOptions={roles} />
+        ) : (
+          <EventStaffSettings
+            orgId={orgId}
+            eventId={eventId}
+            staffData={staffData}
+            membersData={membersData}
+            actions={{
+              add: addEventStaffMember,
+              changeRole: changeEventStaffRole,
+              remove: removeEventStaffMember,
+            }}
+          />
         ),
-      },
-      {
-        key: "body",
-        render: () =>
-          view === "INVITES" ? (
-            <EventStaffInvitePanel
-              orgSlug={orgSlug}
-              eventSlug={eventSlug}
-              eventId={eventId}
-              roleOptions={roles}
-            />
-          ) : (
-            <EventStaffSettings
-              eventId={eventId}
-              staffData={staffData}
-              membersData={membersData}
-              roleOptions={roles}
-            />
-          ),
-      },
-    ],
-    [view, orgSlug, eventSlug, eventId, roles, staffData, membersData]
-  );
+    },
+  ];
 
   return (
     <section className="w-full flex justify-center">

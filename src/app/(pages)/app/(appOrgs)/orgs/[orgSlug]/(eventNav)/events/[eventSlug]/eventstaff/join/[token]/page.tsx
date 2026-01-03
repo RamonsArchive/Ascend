@@ -5,6 +5,7 @@ import {
   fetchEventStaffJoinInvitePageData,
 } from "@/src/actions/event_staff_invites_actions";
 import { baseUrl } from "@/src/lib/utils";
+import type { EventStaffJoinInvitePageData } from "@/src/lib/global_types";
 
 const EventStaffEmailInvitePage = async ({
   params,
@@ -19,6 +20,7 @@ const EventStaffEmailInvitePage = async ({
     token
   );
 
+  console.log(pageData);
   if (pageData.status === "ERROR") {
     return (
       <div className="min-h-[60vh] flex items-center justify-center px-5">
@@ -30,7 +32,7 @@ const EventStaffEmailInvitePage = async ({
     );
   }
 
-  const data = pageData.data as any;
+  const data = pageData.data as EventStaffJoinInvitePageData;
 
   const disabledReason = !data.invite
     ? "INVITE_INVALID"

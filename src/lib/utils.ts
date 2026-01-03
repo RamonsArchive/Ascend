@@ -362,19 +362,6 @@ export const makeClientId = () =>
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
-export const trackDraftSchema = z.object({
-  name: z.string().trim().min(1, "Track name is required.").max(80),
-  blurb: optionalTrimmed(400),
-  order: z.number().int().min(0).max(999).optional(),
-});
-
-export const awardDraftSchema = z.object({
-  name: z.string().trim().min(1, "Award name is required.").max(80),
-  blurb: optionalTrimmed(400),
-  order: z.number().int().min(0).max(999).optional(),
-  allowMultipleWinners: z.boolean().optional(),
-});
-
 export const uniqueNames = (arr: { name: string }[]) => {
   const seen = new Set<string>();
   for (const x of arr) {
@@ -571,3 +558,13 @@ export const uniqBy = <T>(arr: T[], keyFn: (t: T) => string) => {
   }
   return out;
 };
+
+export const titleText = "text-2xl md:text-3xl font-semibold text-white";
+export const subtleText =
+  "text-sm md:text-base text-white/70 leading-relaxed max-w-4xl";
+
+export const card =
+  "rounded-3xl bg-white/4 border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]";
+
+export const inner =
+  "rounded-2xl bg-white/5 border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]";

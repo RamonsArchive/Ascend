@@ -56,6 +56,8 @@ const JoinGate = (props: JoinGateProps) => {
   const joinPath = getJoinPath();
   const callbackURL = `${props.baseUrl}${joinPath}?autojoin=1`;
 
+  console.log(joinPath);
+  console.log(callbackURL);
   const getStaffRoleLabel = () => {
     if (props.entityType !== "STAFF") return null;
 
@@ -94,6 +96,13 @@ const JoinGate = (props: JoinGateProps) => {
       return;
     }
 
+    if (props.entityType === "STAFF") {
+      const orgSlug = (props.entity as any).orgSlug as string;
+      const eventSlug = props.entity.slug;
+      router.push(`/app/orgs/${orgSlug}/events/${eventSlug}`);
+      return;
+    }
+
     router.push("/app");
   };
 
@@ -101,7 +110,7 @@ const JoinGate = (props: JoinGateProps) => {
     setStatusMessage("Redirecting to sign in…");
     try {
       await signInWithGoogle(callbackURL);
-      router.refresh();
+      //router.refresh();
     } catch (e) {
       console.error(e);
       toast.error("ERROR", { description: "Failed to start sign-in." });

@@ -20,8 +20,6 @@ const EventStaffEmailInviteForm = ({
   eventId,
   roleOptions,
 }: {
-  orgSlug: string; // kept for parity; not required by server action
-  eventSlug: string; // kept for parity; not required by server action
   eventId: string;
   roleOptions: EventStaffRole[];
 }) => {

@@ -15,83 +15,72 @@ const inner =
 type InviteMode = "LINK" | "EMAIL";
 
 const EventStaffInvitePanel = ({
-  orgSlug,
-  eventSlug,
   eventId,
   roleOptions,
 }: {
-  orgSlug: string;
-  eventSlug: string;
   eventId: string;
   roleOptions: EventStaffRole[];
 }) => {
   const [mode, setMode] = useState<InviteMode>("LINK");
 
-  const cards = useMemo(
-    () => [
-      {
-        key: "switcher",
-        render: () => (
-          <div className={`${card} p-6 md:p-8 flex flex-col gap-4`}>
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex flex-col gap-1">
-                <div className="text-white font-semibold text-lg md:text-xl">
-                  Invite staff
-                </div>
-                <div className="text-white/60 text-sm leading-relaxed">
-                  Send an invite by email or generate a shareable staff invite
-                  link.
-                </div>
+  const cards = [
+    {
+      key: "switcher",
+      render: () => (
+        <div className={`${card} p-6 md:p-8 flex flex-col gap-4`}>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col gap-1">
+              <div className="text-white font-semibold text-lg md:text-xl">
+                Invite staff
               </div>
-
-              <div className={`${inner} p-1 flex gap-1`}>
-                <button
-                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
-                    mode === "LINK"
-                      ? "bg-white text-primary-950"
-                      : "text-white/80 hover:bg-white/10"
-                  }`}
-                  onClick={() => setMode("LINK")}
-                >
-                  Link
-                </button>
-                <button
-                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
-                    mode === "EMAIL"
-                      ? "bg-white text-primary-950"
-                      : "text-white/80 hover:bg-white/10"
-                  }`}
-                  onClick={() => setMode("EMAIL")}
-                >
-                  Email
-                </button>
+              <div className="text-white/60 text-sm leading-relaxed">
+                Send an invite by email or generate a shareable staff invite
+                link.
               </div>
             </div>
+
+            <div className={`${inner} p-1 flex gap-1`}>
+              <button
+                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+                  mode === "LINK"
+                    ? "bg-white text-primary-950"
+                    : "text-white/80 hover:bg-white/10"
+                }`}
+                onClick={() => setMode("LINK")}
+              >
+                Link
+              </button>
+              <button
+                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+                  mode === "EMAIL"
+                    ? "bg-white text-primary-950"
+                    : "text-white/80 hover:bg-white/10"
+                }`}
+                onClick={() => setMode("EMAIL")}
+              >
+                Email
+              </button>
+            </div>
           </div>
+        </div>
+      ),
+    },
+    {
+      key: "form",
+      render: () =>
+        mode === "LINK" ? (
+          <EventStaffInviteLinkForm
+            eventId={eventId}
+            roleOptions={roleOptions}
+          />
+        ) : (
+          <EventStaffEmailInviteForm
+            eventId={eventId}
+            roleOptions={roleOptions}
+          />
         ),
-      },
-      {
-        key: "form",
-        render: () =>
-          mode === "LINK" ? (
-            <EventStaffInviteLinkForm
-              orgSlug={orgSlug}
-              eventSlug={eventSlug}
-              eventId={eventId}
-              roleOptions={roleOptions}
-            />
-          ) : (
-            <EventStaffEmailInviteForm
-              orgSlug={orgSlug}
-              eventSlug={eventSlug}
-              eventId={eventId}
-              roleOptions={roleOptions}
-            />
-          ),
-      },
-    ],
-    [mode, orgSlug, eventSlug, eventId, roleOptions]
-  );
+    },
+  ];
 
   return (
     <>

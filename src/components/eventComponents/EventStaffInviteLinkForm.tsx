@@ -18,8 +18,6 @@ const EventStaffInviteLinkForm = ({
   eventId,
   roleOptions,
 }: {
-  orgSlug: string; // kept for parity, not required because server returns shareUrl
-  eventSlug: string; // same
   eventId: string;
   roleOptions: EventStaffRole[];
 }) => {
