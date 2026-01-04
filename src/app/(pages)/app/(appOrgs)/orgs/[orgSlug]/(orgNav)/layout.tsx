@@ -24,7 +24,7 @@ const layout = async ({
   return (
     <>
       <OrgNav orgSlug={orgSlug} hasPermissions={hasPermissions} />
-      {children}
+      <main className="mt-[48px]">{children}</main>
     </>
   );
 };

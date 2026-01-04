@@ -5,7 +5,7 @@ const layout = ({ children }: { children: React.ReactNode }) => {
   return (
     <>
       <GlobalNav />
-      {children}
+      <main className="mt-[48px]">{children}</main>
     </>
   );
 };

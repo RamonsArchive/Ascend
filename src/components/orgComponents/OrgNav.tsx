@@ -41,6 +41,8 @@ const XIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
+// ...imports stay the same
+
 const NavbarContent = ({
   onMenuToggle,
   isMenuOpen,
@@ -91,15 +93,13 @@ const NavbarContent = ({
             </div>
           </div>
 
-          <div className="hidden lg:flex items-center">
+          {/* ✅ ONE instance only */}
+          <div className="flex items-center gap-3">
             <ProfileAvatar open={profileOpen} setOpen={setProfileOpen} />
-          </div>
 
-          <div className="lg:hidden flex items-center gap-3">
-            <ProfileAvatar open={profileOpen} setOpen={setProfileOpen} />
             <button
               onClick={onMenuToggle}
-              className="flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity duration-300 ease-in-out"
+              className="lg:hidden flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity duration-300 ease-in-out"
               aria-label="Toggle menu"
             >
               {isMenuOpen ? (

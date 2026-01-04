@@ -28,7 +28,7 @@ const layout = async ({
         eventSlug={eventSlug}
         hasPermissions={hasPermissions}
       />
-      {children}
+      <main className="mt-[48px]">{children}</main>
     </>
   );
 };

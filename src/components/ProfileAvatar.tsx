@@ -17,41 +17,43 @@ export default function ProfileAvatar({ open, setOpen }: ProfileAvatarProps) {
   const userName = session?.user?.name ?? null;
   const isSignedIn = !!session?.user;
 
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  // ✅ EXACT SAME pattern as SlidingMobileMenu
+  const outerRef = useRef<HTMLDivElement>(null); // wrapper that contains button + dropdown
+  const innerRef = useRef<HTMLDivElement>(null); // dropdown itself (or you can set to dropdown root)
 
   useEffect(() => {
     if (!open) return;
 
-    const onPointerDown = (e: PointerEvent) => {
-      const target = e.target as Node;
+    const handleClick = (e: MouseEvent | TouchEvent) => {
+      const innerClicked = innerRef.current?.contains(e.target as Node);
+      const outerClicked = outerRef.current?.contains(e.target as Node);
 
-      const inButton = !!buttonRef.current?.contains(target);
-      const inDropdown = !!dropdownRef.current?.contains(target);
+      // click outside the whole avatar area => close
+      if (!outerClicked) setOpen(false);
 
-      // If you want to debug:
-      // console.log({ inButton, inDropdown, dropdown: dropdownRef.current });
-
-      if (!inButton && !inDropdown) setOpen(false);
+      // (optional) if you only want close when clicking outside dropdown but still within outer,
+      // keep this off. Usually we DON'T close on outer clicks because that includes button.
+      // if (outerClicked && !innerClicked) setOpen(false);
     };
 
-    const onKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
     };
 
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("touchstart", handleClick);
+    document.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("touchstart", handleClick);
+      document.removeEventListener("keydown", handleKeyDown);
     };
   }, [open, setOpen]);
 
   return (
-    <div className="relative z-999">
+    <div ref={outerRef} className="relative z-200">
       <button
-        ref={buttonRef}
         type="button"
         onClick={() => setOpen(!open)}
         aria-haspopup="menu"
@@ -73,7 +75,7 @@ export default function ProfileAvatar({ open, setOpen }: ProfileAvatarProps) {
 
       {open && (
         <ProfileDropdown
-          ref={dropdownRef}
+          innerRef={innerRef as React.RefObject<HTMLDivElement>}
           isSignedIn={isSignedIn}
           onClose={() => setOpen(false)}
           refetch={refetch}

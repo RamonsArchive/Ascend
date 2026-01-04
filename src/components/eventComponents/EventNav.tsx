@@ -70,7 +70,7 @@ const NavbarContent = ({
           </Link>
 
           <div className="hidden lg:flex flex-1 justify-center">
-            {links.map((link) => (
+            {links.map((link: any) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -81,13 +81,16 @@ const NavbarContent = ({
             ))}
           </div>
 
-          <div className="hidden lg:flex">
+          {/* ✅ ONE instance only */}
+          <div className="flex items-center gap-3">
             <ProfileAvatar open={profileOpen} setOpen={setProfileOpen} />
-          </div>
 
-          <div className="lg:hidden flex gap-3">
-            <ProfileAvatar open={profileOpen} setOpen={setProfileOpen} />
-            <button onClick={onMenuToggle}>
+            {/* menu button only exists on mobile */}
+            <button
+              onClick={onMenuToggle}
+              className="lg:hidden"
+              aria-label="Toggle menu"
+            >
               {isMenuOpen ? (
                 <XIcon className="w-6 h-6 text-white" />
               ) : (
@@ -101,7 +104,15 @@ const NavbarContent = ({
   );
 };
 
-const EventNav = ({ orgSlug, eventSlug, hasPermissions }: any) => {
+const EventNav = ({
+  orgSlug,
+  eventSlug,
+  hasPermissions,
+}: {
+  orgSlug: string;
+  eventSlug: string;
+  hasPermissions: boolean;
+}) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [showNavbar, setShowNavbar] = useState(true); // ✅ default visible
