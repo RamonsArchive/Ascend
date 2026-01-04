@@ -4,8 +4,8 @@ import React, { useEffect, useRef, useState, startTransition } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { X } from "lucide-react";
-
 import type { SlidingMobileMenuProps, NavLink } from "@/src/lib/global_types";
+
 export default function SlidingMobileMenu({
   isOpen,
   onClose,
@@ -87,7 +87,7 @@ export default function SlidingMobileMenu({
   return createPortal(
     <aside
       ref={outerRef}
-      className={`fixed inset-0 z-60 bg-black/55 transition-opacity duration-300 ease-in-out ${
+      className={`fixed inset-0 z-999 bg-black/55 transition-opacity duration-300 ease-in-out ${
         isOpen && shouldRender ? "opacity-100" : "opacity-0 pointer-events-none"
       }`}
     >

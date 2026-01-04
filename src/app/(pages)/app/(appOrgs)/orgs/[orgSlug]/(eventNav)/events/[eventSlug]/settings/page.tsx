@@ -36,7 +36,7 @@ const EventSettingsPage = async ({
   const hasPermissions = await assertEventAdminOrOwner(
     orgSlug,
     eventSlug,
-    userId,
+    userId
   );
   if (!hasPermissions.data || hasPermissions.status === "ERROR") {
     return (
@@ -134,6 +134,7 @@ const EventSettingsPage = async ({
   const rubricCategories =
     (rubricCategoriesRes.data as RubricCategoryDraft[]) ?? [];
   console.log("staffData", staffData);
+  console.log("rubricCategories", rubricCategories);
   return (
     <div className="relative w-full min-h-[calc(100vh-48px)]">
       <div className="absolute inset-0 pointer-events-none marketing-bg" />
