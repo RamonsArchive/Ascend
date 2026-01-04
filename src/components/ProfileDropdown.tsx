@@ -62,15 +62,6 @@ export default function ProfileDropdown({
           {isSignedIn ? (
             <>
               <Link
-                href="/app/profile"
-                onClick={onClose}
-                className="w-full rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors px-4 py-3 text-sm text-white/90 flex items-center gap-3"
-              >
-                <User className="w-4 h-4 text-white/80" />
-                Profile
-              </Link>
-
-              <Link
                 href="/app/settings"
                 onClick={onClose}
                 className="w-full rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors px-4 py-3 text-sm text-white/90 flex items-center gap-3"

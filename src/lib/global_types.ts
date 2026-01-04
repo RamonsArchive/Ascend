@@ -658,3 +658,29 @@ export type SlidingMobileMenuProps = {
   // optional: width like your 75%
   widthClassName?: string; // ex: "w-[78%]" or "w-[75%]"
 };
+
+export type UserDataSettings = {
+  id: string;
+  name: string | null;
+  email: string | null;
+  image: string | null;
+
+  username: string | null;
+  headline: string | null;
+
+  bioRich: unknown | null; // whatever you store (JSON)
+  bioText: string | null; // plain fallback if you store it
+
+  profilePicKey: string | null;
+  bannerKey: string | null;
+
+  location: string | null;
+  websiteUrl: string | null;
+  linkedinUrl: string | null;
+  discord: string | null;
+  youtubeUrl: string | null;
+  githubUrl: string | null;
+
+  createdAt: Date;
+  updatedAt: Date;
+};

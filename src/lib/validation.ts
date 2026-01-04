@@ -9,6 +9,7 @@ import {
   jsonArrayFromString,
   optionalMapsShortUrl,
   optionalTrimmed,
+  safeJsonParse,
 } from "./utils";
 import {
   EventRubricMode,
@@ -92,7 +93,7 @@ export const contactFormSchema = z.object({
         if (!val) return true; // Allow empty/undefined
         return /^[0-9]{10}$/.test(val); // Validate if provided
       },
-      { message: "Phone number must be 10 digits" },
+      { message: "Phone number must be 10 digits" }
     ),
   organization: z.string().optional(),
   message: z.string().min(1, { message: "Message is required" }).max(500, {
@@ -117,12 +118,12 @@ export const newOrgClientFormSchema = z.object({
     (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
     z.string().min(1, { message: "Description is required" }).max(1000, {
       message: "Description must be less than 1000 characters",
-    }),
+    })
   ),
 
   publicEmail: z.preprocess(
     (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
-    z.string().email({ message: "Invalid email address" }).optional(),
+    z.string().email({ message: "Invalid email address" }).optional()
   ),
 
   publicPhone: z
@@ -134,7 +135,7 @@ export const newOrgClientFormSchema = z.object({
 
   websiteUrl: z.preprocess(
     (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
-    z.string().url({ message: "Invalid website URL" }).optional(),
+    z.string().url({ message: "Invalid website URL" }).optional()
   ),
 
   logoFile: z
@@ -157,7 +158,7 @@ export const newOrgClientFormSchema = z.object({
           },
         });
       },
-      { message: "Logo must be a PNG, JPG, or WEBP. Max size is 10MB." },
+      { message: "Logo must be a PNG, JPG, or WEBP. Max size is 10MB." }
     ),
 
   coverFile: z
@@ -180,7 +181,7 @@ export const newOrgClientFormSchema = z.object({
           },
         });
       },
-      { message: "Cover must be a PNG, JPG, or WEBP. Max size is 10MB." },
+      { message: "Cover must be a PNG, JPG, or WEBP. Max size is 10MB." }
     ),
 
   contactNote: z.preprocess(
@@ -188,7 +189,7 @@ export const newOrgClientFormSchema = z.object({
     z
       .string()
       .max(2000, { message: "Contact note must be less than 2000 characters" })
-      .optional(),
+      .optional()
   ),
 });
 
@@ -202,12 +203,12 @@ export const newOrgServerFormSchema = z.object({
 
   description: z.preprocess(
     (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
-    z.string().min(1, { message: "Description is required" }).max(1000),
+    z.string().min(1, { message: "Description is required" }).max(1000)
   ),
 
   publicEmail: z.preprocess(
     (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
-    z.string().email({ message: "Invalid email address" }).optional(),
+    z.string().email({ message: "Invalid email address" }).optional()
   ),
 
   publicPhone: z
@@ -219,7 +220,7 @@ export const newOrgServerFormSchema = z.object({
 
   websiteUrl: z.preprocess(
     (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
-    z.string().url({ message: "Invalid website URL" }).optional(),
+    z.string().url({ message: "Invalid website URL" }).optional()
   ),
 
   logoKey: z.preprocess(
@@ -228,7 +229,7 @@ export const newOrgServerFormSchema = z.object({
       .string()
       .max(512)
       .regex(S3_KEY_REGEX, { message: "Invalid logo key" })
-      .optional(),
+      .optional()
   ),
   coverKey: z.preprocess(
     emptyToUndefined,
@@ -236,12 +237,12 @@ export const newOrgServerFormSchema = z.object({
       .string()
       .max(512)
       .regex(S3_KEY_REGEX, { message: "Invalid cover key" })
-      .optional(),
+      .optional()
   ),
 
   contactNote: z.preprocess(
     (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
-    z.string().max(2000).optional(),
+    z.string().max(2000).optional()
   ),
 });
 
@@ -251,12 +252,12 @@ export const editOrgServerSchema = z.object({
   name: z.string().min(1).max(100),
   description: z.preprocess(
     (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
-    z.string().min(1).max(1000),
+    z.string().min(1).max(1000)
   ),
 
   publicEmail: z.preprocess(
     (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
-    z.string().email().optional(),
+    z.string().email().optional()
   ),
 
   publicPhone: z
@@ -268,23 +269,23 @@ export const editOrgServerSchema = z.object({
 
   websiteUrl: z.preprocess(
     (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
-    z.string().url().optional(),
+    z.string().url().optional()
   ),
 
   contactNote: z.preprocess(
     (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
-    z.string().max(2000).optional(),
+    z.string().max(2000).optional()
   ),
 
   // tmp keys from client (after presigned upload)
   logoTmpKey: z.preprocess(
     (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
-    z.string().max(512).regex(S3_KEY_REGEX).optional(),
+    z.string().max(512).regex(S3_KEY_REGEX).optional()
   ),
 
   coverTmpKey: z.preprocess(
     (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
-    z.string().max(512).regex(S3_KEY_REGEX).optional(),
+    z.string().max(512).regex(S3_KEY_REGEX).optional()
   ),
 
   removeLogo: z.boolean().optional(),
@@ -303,12 +304,12 @@ export const editOrgClientSchema = z.object({
     emptyToUndefined,
     z.string().min(1, { message: "Description is required" }).max(1000, {
       message: "Description must be less than 1000 characters",
-    }),
+    })
   ),
 
   publicEmail: z.preprocess(
     emptyToUndefined,
-    z.string().email({ message: "Invalid email address" }).optional(),
+    z.string().email({ message: "Invalid email address" }).optional()
   ),
 
   publicPhone: z
@@ -320,7 +321,7 @@ export const editOrgClientSchema = z.object({
 
   websiteUrl: z.preprocess(
     emptyToUndefined,
-    z.string().url({ message: "Invalid website URL" }).optional(),
+    z.string().url({ message: "Invalid website URL" }).optional()
   ),
 
   contactNote: z.preprocess(
@@ -328,7 +329,7 @@ export const editOrgClientSchema = z.object({
     z
       .string()
       .max(2000, { message: "Contact note must be less than 2000 characters" })
-      .optional(),
+      .optional()
   ),
 
   logoFile: z
@@ -351,7 +352,7 @@ export const editOrgClientSchema = z.object({
           },
         });
       },
-      { message: "Logo must be a PNG, JPG, or WEBP. Max size is 10MB." },
+      { message: "Logo must be a PNG, JPG, or WEBP. Max size is 10MB." }
     ),
 
   coverFile: z
@@ -374,7 +375,7 @@ export const editOrgClientSchema = z.object({
           },
         });
       },
-      { message: "Cover must be a PNG, JPG, or WEBP. Max size is 10MB." },
+      { message: "Cover must be a PNG, JPG, or WEBP. Max size is 10MB." }
     ),
 
   removeLogo: z.boolean().optional(),
@@ -388,7 +389,7 @@ export const createSponsorProfileClientSchema = z.object({
     .max(100),
   sponsorWebsite: z.preprocess(
     emptyToUndefined,
-    z.string().url({ message: "Invalid website URL" }).optional(),
+    z.string().url({ message: "Invalid website URL" }).optional()
   ),
   sponsorDescription: z.preprocess(
     emptyToUndefined,
@@ -397,7 +398,7 @@ export const createSponsorProfileClientSchema = z.object({
       .max(2000, {
         message: "Description must be less than 2000 characters",
       })
-      .optional(),
+      .optional()
   ),
   logoFile: z
     .custom<File | undefined>((val) => val == null || val instanceof File, {
@@ -427,7 +428,7 @@ export const addExistingSponsorToOrgClientSchema = z.object({
     z
       .string()
       .max(2000, { message: "Blurb must be less than 2000 characters" })
-      .optional(),
+      .optional()
   ),
   logoFile: z
     .custom<File | undefined>((val) => val == null || val instanceof File, {
@@ -444,7 +445,7 @@ export const updateSponsorProfileClientSchema = z.object({
     .max(100),
   sponsorWebsite: z.preprocess(
     emptyToUndefined,
-    z.string().url({ message: "Invalid website URL" }).optional(),
+    z.string().url({ message: "Invalid website URL" }).optional()
   ),
   sponsorDescription: z.preprocess(
     emptyToUndefined,
@@ -453,7 +454,7 @@ export const updateSponsorProfileClientSchema = z.object({
       .max(2000, {
         message: "Description must be less than 2000 characters",
       })
-      .optional(),
+      .optional()
   ),
   logoFile: z
     .custom<File | undefined>((val) => val == null || val instanceof File, {
@@ -480,7 +481,7 @@ export const editOrgSponsorClientSchema = z.object({
     z
       .string()
       .max(2000, { message: "Blurb must be less than 2000 characters" })
-      .optional(),
+      .optional()
   ),
   order: z
     .number()
@@ -726,11 +727,11 @@ export const createOrgEventServerSchema = z.object({
   locationName: z.preprocess(emptyToUndefined, z.string().max(120).optional()),
   locationAddress: z.preprocess(
     emptyToUndefined,
-    z.string().max(240).optional(),
+    z.string().max(240).optional()
   ),
   locationNotes: z.preprocess(
     emptyToUndefined,
-    z.string().max(1000).optional(),
+    z.string().max(1000).optional()
   ),
   locationMapUrl: z.preprocess(emptyToUndefined, optionalUrl),
   rulesRich: z.unknown().optional(), // we’ll build JSON server-side from markdown
@@ -947,7 +948,7 @@ export const commonListEditorSchema = z.object({
           .string()
           .optional()
           .transform((v) => (v ?? "").replace(/[^\d]/g, "")),
-      }),
+      })
     )
     .max(50, "Too many items"),
 });
@@ -976,3 +977,75 @@ export const editEventSponsorClientSchema = z.object({
   logoFile: z.any().optional(),
   removeLogo: z.boolean().optional(),
 });
+
+export const updateUserProfileClientSchema = z.object({
+  name: z.string().max(80).optional(),
+  username: z.string().max(40).optional(),
+  headline: z.string().max(120).optional(),
+
+  bioMarkdown: markdownRichSchema.optional(),
+
+  location: z.string().max(120).optional(),
+  websiteUrl: z.preprocess(emptyToUndefined, optionalUrl.optional()),
+  linkedinUrl: z.preprocess(emptyToUndefined, optionalUrl.optional()),
+  youtubeUrl: z.preprocess(emptyToUndefined, optionalUrl.optional()),
+  githubUrl: z.preprocess(emptyToUndefined, optionalUrl.optional()),
+  discord: z.string().max(80).optional(),
+
+  profilePicFile: z
+    .custom<File | undefined>((v) => v == null || v instanceof File)
+    .optional(),
+  bannerFile: z
+    .custom<File | undefined>((v) => v == null || v instanceof File)
+    .optional(),
+
+  removeProfilePic: z.boolean().optional(),
+  removeBanner: z.boolean().optional(),
+});
+
+export const updateUserProfileServerSchema = z
+  .object({
+    name: z.string().max(80).optional().or(z.literal("")),
+    username: z.string().max(40).optional().or(z.literal("")),
+    headline: z.string().max(120).optional().or(z.literal("")),
+
+    bioMarkdown: z.string().max(20000).optional().or(z.literal("")),
+    bioRich: z.string().optional().or(z.literal("")), // JSON string (optional)
+
+    location: z.string().max(120).optional().or(z.literal("")),
+    websiteUrl: z.string().optional().or(z.literal("")),
+    linkedinUrl: z.string().optional().or(z.literal("")),
+    youtubeUrl: z.string().optional().or(z.literal("")),
+    githubUrl: z.string().optional().or(z.literal("")),
+    discord: z.string().max(80).optional().or(z.literal("")),
+
+    profilePicTmpKey: z.string().optional().or(z.literal("")),
+    bannerTmpKey: z.string().optional().or(z.literal("")),
+    removeProfilePic: z.enum(["0", "1"]).optional(),
+    removeBanner: z.enum(["0", "1"]).optional(),
+  })
+  .transform((v) => ({
+    name: v.name || undefined,
+    username: v.username || undefined,
+    headline: v.headline || undefined,
+    bioMarkdown: v.bioMarkdown || undefined,
+    bioRich: v.bioRich ? safeJsonParse(v.bioRich) : undefined,
+    location: v.location || undefined,
+    websiteUrl: v.websiteUrl || undefined,
+    linkedinUrl: v.linkedinUrl || undefined,
+    youtubeUrl: v.youtubeUrl || undefined,
+    githubUrl: v.githubUrl || undefined,
+    discord: v.discord || undefined,
+    profilePicTmpKey: v.profilePicTmpKey || undefined,
+    bannerTmpKey: v.bannerTmpKey || undefined,
+    removeProfilePic: v.removeProfilePic === "1",
+    removeBanner: v.removeBanner === "1",
+  }));
+
+export const deleteUserAccountServerSchema = z
+  .object({
+    confirmEmail: z.string().email().optional().or(z.literal("")),
+  })
+  .transform((v) => ({
+    confirmEmail: v.confirmEmail || undefined,
+  }));

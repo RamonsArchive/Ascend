@@ -83,3 +83,73 @@ export async function deleteS3ObjectIfExists(key: string | null | undefined) {
     console.warn("Failed to delete S3 object:", key, e);
   }
 }
+
+export type UserAssetKind = "profile" | "banner";
+
+export async function createUserImageUpload(opts: {
+  kind: UserAssetKind;
+  fileName: string;
+  contentType: string;
+}) {
+  assertEnv();
+
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user?.id) throw new Error("UNAUTHORIZED");
+
+  const { kind, fileName, contentType } = opts;
+  const uuid = crypto.randomUUID();
+  const ext = extFrom(fileName, contentType);
+
+  const key = `tmp/uploads/${session.user.id}/${kind}/v1/${uuid}.${ext}`;
+
+  const presigned = await createPresignedPost(s3, {
+    Bucket: BUCKET,
+    Key: key,
+    Conditions: [
+      ["content-length-range", 1, MAX_BYTES],
+      ["starts-with", "$Content-Type", "image/"],
+    ],
+    Fields: { "Content-Type": contentType },
+    Expires: 60,
+  });
+
+  return { key, url: presigned.url, fields: presigned.fields };
+}
+
+export async function finalizeUserImageFromTmp(opts: {
+  userId: string;
+  kind: UserAssetKind;
+  tmpKey: string;
+}): Promise<string> {
+  assertEnv();
+
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user?.id) throw new Error("UNAUTHORIZED");
+
+  // IMPORTANT: only allow finalizing YOUR tmp uploads
+  if (!opts.tmpKey.startsWith(`tmp/uploads/${session.user.id}/`)) {
+    throw new Error("INVALID_TMP_KEY_OWNER");
+  }
+
+  const { userId, kind, tmpKey } = opts;
+  ensureTmpKey(tmpKey);
+
+  const ext = extFromKey(tmpKey);
+  const uuid = crypto.randomUUID();
+
+  const finalKey = `public/users/${userId}/${kind}/v1/${uuid}.${ext}`;
+
+  const encodedKey = encodeURIComponent(tmpKey).replace(/%2F/g, "/");
+  const copySource = `${BUCKET}/${encodedKey}`;
+
+  await s3.send(
+    new CopyObjectCommand({
+      Bucket: BUCKET,
+      Key: finalKey,
+      CopySource: copySource,
+    })
+  );
+  await s3.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: tmpKey }));
+
+  return finalKey;
+}
